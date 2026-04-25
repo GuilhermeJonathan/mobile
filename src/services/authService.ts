@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { decodeToken, isTokenExpired, tokenExpiresAt, JwtPayload } from '../utils/tokenUtils';
 
-const LOGIN_API_URL = 'https://localhost:7228';
+const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:7228';
 
 export interface UserInfo {
   id: string;

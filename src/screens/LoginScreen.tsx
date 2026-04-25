@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { authService } from '../services/authService';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorScheme } from '../theme/colors';
 
 export default function LoginScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,6 +48,7 @@ export default function LoginScreen({ navigation }: any) {
         <TextInput
           style={styles.input}
           placeholder="E-mail"
+          placeholderTextColor={colors.inputPlaceholder}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -51,6 +57,7 @@ export default function LoginScreen({ navigation }: any) {
         <TextInput
           style={styles.input}
           placeholder="Senha"
+          placeholderTextColor={colors.inputPlaceholder}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -74,24 +81,26 @@ export default function LoginScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#f5f5f5' },
-  card: {
-    width: '100%', maxWidth: 400,
-    backgroundColor: '#fff', borderRadius: 16, padding: 32,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1, shadowRadius: 12, elevation: 6,
-  },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 28, color: '#1a1a2e' },
-  input: {
-    backgroundColor: '#f5f5f5', borderRadius: 8, padding: 14,
-    marginBottom: 14, fontSize: 15, borderWidth: 1, borderColor: '#e0e0e0',
-  },
-  errorBox: {
-    backgroundColor: '#ffebee', borderRadius: 8, padding: 12,
-    marginBottom: 14, borderWidth: 1, borderColor: '#ef9a9a',
-  },
-  errorText: { color: '#c62828', fontSize: 14, textAlign: 'center' },
-  button: { backgroundColor: '#4CAF50', borderRadius: 8, padding: 15, alignItems: 'center', marginTop: 4 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: c.background },
+    card: {
+      width: '100%', maxWidth: 400,
+      backgroundColor: c.surface, borderRadius: 16, padding: 32,
+      borderWidth: 1, borderColor: c.border,
+    },
+    title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 28, color: c.text },
+    input: {
+      backgroundColor: c.inputBg, borderRadius: 8, padding: 14,
+      marginBottom: 14, fontSize: 15, borderWidth: 1, borderColor: c.inputBorder,
+      color: c.text,
+    },
+    errorBox: {
+      backgroundColor: c.redDim, borderRadius: 8, padding: 12,
+      marginBottom: 14, borderWidth: 1, borderColor: c.redBorder,
+    },
+    errorText: { color: c.red, fontSize: 14, textAlign: 'center' },
+    button: { backgroundColor: c.green, borderRadius: 8, padding: 15, alignItems: 'center', marginTop: 4 },
+    buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  });
+}

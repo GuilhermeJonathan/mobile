@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, TextInput, Modal,
@@ -6,6 +6,9 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { receitasRecorrentesService } from '../services/api';
 import { ReceitaRecorrente, TipoReceita } from '../types';
+import { fmtBRL } from '../utils/currency';
+import { useTheme } from '../theme/ThemeContext';
+import type { ColorScheme } from '../theme/colors';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function calcValor(tipo: TipoReceita, valor: string, vh: string, qh: string): number {
@@ -19,6 +22,9 @@ function calcValor(tipo: TipoReceita, valor: string, vh: string, qh: string): nu
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ReceitasScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const [receitas, setReceitas] = useState<ReceitaRecorrente[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -199,7 +205,7 @@ export default function ReceitasScreen() {
             {receitas.length > 0 && (
               <View style={styles.totalCard}>
                 <Text style={styles.totalLabel}>Receita Recorrente Mensal</Text>
-                <Text style={styles.totalValor}>R$ {totalMensal.toFixed(2)}</Text>
+                <Text style={styles.totalValor}>{fmtBRL(totalMensal)}</Text>
                 <Text style={styles.totalSub}>{receitas.length} receita{receitas.length > 1 ? 's' : ''} ativa{receitas.length > 1 ? 's' : ''}</Text>
               </View>
             )}
@@ -219,12 +225,12 @@ export default function ReceitasScreen() {
                 <Text style={styles.cardDia}>Todo dia {item.dia} · {item.tipo === TipoReceita.Horista ? 'Horista' : 'Fixo'}</Text>
                 {item.tipo === TipoReceita.Horista && item.valorHora != null && (
                   <Text style={styles.cardHorista}>
-                    R$ {item.valorHora.toFixed(2)}/h × {item.quantidadeHoras}h
+                    {fmtBRL(item.valorHora)}/h × {item.quantidadeHoras}h
                   </Text>
                 )}
               </View>
               <View style={styles.cardRight}>
-                <Text style={styles.cardValor}>R$ {item.valor.toFixed(2)}</Text>
+                <Text style={styles.cardValor}>{fmtBRL(item.valor)}</Text>
                 <View style={styles.cardActions}>
                   <TouchableOpacity onPress={() => abrirEdicao(item)} style={styles.btnAction}>
                     <Text style={styles.btnActionText}>✏️</Text>
@@ -262,28 +268,55 @@ export default function ReceitasScreen() {
             </View>
 
             <Text style={styles.label}>Nome</Text>
-            <TextInput style={styles.input} placeholder="Ex: Salário, Freelance..." value={cNome} onChangeText={setCNome} />
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: Salário, Freelance..."
+              placeholderTextColor={colors.inputPlaceholder}
+              value={cNome}
+              onChangeText={setCNome}
+            />
 
             {cTipo === TipoReceita.Fixo ? (
               <>
                 <Text style={styles.label}>Valor (R$)</Text>
-                <TextInput style={styles.input} placeholder="0,00" keyboardType="decimal-pad" value={cValor} onChangeText={setCValor} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="0,00"
+                  placeholderTextColor={colors.inputPlaceholder}
+                  keyboardType="decimal-pad"
+                  value={cValor}
+                  onChangeText={setCValor}
+                />
               </>
             ) : (
               <>
                 <View style={styles.row}>
                   <View style={{ flex: 1, marginRight: 8 }}>
                     <Text style={styles.label}>Valor por hora (R$)</Text>
-                    <TextInput style={styles.input} placeholder="0,00" keyboardType="decimal-pad" value={cValorHora} onChangeText={setCValorHora} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0,00"
+                      placeholderTextColor={colors.inputPlaceholder}
+                      keyboardType="decimal-pad"
+                      value={cValorHora}
+                      onChangeText={setCValorHora}
+                    />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.label}>Qtd. de horas</Text>
-                    <TextInput style={styles.input} placeholder="0" keyboardType="decimal-pad" value={cQtdHoras} onChangeText={setCQtdHoras} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0"
+                      placeholderTextColor={colors.inputPlaceholder}
+                      keyboardType="decimal-pad"
+                      value={cQtdHoras}
+                      onChangeText={setCQtdHoras}
+                    />
                   </View>
                 </View>
                 {previewCriar > 0 && (
                   <View style={styles.previewBox}>
-                    <Text style={styles.previewText}>Total mensal: R$ {previewCriar.toFixed(2)}</Text>
+                    <Text style={styles.previewText}>Total mensal: {fmtBRL(previewCriar)}</Text>
                   </View>
                 )}
               </>
@@ -292,7 +325,15 @@ export default function ReceitasScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1, marginRight: 8 }}>
                 <Text style={styles.label}>Dia do mês (1–28)</Text>
-                <TextInput style={styles.input} placeholder="1" keyboardType="number-pad" value={cDia} onChangeText={t => setCDia(t.replace(/\D/g, '') || '1')} maxLength={2} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="1"
+                  placeholderTextColor={colors.inputPlaceholder}
+                  keyboardType="number-pad"
+                  value={cDia}
+                  onChangeText={t => setCDia(t.replace(/\D/g, '') || '1')}
+                  maxLength={2}
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Repetir (meses)</Text>
@@ -300,7 +341,12 @@ export default function ReceitasScreen() {
                   <TouchableOpacity style={styles.stepBtn} onPress={() => setCMeses(String(Math.max(1, (parseInt(cMeses) || 12) - 1)))}>
                     <Text style={styles.stepBtnText}>−</Text>
                   </TouchableOpacity>
-                  <TextInput style={styles.stepInput} keyboardType="number-pad" value={cMeses} onChangeText={t => setCMeses(t.replace(/\D/g, '') || '1')} />
+                  <TextInput
+                    style={styles.stepInput}
+                    keyboardType="number-pad"
+                    value={cMeses}
+                    onChangeText={t => setCMeses(t.replace(/\D/g, '') || '1')}
+                  />
                   <TouchableOpacity style={styles.stepBtn} onPress={() => setCMeses(String((parseInt(cMeses) || 12) + 1))}>
                     <Text style={styles.stepBtnText}>+</Text>
                   </TouchableOpacity>
@@ -347,30 +393,57 @@ export default function ReceitasScreen() {
                 {eTipo === TipoReceita.Fixo ? (
                   <>
                     <Text style={styles.label}>Valor (R$)</Text>
-                    <TextInput style={styles.input} placeholder="0,00" keyboardType="decimal-pad" value={eValor} onChangeText={setEValor} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0,00"
+                      placeholderTextColor={colors.inputPlaceholder}
+                      keyboardType="decimal-pad"
+                      value={eValor}
+                      onChangeText={setEValor}
+                    />
                   </>
                 ) : (
                   <>
                     <View style={styles.row}>
                       <View style={{ flex: 1, marginRight: 8 }}>
                         <Text style={styles.label}>Valor por hora (R$)</Text>
-                        <TextInput style={styles.input} placeholder="0,00" keyboardType="decimal-pad" value={eValorHora} onChangeText={setEValorHora} />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="0,00"
+                          placeholderTextColor={colors.inputPlaceholder}
+                          keyboardType="decimal-pad"
+                          value={eValorHora}
+                          onChangeText={setEValorHora}
+                        />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.label}>Qtd. de horas</Text>
-                        <TextInput style={styles.input} placeholder="0" keyboardType="decimal-pad" value={eQtdHoras} onChangeText={setEQtdHoras} />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="0"
+                          placeholderTextColor={colors.inputPlaceholder}
+                          keyboardType="decimal-pad"
+                          value={eQtdHoras}
+                          onChangeText={setEQtdHoras}
+                        />
                       </View>
                     </View>
                     {previewEditar > 0 && (
                       <View style={styles.previewBox}>
-                        <Text style={styles.previewText}>Total mensal: R$ {previewEditar.toFixed(2)}</Text>
+                        <Text style={styles.previewText}>Total mensal: {fmtBRL(previewEditar)}</Text>
                       </View>
                     )}
                   </>
                 )}
 
                 <Text style={styles.label}>Dia do mês (1–28)</Text>
-                <TextInput style={styles.input} keyboardType="number-pad" value={eDia} onChangeText={t => setEDia(t.replace(/\D/g, '') || '1')} maxLength={2} />
+                <TextInput
+                  style={styles.input}
+                  keyboardType="number-pad"
+                  value={eDia}
+                  onChangeText={t => setEDia(t.replace(/\D/g, '') || '1')}
+                  maxLength={2}
+                />
 
                 {error !== '' && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
 
@@ -428,49 +501,51 @@ export default function ReceitasScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  totalCard: { backgroundColor: '#4CAF50', borderRadius: 12, padding: 20, marginBottom: 12, alignItems: 'center' },
-  totalLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13 },
-  totalValor: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
-  totalSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 4 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, elevation: 2 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardLeft: { flex: 1 },
-  cardNome: { fontSize: 16, fontWeight: 'bold', color: '#1a1a2e' },
-  cardDia: { fontSize: 13, color: '#888', marginTop: 2 },
-  cardHorista: { fontSize: 12, color: '#4CAF50', marginTop: 2 },
-  cardRight: { alignItems: 'flex-end', gap: 6 },
-  cardValor: { fontSize: 16, fontWeight: 'bold', color: '#4CAF50' },
-  cardActions: { flexDirection: 'row', gap: 8 },
-  btnAction: { padding: 4 },
-  btnActionText: { fontSize: 18 },
-  empty: { textAlign: 'center', marginTop: 60, color: '#aaa', fontSize: 16, lineHeight: 26 },
-  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#4CAF50', justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
-  errorBox: { backgroundColor: '#ffebee', borderRadius: 8, padding: 12, marginTop: 8, borderWidth: 1, borderColor: '#ef9a9a' },
-  errorText: { color: '#c62828', fontSize: 14, textAlign: 'center' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modal: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '100%', maxWidth: 420 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1a1a2e', marginBottom: 6 },
-  modalSub: { fontSize: 13, color: '#888', marginBottom: 4, lineHeight: 18 },
-  label: { fontSize: 13, fontWeight: '600', color: '#444', marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, borderWidth: 1, borderColor: '#ddd' },
-  row: { flexDirection: 'row' },
-  chips: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
-  chipActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
-  chipText: { fontSize: 14, color: '#444' },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
-  previewBox: { backgroundColor: '#E8F5E9', borderRadius: 8, padding: 10, marginTop: 8, alignItems: 'center' },
-  previewText: { color: '#2E7D32', fontSize: 15, fontWeight: 'bold' },
-  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  stepBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#4CAF50', justifyContent: 'center', alignItems: 'center' },
-  stepBtnText: { color: '#fff', fontSize: 20, lineHeight: 24 },
-  stepInput: { width: 50, textAlign: 'center', backgroundColor: '#f5f5f5', borderRadius: 8, padding: 6, fontSize: 16, fontWeight: 'bold', borderWidth: 1, borderColor: '#ddd' },
-  modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ddd' },
-  btnCancelText: { color: '#666', fontSize: 15 },
-  btnSave: { flex: 1, backgroundColor: '#4CAF50', borderRadius: 8, padding: 14, alignItems: 'center' },
-  btnSaveText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    totalCard: { backgroundColor: c.green, borderRadius: 12, padding: 20, marginBottom: 12, alignItems: 'center' },
+    totalLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13 },
+    totalValor: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
+    totalSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 4 },
+    card: { backgroundColor: c.surface, borderRadius: 12, padding: 16, marginBottom: 10 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    cardLeft: { flex: 1 },
+    cardNome: { fontSize: 16, fontWeight: 'bold', color: c.text },
+    cardDia: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+    cardHorista: { fontSize: 12, color: c.green, marginTop: 2 },
+    cardRight: { alignItems: 'flex-end', gap: 6 },
+    cardValor: { fontSize: 16, fontWeight: 'bold', color: c.green },
+    cardActions: { flexDirection: 'row', gap: 8 },
+    btnAction: { padding: 4 },
+    btnActionText: { fontSize: 18 },
+    empty: { textAlign: 'center', marginTop: 60, color: c.textSecondary, fontSize: 16, lineHeight: 26 },
+    fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.green, justifyContent: 'center', alignItems: 'center', elevation: 5 },
+    fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
+    errorBox: { backgroundColor: c.redDim, borderRadius: 8, padding: 12, marginTop: 8, borderWidth: 1, borderColor: c.redBorder },
+    errorText: { color: c.redBorder, fontSize: 14, textAlign: 'center' },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    modal: { backgroundColor: c.surfaceElevated, borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: c.border },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: c.text, marginBottom: 6 },
+    modalSub: { fontSize: 13, color: c.textSecondary, marginBottom: 4, lineHeight: 18 },
+    label: { fontSize: 13, fontWeight: '600', color: c.textSecondary, marginBottom: 6, marginTop: 12, textTransform: 'uppercase', letterSpacing: 0.4 },
+    input: { backgroundColor: c.inputBg, borderRadius: 8, padding: 12, fontSize: 16, borderWidth: 1, borderColor: c.inputBorder, color: c.text },
+    row: { flexDirection: 'row' },
+    chips: { flexDirection: 'row', gap: 8, marginTop: 4 },
+    chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: c.inputBorder, backgroundColor: c.inputBg },
+    chipActive: { backgroundColor: c.green, borderColor: c.green },
+    chipText: { fontSize: 14, color: c.textSecondary },
+    chipTextActive: { color: '#fff', fontWeight: '600' },
+    previewBox: { backgroundColor: c.greenDim, borderRadius: 8, padding: 10, marginTop: 8, alignItems: 'center', borderWidth: 1, borderColor: c.greenBorder },
+    previewText: { color: c.green, fontSize: 15, fontWeight: 'bold' },
+    stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+    stepBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: c.green, justifyContent: 'center', alignItems: 'center' },
+    stepBtnText: { color: '#fff', fontSize: 20, lineHeight: 24 },
+    stepInput: { width: 50, textAlign: 'center', backgroundColor: c.inputBg, borderRadius: 8, padding: 6, fontSize: 16, fontWeight: 'bold', borderWidth: 1, borderColor: c.inputBorder, color: c.text },
+    modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
+    btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: c.border },
+    btnCancelText: { color: c.textSecondary, fontSize: 15 },
+    btnSave: { flex: 1, backgroundColor: c.green, borderRadius: 8, padding: 14, alignItems: 'center' },
+    btnSaveText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+  });
+}

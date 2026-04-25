@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, ScrollView,
@@ -7,6 +7,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, saldosService } from '../services/api';
 import { Lancamento, SaldoConta, SituacaoLancamento, TipoLancamento, TipoConta, TipoReceita } from '../types';
 import { fmtBRL } from '../utils/currency';
+import { useTheme } from '../theme/ThemeContext';
+import type { ColorScheme } from '../theme/colors';
 
 const TIPO_CONTA_EMOJI: Record<number, string> = {
   [TipoConta.ContaCorrente]: '🏦',
@@ -60,6 +62,9 @@ type ListItem =
 type Filtro = 'todos' | 'receitas' | 'despesas';
 
 export default function LancamentosScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const now = new Date();
   const [mes, setMes] = useState(now.getMonth() + 1);
   const [ano, setAno] = useState(now.getFullYear());
@@ -70,9 +75,15 @@ export default function LancamentosScreen({ navigation }: any) {
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [toggling, setToggling] = useState<Set<string>>(new Set());
 
-  // Modal de seleção de conta
+  // Modal de seleção de conta (lançamentos normais)
   const [contas, setContas] = useState<SaldoConta[]>([]);
   const [contaModal, setContaModal] = useState<{ visible: boolean; item: Lancamento | null }>({ visible: false, item: null });
+
+  // Modal de pagamento de fatura de cartão
+  const [faturaModal, setFaturaModal] = useState<{
+    cartaoId: string; cartaoNome: string;
+    total: number; items: Lancamento[];
+  } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -121,27 +132,43 @@ export default function LancamentosScreen({ navigation }: any) {
     }
   }
 
-  // Toggle: se está confirmando abre modal de conta; se está desconfirmando faz direto
+  // Toggle check
   async function handleToggleCheck(item: Lancamento) {
     if (toggling.has(item.id)) return;
     const confirmando = !isConfirmado(item.situacao);
 
-    if (confirmando) {
-      // Carrega contas e abre modal
-      try {
-        const lista = await saldosService.getAll();
-        setContas(lista);
-      } catch { setContas([]); }
+    if (confirmando && !item.cartaoId) {
+      // Lançamento normal → abre popup de conta
+      try { setContas(await saldosService.getAll()); } catch { setContas([]); }
       setContaModal({ visible: true, item });
       return;
     }
 
-    // Desconfirmando: chama direto (rollback automático no backend)
+    // Cartão confirmando OU qualquer desconfirmação → confirma direto
     const novaSituacao = proximaSituacao(item);
-    setLancamentos(prev => prev.map(l => l.id === item.id ? { ...l, situacao: novaSituacao } : l));
+    const listaOtimista = lancamentos.map(l =>
+      l.id === item.id ? { ...l, situacao: novaSituacao } : l
+    );
+    setLancamentos(listaOtimista);
     setToggling(prev => new Set(prev).add(item.id));
     try {
       await lancamentosService.atualizarSituacaoComConta(item.id, novaSituacao, null);
+
+      // Se confirmou o último item do cartão → abre popup de pagamento de fatura
+      if (confirmando && item.cartaoId) {
+        const itemsDoCartao = listaOtimista.filter(l => l.cartaoId === item.cartaoId);
+        const todosConfirmados = itemsDoCartao.every(l => isConfirmado(l.situacao));
+        if (todosConfirmados) {
+          try { setContas(await saldosService.getAll()); } catch { setContas([]); }
+          setFaturaModal({
+            cartaoId: item.cartaoId,
+            cartaoNome: item.cartaoNome ?? 'Cartão',
+            total: itemsDoCartao.reduce((s, l) => s + l.valor, 0),
+            items: itemsDoCartao,
+          });
+        }
+      }
+
       const data = await lancamentosService.getByMes(mes, ano);
       setLancamentos(data);
     } catch {
@@ -149,6 +176,44 @@ export default function LancamentosScreen({ navigation }: any) {
     } finally {
       setToggling(prev => { const next = new Set(prev); next.delete(item.id); return next; });
     }
+  }
+
+  // Paga a fatura: marca todos os itens como pagos e debita a conta
+  async function confirmarFatura(contaId: string | null) {
+    if (!faturaModal) return;
+    const { items, total, cartaoNome } = faturaModal;
+    setFaturaModal(null);
+
+    // Marca todos os itens não confirmados como pagos (sem movimentar conta individualmente)
+    const naoConfirmados = items.filter(l => !isConfirmado(l.situacao));
+    setLancamentos(prev => prev.map(l =>
+      naoConfirmados.find(n => n.id === l.id)
+        ? { ...l, situacao: SituacaoLancamento.Pago }
+        : l
+    ));
+    for (const item of naoConfirmados) {
+      try {
+        await lancamentosService.atualizarSituacaoComConta(item.id, SituacaoLancamento.Pago, null);
+      } catch {}
+    }
+
+    // Debita o total da conta selecionada
+    if (contaId) {
+      const conta = contas.find(c => c.id === contaId);
+      if (conta) {
+        try {
+          await saldosService.update(contaId, {
+            banco: conta.banco,
+            saldo: conta.saldo - total,
+            tipo: conta.tipo,
+          });
+        } catch {}
+      }
+    }
+
+    // Recarrega lista
+    const data = await lancamentosService.getByMes(mes, ano);
+    setLancamentos(data);
   }
 
   type RawItem =
@@ -289,7 +354,7 @@ export default function LancamentosScreen({ navigation }: any) {
           <View style={styles.itemLeft}>
             <Text style={styles.itemDesc}>{item.descricao}</Text>
             <View style={styles.itemMetaRow}>
-              {!item.cartaoId && item.categoriaNome && (
+              {item.categoriaNome && (
                 <View style={styles.catBadge}>
                   <Text style={styles.catBadgeText}>{item.categoriaNome}</Text>
                 </View>
@@ -400,9 +465,12 @@ export default function LancamentosScreen({ navigation }: any) {
             </View>
           </View>
           <View style={styles.cartaoRight}>
-            <Text style={[styles.itemValor, { color: '#e53935' }]}>
+            <Text style={[styles.itemValor, { color: colors.red }]}>
               -{fmtBRL(item.total)}
             </Text>
+            {todosConfirmados && (
+              <Text style={styles.faturaPageText}>✓ Fatura paga</Text>
+            )}
             <Text style={styles.expandHint}>{expanded ? '▲ recolher' : '▼ ver detalhes'}</Text>
           </View>
         </TouchableOpacity>
@@ -529,173 +597,237 @@ export default function LancamentosScreen({ navigation }: any) {
           </View>
         </View>
       </Modal>
+
+      {/* ── Modal de pagamento de fatura ── */}
+      <Modal
+        visible={!!faturaModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFaturaModal(null)}
+      >
+        <View style={styles.contaOverlay}>
+          <View style={styles.contaSheet}>
+            <Text style={styles.contaSheetTitle}>💳 Pagar fatura {faturaModal?.cartaoNome}</Text>
+            <Text style={styles.contaSheetSub}>
+              Total: {fmtBRL(faturaModal?.total ?? 0)} · De qual conta?
+            </Text>
+
+            <ScrollView style={{ maxHeight: 320 }}>
+              {contas.length === 0 && (
+                <View style={styles.contaSemContas}>
+                  <Text style={styles.contaSemContasText}>Nenhuma conta cadastrada.</Text>
+                  <Text style={styles.contaSemContasHint}>Cadastre em Saldos → +</Text>
+                </View>
+              )}
+              {contas.map(c => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={styles.contaOption}
+                  onPress={() => confirmarFatura(c.id)}
+                >
+                  <Text style={styles.contaOptionEmoji}>{TIPO_CONTA_EMOJI[c.tipo] ?? '🏦'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.contaOptionNome}>{c.banco}</Text>
+                    <Text style={[styles.contaOptionSaldo, { color: c.saldo >= 0 ? colors.green : colors.red }]}>
+                      {fmtBRL(c.saldo)}
+                    </Text>
+                  </View>
+                  <Text style={styles.contaOptionArrow}>›</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.contaSemContaBtn}
+              onPress={() => confirmarFatura(null)}
+            >
+              <Text style={styles.contaSemContaBtnText}>Pagar sem vincular conta</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.contaCancelarBtn}
+              onPress={() => setFaturaModal(null)}
+            >
+              <Text style={styles.contaCancelarBtnText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#1a1a2e', borderBottomWidth: 1, borderBottomColor: '#ffffff15' },
-  navBtn: { fontSize: 22, color: '#4CAF50', paddingHorizontal: 12 },
-  mesTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border },
+    navBtn: { fontSize: 22, color: c.green, paddingHorizontal: 12 },
+    mesTitle: { fontSize: 18, fontWeight: 'bold', color: c.text },
 
-  item: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1a1a2e', paddingVertical: 10, paddingRight: 14, paddingLeft: 10,
-    marginHorizontal: 12, marginTop: 8, borderRadius: 10,
-  },
-  itemIndented: {
-    marginHorizontal: 20, marginTop: 2, borderRadius: 8,
-    backgroundColor: '#16213e', borderLeftWidth: 3, borderLeftColor: '#1565C0',
-  },
-  itemBody: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    item: {
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: c.surface, paddingVertical: 10, paddingRight: 14, paddingLeft: 10,
+      marginHorizontal: 12, marginTop: 8, borderRadius: 10,
+    },
+    itemIndented: {
+      marginHorizontal: 20, marginTop: 2, borderRadius: 8,
+      backgroundColor: c.surfaceSubtle, borderLeftWidth: 3, borderLeftColor: c.blue,
+    },
+    itemBody: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 
-  checkBtn: {
-    width: 26, height: 26, borderRadius: 13, borderWidth: 2,
-    justifyContent: 'center', alignItems: 'center',
-    marginRight: 12, flexShrink: 0,
-  },
-  checkMark: { color: '#fff', fontSize: 14, fontWeight: 'bold', lineHeight: 16 },
+    checkBtn: {
+      width: 26, height: 26, borderRadius: 13, borderWidth: 2,
+      justifyContent: 'center', alignItems: 'center',
+      marginRight: 12, flexShrink: 0,
+    },
+    checkMark: { color: c.checkmark, fontSize: 14, fontWeight: 'bold', lineHeight: 16 },
 
-  resumoCard: {
-    flexDirection: 'row', backgroundColor: '#1a1a2e',
-    marginHorizontal: 12, marginTop: 10, marginBottom: 4,
-    borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#ffffff10',
-  },
-  resumoItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  resumoLabel: { fontSize: 11, color: '#9aa0b4', marginBottom: 4 },
-  resumoCredito: { fontSize: 15, fontWeight: 'bold', color: '#4CAF50' },
-  resumoDebito: { fontSize: 15, fontWeight: 'bold', color: '#ef5350' },
-  resumoSaldo: { fontSize: 15, fontWeight: 'bold' },
-  resumoDivider: { width: 1, backgroundColor: '#ffffff15', marginVertical: 10 },
+    resumoCard: {
+      flexDirection: 'row', backgroundColor: c.surface,
+      marginHorizontal: 12, marginTop: 10, marginBottom: 4,
+      borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: c.border,
+    },
+    resumoItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
+    resumoLabel: { fontSize: 11, color: c.textSecondary, marginBottom: 4 },
+    resumoCredito: { fontSize: 15, fontWeight: 'bold', color: c.green },
+    resumoDebito: { fontSize: 15, fontWeight: 'bold', color: c.red },
+    resumoSaldo: { fontSize: 15, fontWeight: 'bold' },
+    resumoDivider: { width: 1, backgroundColor: c.border, marginVertical: 10 },
 
-  dateHeader: {
-    marginHorizontal: 12, marginTop: 14, marginBottom: 2,
-    paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: '#ffffff15',
-  },
-  dateHeaderLabel: { fontSize: 12, fontWeight: '700', color: '#666677', textTransform: 'uppercase', letterSpacing: 0.5 },
+    dateHeader: {
+      marginHorizontal: 12, marginTop: 14, marginBottom: 2,
+      paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    dateHeaderLabel: { fontSize: 12, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  filterBar: {
-    flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingVertical: 10,
-    backgroundColor: '#1a1a2e', borderBottomWidth: 1, borderBottomColor: '#ffffff15',
-  },
-  filterChip: {
-    flex: 1, paddingVertical: 7, borderRadius: 20,
-    borderWidth: 1, borderColor: '#ffffff20', backgroundColor: '#ffffff0d',
-    alignItems: 'center',
-  },
-  filterChipAll: { backgroundColor: '#ffffff25', borderColor: '#ffffff40' },
-  filterChipReceitas: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
-  filterChipDespesas: { backgroundColor: '#ef5350', borderColor: '#ef5350' },
-  filterChipText: { fontSize: 13, fontWeight: '600', color: '#9aa0b4' },
-  filterChipTextActive: { color: '#fff' },
+    filterBar: {
+      flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingVertical: 10,
+      backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    filterChip: {
+      flex: 1, paddingVertical: 7, borderRadius: 20,
+      borderWidth: 1, borderColor: c.inputBorder, backgroundColor: c.inputBg,
+      alignItems: 'center',
+    },
+    filterChipAll: { backgroundColor: c.border, borderColor: c.border },
+    filterChipReceitas: { backgroundColor: c.green, borderColor: c.green },
+    filterChipDespesas: { backgroundColor: c.red, borderColor: c.red },
+    filterChipText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+    filterChipTextActive: { color: c.text },
 
-  cartaoTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  vencBadge: {
-    backgroundColor: '#1565C025', borderRadius: 10, borderWidth: 1, borderColor: '#1565C060',
-    paddingHorizontal: 8, paddingVertical: 2,
-  },
-  vencBadgeText: { fontSize: 11, color: '#64B5F6', fontWeight: '600' },
-  vencBadgeSem: {
-    backgroundColor: '#FF980015', borderRadius: 10, borderWidth: 1, borderColor: '#FF980050',
-    paddingHorizontal: 8, paddingVertical: 2,
-  },
-  vencBadgeSemText: { fontSize: 11, color: '#FF9800', fontWeight: '500' },
+    cartaoTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    vencBadge: {
+      backgroundColor: c.blueDim, borderRadius: 10, borderWidth: 1, borderColor: c.blueBorder,
+      paddingHorizontal: 8, paddingVertical: 2,
+    },
+    vencBadgeText: { fontSize: 11, color: '#64B5F6', fontWeight: '600' },
+    vencBadgeSem: {
+      backgroundColor: '#FF980015', borderRadius: 10, borderWidth: 1, borderColor: '#FF980050',
+      paddingHorizontal: 8, paddingVertical: 2,
+    },
+    vencBadgeSemText: { fontSize: 11, color: c.orange, fontWeight: '500' },
 
-  receitaBadgeHorista: {
-    backgroundColor: '#7B1FA220', borderRadius: 10, borderWidth: 1, borderColor: '#CE93D840',
-    paddingHorizontal: 7, paddingVertical: 1,
-  },
-  receitaBadgeFixo: {
-    backgroundColor: '#00695C20', borderRadius: 10, borderWidth: 1, borderColor: '#80CBC440',
-    paddingHorizontal: 7, paddingVertical: 1,
-  },
-  receitaBadgeText: { fontSize: 11, color: '#ccc', fontWeight: '600' },
+    receitaBadgeHorista: {
+      backgroundColor: c.purpleDim, borderRadius: 10, borderWidth: 1, borderColor: c.purpleBorder,
+      paddingHorizontal: 7, paddingVertical: 1,
+    },
+    receitaBadgeFixo: {
+      backgroundColor: '#00695C20', borderRadius: 10, borderWidth: 1, borderColor: '#80CBC440',
+      paddingHorizontal: 7, paddingVertical: 1,
+    },
+    receitaBadgeText: { fontSize: 11, color: '#ccc', fontWeight: '600' },
 
-  cartaoRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: '#1565C018', padding: 14,
-    marginHorizontal: 12, marginTop: 8, borderRadius: 10,
-    borderLeftWidth: 4, borderLeftColor: '#1565C0',
-  },
-  cartaoCheck: {
-    width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: '#64B5F660',
-    justifyContent: 'center', alignItems: 'center', marginRight: 12, flexShrink: 0,
-  },
-  cartaoCheckDone: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
-  cartaoCheckPartial: { backgroundColor: '#FF9800', borderColor: '#FF9800' },
-  cartaoCheckPartialText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
+    cartaoRow: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      backgroundColor: c.cartaoRowBg, padding: 14,
+      marginHorizontal: 12, marginTop: 8, borderRadius: 10,
+      borderLeftWidth: 4, borderLeftColor: c.blue,
+    },
+    cartaoCheck: {
+      width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: '#64B5F660',
+      justifyContent: 'center', alignItems: 'center', marginRight: 12, flexShrink: 0,
+    },
+    cartaoCheckDone: { backgroundColor: c.green, borderColor: c.green },
+    cartaoCheckPartial: { backgroundColor: c.orange, borderColor: c.orange },
+    cartaoCheckPartialText: { color: c.text, fontSize: 13, fontWeight: 'bold' },
 
-  itemConfirmado: { borderLeftWidth: 3, borderLeftColor: '#4CAF50' },
+    itemConfirmado: { borderLeftWidth: 3, borderLeftColor: c.green },
 
-  itemLeft: { flex: 1 },
-  itemDesc: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  itemMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2 },
-  itemMeta: { fontSize: 12, color: '#9aa0b4' },
-  itemMetaVence: { fontSize: 12, color: '#64B5F6', fontWeight: '600' },
+    itemLeft: { flex: 1 },
+    itemDesc: { fontSize: 15, fontWeight: '600', color: c.text },
+    itemMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2 },
+    itemMeta: { fontSize: 12, color: c.textSecondary },
+    itemMetaVence: { fontSize: 12, color: '#64B5F6', fontWeight: '600' },
 
-  dataBadge: {
-    backgroundColor: '#ffffff10', borderRadius: 10, borderWidth: 1, borderColor: '#ffffff20',
-    paddingHorizontal: 8, paddingVertical: 2,
-  },
-  dataBadgeVencido: { backgroundColor: '#ef535020', borderColor: '#ef535040' },
-  dataBadgeText: { fontSize: 11, color: '#9aa0b4', fontWeight: '500' },
-  dataBadgeTextVencido: { color: '#ef9a9a', fontWeight: '600' },
+    dataBadge: {
+      backgroundColor: c.border, borderRadius: 10, borderWidth: 1, borderColor: c.inputBorder,
+      paddingHorizontal: 8, paddingVertical: 2,
+    },
+    dataBadgeVencido: { backgroundColor: c.redDim, borderColor: c.redBorder },
+    dataBadgeText: { fontSize: 11, color: c.textSecondary, fontWeight: '500' },
+    dataBadgeTextVencido: { color: c.redBorder, fontWeight: '600' },
 
-  catBadge: {
-    backgroundColor: '#ffffff10', borderRadius: 10, borderWidth: 1, borderColor: '#ffffff20',
-    paddingHorizontal: 8, paddingVertical: 2,
-  },
-  catBadgeText: { fontSize: 11, color: '#9aa0b4', fontWeight: '500' },
+    catBadge: {
+      backgroundColor: c.border, borderRadius: 10, borderWidth: 1, borderColor: c.inputBorder,
+      paddingHorizontal: 8, paddingVertical: 2,
+    },
+    catBadgeText: { fontSize: 11, color: c.textSecondary, fontWeight: '500' },
 
-  parcelaBadge: { backgroundColor: '#FF980015', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1, borderColor: '#FF980040' },
-  parcelaBadgeText: { fontSize: 11, color: '#FF9800', fontWeight: '600' },
-  recorrenteBadge: { backgroundColor: '#7B1FA215', borderRadius: 10, borderWidth: 1, borderColor: '#CE93D840', paddingHorizontal: 7, paddingVertical: 1 },
-  recorrenteBadgeText: { fontSize: 11, color: '#CE93D8', fontWeight: '600' },
+    parcelaBadge: { backgroundColor: '#FF980015', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1, borderColor: '#FF980040' },
+    parcelaBadgeText: { fontSize: 11, color: c.orange, fontWeight: '600' },
+    recorrenteBadge: { backgroundColor: c.purpleDim, borderRadius: 10, borderWidth: 1, borderColor: c.purpleBorder, paddingHorizontal: 7, paddingVertical: 1 },
+    recorrenteBadgeText: { fontSize: 11, color: c.purpleLight, fontWeight: '600' },
 
-  itemRight: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 8 },
-  itemValor: { fontSize: 15, fontWeight: 'bold', textAlign: 'right' },
+    itemRight: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 8 },
+    itemValor: { fontSize: 15, fontWeight: 'bold', textAlign: 'right' },
 
-  situacaoBadge: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 3 },
-  situacaoBadgeText: { fontSize: 12, fontWeight: '600' },
+    situacaoBadge: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 3 },
+    situacaoBadgeText: { fontSize: 12, fontWeight: '600' },
 
-  cartaoRight: { alignItems: 'flex-end', marginLeft: 8 },
-  expandHint: { fontSize: 11, color: '#64B5F6', marginTop: 2 },
+    cartaoRight: { alignItems: 'flex-end', marginLeft: 8, gap: 2 },
+    expandHint: { fontSize: 11, color: c.blue, marginTop: 2 },
+    pagarFaturaBtn: {
+      backgroundColor: c.blue, borderRadius: 8,
+      paddingHorizontal: 10, paddingVertical: 5,
+    },
+    pagarFaturaBtnText: { fontSize: 11, color: '#fff', fontWeight: '700' },
+    faturaPageText: { fontSize: 11, color: c.green, fontWeight: '600' },
 
-  empty: { textAlign: 'center', marginTop: 40, color: '#9aa0b4', fontSize: 16 },
-  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#4CAF50', justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
+    empty: { textAlign: 'center', marginTop: 40, color: c.textSecondary, fontSize: 16 },
+    fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.green, justifyContent: 'center', alignItems: 'center', elevation: 5 },
+    fabText: { color: c.text, fontSize: 28, lineHeight: 32 },
 
-  contaOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  contaSheet: {
-    backgroundColor: '#1a1a2e', borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: 24, paddingBottom: 36, borderTopWidth: 1, borderTopColor: '#ffffff15',
-  },
-  contaSheetTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
-  contaSheetSub: { fontSize: 13, color: '#9aa0b4', marginBottom: 16 },
+    contaOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
+    contaSheet: {
+      backgroundColor: c.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+      padding: 24, paddingBottom: 36, borderTopWidth: 1, borderTopColor: c.border,
+    },
+    contaSheetTitle: { fontSize: 18, fontWeight: 'bold', color: c.text, marginBottom: 4 },
+    contaSheetSub: { fontSize: 13, color: c.textSecondary, marginBottom: 16 },
 
-  contaOption: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#ffffff15',
-  },
-  contaOptionEmoji: { fontSize: 24 },
-  contaOptionNome: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  contaOptionSaldo: { fontSize: 12, marginTop: 2 },
-  contaOptionArrow: { fontSize: 22, color: '#ffffff30' },
+    contaOption: {
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    contaOptionEmoji: { fontSize: 24 },
+    contaOptionNome: { fontSize: 15, fontWeight: '600', color: c.text },
+    contaOptionSaldo: { fontSize: 12, marginTop: 2 },
+    contaOptionArrow: { fontSize: 22, color: '#ffffff30' },
 
-  contaSemContas: { alignItems: 'center', paddingVertical: 20 },
-  contaSemContasText: { fontSize: 14, color: '#9aa0b4' },
-  contaSemContasHint: { fontSize: 12, color: '#666677', marginTop: 4 },
+    contaSemContas: { alignItems: 'center', paddingVertical: 20 },
+    contaSemContasText: { fontSize: 14, color: c.textSecondary },
+    contaSemContasHint: { fontSize: 12, color: c.textTertiary, marginTop: 4 },
 
-  contaSemContaBtn: {
-    marginTop: 16, padding: 14, borderRadius: 8,
-    borderWidth: 1, borderColor: '#ffffff25', alignItems: 'center',
-  },
-  contaSemContaBtnText: { fontSize: 14, color: '#9aa0b4' },
+    contaSemContaBtn: {
+      marginTop: 16, padding: 14, borderRadius: 8,
+      borderWidth: 1, borderColor: c.border, alignItems: 'center',
+    },
+    contaSemContaBtnText: { fontSize: 14, color: c.textSecondary },
 
-  contaCancelarBtn: {
-    marginTop: 8, padding: 14, borderRadius: 8,
-    backgroundColor: '#ef535015', alignItems: 'center',
-  },
-  contaCancelarBtnText: { fontSize: 14, color: '#ef5350', fontWeight: '600' },
-});
+    contaCancelarBtn: {
+      marginTop: 8, padding: 14, borderRadius: 8,
+      backgroundColor: c.redDim, alignItems: 'center',
+    },
+    contaCancelarBtnText: { fontSize: 14, color: c.red, fontWeight: '600' },
+  });
+}

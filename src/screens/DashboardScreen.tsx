@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions,
@@ -7,6 +7,8 @@ import Svg, { Rect, Text as SvgText, Line, Circle, Path, G } from 'react-native-
 import { lancamentosService } from '../services/api';
 import { Dashboard } from '../types';
 import { fmtBRL, fmtBRLCompact } from '../utils/currency';
+import { useTheme } from '../theme/ThemeContext';
+import type { ColorScheme } from '../theme/colors';
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
@@ -17,6 +19,7 @@ const CATEGORY_COLORS = [
 
 // ─── Gráfico de barras horizontal para categorias ────────────────────────────
 function CategoryBarChart({ data, width }: { data: { categoria: string; total: number }[]; width: number }) {
+  const { colors } = useTheme();
   const barH = 26;
   const gap = 8;
   const labelW = 90;
@@ -32,12 +35,12 @@ function CategoryBarChart({ data, width }: { data: { categoria: string; total: n
         const color = CATEGORY_COLORS[i % CATEGORY_COLORS.length];
         return (
           <G key={item.categoria}>
-            <SvgText x={0} y={y + barH / 2 + 5} fontSize={11} fill="#555">
+            <SvgText x={0} y={y + barH / 2 + 5} fontSize={11} fill={colors.textSecondary}>
               {item.categoria.length > 11 ? item.categoria.slice(0, 10) + '…' : item.categoria}
             </SvgText>
-            <Rect x={labelW} y={y + 2} width={chartW} height={barH - 4} rx={5} fill="#f0f0f0" />
+            <Rect x={labelW} y={y + 2} width={chartW} height={barH - 4} rx={5} fill={colors.barBg} />
             <Rect x={labelW} y={y + 2} width={barWidth} height={barH - 4} rx={5} fill={color} />
-            <SvgText x={labelW + barWidth + 5} y={y + barH / 2 + 5} fontSize={10} fill="#333" fontWeight="bold">
+            <SvgText x={labelW + barWidth + 5} y={y + barH / 2 + 5} fontSize={10} fill={colors.textTertiary} fontWeight="bold">
               {item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </SvgText>
           </G>
@@ -49,6 +52,7 @@ function CategoryBarChart({ data, width }: { data: { categoria: string; total: n
 
 // ─── Donut Receitas vs Despesas ───────────────────────────────────────────────
 function ReceitaDespesaDonut({ receitas, despesas }: { receitas: number; despesas: number }) {
+  const { colors } = useTheme();
   const size = 180;
   const cx = size / 2;
   const cy = size / 2;
@@ -85,14 +89,14 @@ function ReceitaDespesaDonut({ receitas, despesas }: { receitas: number; despesa
     <View style={{ alignItems: 'center' }}>
       <Svg width={size} height={size}>
         {/* Fundo */}
-        <Path d={arcPath(0, 359.99, '#f0f0f0')} fill="#f0f0f0" />
+        <Path d={arcPath(0, 359.99, colors.border)} fill={colors.border} />
         {/* Receitas */}
         <Path d={arcPath(0, receitasDeg)} fill="#4CAF50" />
         {/* Despesas */}
         {despesasDeg > 0 && <Path d={arcPath(receitasDeg, 360)} fill="#e53935" />}
         {/* Centro */}
-        <Circle cx={cx} cy={cy} r={r - 4} fill="white" />
-        <SvgText x={cx} y={cy - 8} textAnchor="middle" fontSize={10} fill="#888">Saldo</SvgText>
+        <Circle cx={cx} cy={cy} r={r - 4} fill={colors.chartCenter} />
+        <SvgText x={cx} y={cy - 8} textAnchor="middle" fontSize={10} fill={colors.textSecondary}>Saldo</SvgText>
         <SvgText x={cx} y={cy + 8} textAnchor="middle" fontSize={13} fontWeight="bold" fill={saldoColor}>
           {fmtBRLCompact(Math.abs(saldo))}
         </SvgText>
@@ -105,14 +109,14 @@ function ReceitaDespesaDonut({ receitas, despesas }: { receitas: number; despesa
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
         <View style={{ alignItems: 'center' }}>
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#4CAF50', marginBottom: 2 }} />
-          <Text style={{ fontSize: 10, color: '#555' }}>Receitas</Text>
+          <Text style={{ fontSize: 10, color: colors.textSecondary }}>Receitas</Text>
           <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#4CAF50' }}>
             {total > 0 ? ((receitas / total) * 100).toFixed(0) : 0}%
           </Text>
         </View>
         <View style={{ alignItems: 'center' }}>
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#e53935', marginBottom: 2 }} />
-          <Text style={{ fontSize: 10, color: '#555' }}>Despesas</Text>
+          <Text style={{ fontSize: 10, color: colors.textSecondary }}>Despesas</Text>
           <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#e53935' }}>
             {total > 0 ? ((despesas / total) * 100).toFixed(0) : 0}%
           </Text>
@@ -127,6 +131,7 @@ function CategoryPieChart({ data, totalDespesas }: {
   data: { categoria: string; total: number }[];
   totalDespesas: number;
 }) {
+  const { colors } = useTheme();
   const size = 180;
   const cx = size / 2;
   const cy = size / 2;
@@ -166,11 +171,11 @@ function CategoryPieChart({ data, totalDespesas }: {
     <View style={{ alignItems: 'center' }}>
       <Svg width={size} height={size}>
         {slices.map(s => (
-          <Path key={s.categoria} d={slicePath(s.start, s.end)} fill={s.color} stroke="white" strokeWidth={1.5} />
+          <Path key={s.categoria} d={slicePath(s.start, s.end)} fill={s.color} stroke={colors.chartCenter} strokeWidth={1.5} />
         ))}
         {/* Centro */}
-        <Circle cx={cx} cy={cy} r={r - 2} fill="white" />
-        <SvgText x={cx} y={cy + 5} textAnchor="middle" fontSize={10} fill="#888" fontWeight="600">
+        <Circle cx={cx} cy={cy} r={r - 2} fill={colors.chartCenter} />
+        <SvgText x={cx} y={cy + 5} textAnchor="middle" fontSize={10} fill={colors.textSecondary} fontWeight="600">
           {data.length} cat.
         </SvgText>
       </Svg>
@@ -180,10 +185,10 @@ function CategoryPieChart({ data, totalDespesas }: {
         {slices.map(s => (
           <View key={s.categoria} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: s.color }} />
-            <Text style={{ fontSize: 10, color: '#555', flex: 1 }} numberOfLines={1}>
+            <Text style={{ fontSize: 10, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
               {s.categoria.length > 12 ? s.categoria.slice(0, 11) + '…' : s.categoria}
             </Text>
-            <Text style={{ fontSize: 10, fontWeight: '700', color: '#333', marginLeft: 2 }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textTertiary, marginLeft: 2 }}>
               {totalDespesas > 0 ? ((s.total / totalDespesas) * 100).toFixed(0) : 0}%
             </Text>
           </View>
@@ -195,6 +200,7 @@ function CategoryPieChart({ data, totalDespesas }: {
 
 // ─── Gráfico de linhas para projeção ─────────────────────────────────────────
 function ProjectionChart({ data }: { data: { label: string; receitas: number; despesas: number; isFuture: boolean }[] }) {
+  const { colors } = useTheme();
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   // Ocupa toda a largura: window - margens da section (16*2); o padding é cancelado pelo marginHorizontal: -18 do wrapper
@@ -237,8 +243,8 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
       {/* Grid lines */}
       {ticks.map((t, i) => (
         <G key={i}>
-          <Line x1={padL} y1={t.y} x2={screenW - padR} y2={t.y} stroke="#f0f0f0" strokeWidth={1} />
-          <SvgText x={padL - 4} y={t.y + 4} fontSize={9} fill="#aaa" textAnchor="end">
+          <Line x1={padL} y1={t.y} x2={screenW - padR} y2={t.y} stroke={colors.gridLine} strokeWidth={1} />
+          <SvgText x={padL - 4} y={t.y + 4} fontSize={9} fill={colors.textTertiary} textAnchor="end">
             {t.v >= 1000 ? `${(t.v / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}k` : t.v.toFixed(0)}
           </SvgText>
         </G>
@@ -253,7 +259,7 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
         <Line
           x1={xOf(hoveredIdx)} y1={padT}
           x2={xOf(hoveredIdx)} y2={padT + plotH}
-          stroke="#bbb" strokeWidth={1} strokeDasharray="4,3"
+          stroke={colors.textTertiary} strokeWidth={1} strokeDasharray="4,3"
         />
       )}
 
@@ -267,7 +273,7 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
             <Circle cx={xOf(i)} cy={yOf(d.receitas)} r={r} fill={d.isFuture ? 'none' : '#4CAF50'} stroke="#4CAF50" strokeWidth={hovered ? 2.5 : 2} />
             <Circle cx={xOf(i)} cy={yOf(d.despesas)} r={r} fill={d.isFuture ? 'none' : '#e53935'} stroke="#e53935" strokeWidth={hovered ? 2.5 : 2} strokeDasharray={d.isFuture ? '3,2' : undefined} />
             {showLabel && (
-              <SvgText x={xOf(i)} y={chartH - 4} fontSize={9} fill={hovered ? '#333' : (d.isFuture ? '#aaa' : '#555')} fontWeight={hovered ? 'bold' : 'normal'} textAnchor="middle">
+              <SvgText x={xOf(i)} y={chartH - 4} fontSize={9} fill={hovered ? colors.text : (d.isFuture ? colors.textTertiary : colors.textSecondary)} fontWeight={hovered ? 'bold' : 'normal'} textAnchor="middle">
                 {d.label}{d.isFuture ? '*' : ''}
               </SvgText>
             )}
@@ -306,9 +312,9 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
             {/* Sombra */}
             <Rect x={tx + 2} y={ty + 2} width={TIP_W} height={TIP_H} rx={8} fill="rgba(0,0,0,0.07)" />
             {/* Fundo */}
-            <Rect x={tx} y={ty} width={TIP_W} height={TIP_H} rx={8} fill="white" stroke="#e0e0e0" strokeWidth={1} />
+            <Rect x={tx} y={ty} width={TIP_W} height={TIP_H} rx={8} fill={colors.tooltipBg} stroke={colors.tooltipBorder} strokeWidth={1} />
             {/* Título (mês) */}
-            <SvgText x={tx + 12} y={ty + 20} fontSize={12} fill="#1a1a2e" fontWeight="bold">
+            <SvgText x={tx + 12} y={ty + 20} fontSize={12} fill={colors.text} fontWeight="bold">
               {d.label}{d.isFuture ? ' (projetado)' : ''}
             </SvgText>
             {/* Receitas */}
@@ -330,13 +336,16 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
       <SvgText x={padL + 13} y={12} fontSize={10} fill="#4CAF50">Receitas</SvgText>
       <Rect x={padL + 70} y={8} width={10} height={4} rx={2} fill="#e53935" />
       <SvgText x={padL + 83} y={12} fontSize={10} fill="#e53935">Despesas</SvgText>
-      <SvgText x={screenW - padR} y={chartH - 4} fontSize={9} fill="#bbb" textAnchor="end">* projetado</SvgText>
+      <SvgText x={screenW - padR} y={chartH - 4} fontSize={9} fill={colors.textTertiary} textAnchor="end">* projetado</SvgText>
     </Svg>
   );
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function DashboardScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const now = new Date();
   const [mes, setMes] = useState(now.getMonth() + 1);
   const [ano, setAno] = useState(now.getFullYear());
@@ -515,25 +524,27 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  navBtn: { fontSize: 22, color: '#4CAF50', paddingHorizontal: 12 },
-  mesTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  cards: { paddingHorizontal: 16, gap: 10, flexDirection: 'row' },
-  card: { flex: 1, backgroundColor: '#1a1a2e', borderRadius: 10, padding: 10, borderLeftWidth: 4 },
-  cardLabel: { fontSize: 11, color: '#9aa0b4', marginBottom: 4 },
-  cardValue: { fontSize: 15, fontWeight: 'bold' },
-  section: { margin: 16, marginTop: 12, backgroundColor: '#1a1a2e', borderRadius: 12, padding: 18, overflow: 'hidden' },
-  sectionTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 4, color: '#fff' },
-  sectionSub: { fontSize: 11, color: '#666677', marginBottom: 12 },
-  chartsRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  chartLeft: { flex: 1.6 },
-  chartRight: { flex: 1, alignItems: 'center' },
-  chartWrap: { alignItems: 'flex-start', marginTop: 8 },
-  projectionWrap: { alignItems: 'flex-start', marginTop: 8, marginHorizontal: -18 },
-  legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  legendDot: { width: 10, height: 10, borderRadius: 5 },
-  legendText: { fontSize: 11, color: '#9aa0b4' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
+    navBtn: { fontSize: 22, color: c.green, paddingHorizontal: 12 },
+    mesTitle: { fontSize: 20, fontWeight: 'bold', color: c.text },
+    cards: { paddingHorizontal: 16, gap: 10, flexDirection: 'row' },
+    card: { flex: 1, backgroundColor: c.surface, borderRadius: 10, padding: 10, borderLeftWidth: 4 },
+    cardLabel: { fontSize: 11, color: c.textSecondary, marginBottom: 4 },
+    cardValue: { fontSize: 15, fontWeight: 'bold' },
+    section: { margin: 16, marginTop: 12, backgroundColor: c.surface, borderRadius: 12, padding: 18, overflow: 'hidden' },
+    sectionTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 4, color: c.text },
+    sectionSub: { fontSize: 11, color: c.textTertiary, marginBottom: 12 },
+    chartsRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+    chartLeft: { flex: 1.6 },
+    chartRight: { flex: 1, alignItems: 'center' },
+    chartWrap: { alignItems: 'flex-start', marginTop: 8 },
+    projectionWrap: { alignItems: 'flex-start', marginTop: 8, marginHorizontal: -18 },
+    legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+    legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    legendDot: { width: 10, height: 10, borderRadius: 5 },
+    legendText: { fontSize: 11, color: c.textSecondary },
+  });
+}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, TextInput, Modal,
@@ -6,6 +6,9 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { cartoesService } from '../services/api';
 import { CartaoCredito, CartaoLancamento, SituacaoLancamento } from '../types';
+import { fmtBRL } from '../utils/currency';
+import { useTheme } from '../theme/ThemeContext';
+import type { ColorScheme } from '../theme/colors';
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -26,6 +29,9 @@ const situacaoCor: Record<number, string> = {
 };
 
 export default function CartoesScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const now = new Date();
   const [mes, setMes] = useState(now.getMonth() + 1);
   const [ano, setAno] = useState(now.getFullYear());
@@ -135,7 +141,7 @@ export default function CartoesScreen() {
             {cartoes.length > 0 && (
               <View style={styles.totalCard}>
                 <Text style={styles.totalLabel}>Total Cartões no Mês</Text>
-                <Text style={styles.totalValor}>R$ {totalGeral.toFixed(2)}</Text>
+                <Text style={styles.totalValor}>{fmtBRL(totalGeral)}</Text>
               </View>
             )}
 
@@ -158,7 +164,7 @@ export default function CartoesScreen() {
                   <Text style={styles.cardVencimento}>📅 Vence dia {item.diaVencimento}</Text>
                 ) : null}
                 {item.totalMes > 0
-                  ? <Text style={styles.cardTotal}>R$ {item.totalMes.toFixed(2)} este mês</Text>
+                  ? <Text style={styles.cardTotal}>{fmtBRL(item.totalMes)} este mês</Text>
                   : <Text style={styles.cardVazio}>Sem lançamentos este mês</Text>
                 }
               </View>
@@ -184,7 +190,7 @@ export default function CartoesScreen() {
                   </Text>
                 </View>
                 <View style={styles.lancamentoRight}>
-                  <Text style={styles.lancamentoValor}>R$ {l.valor.toFixed(2)}</Text>
+                  <Text style={styles.lancamentoValor}>{fmtBRL(l.valor)}</Text>
                   <Text style={[styles.lancamentoSituacao, { color: situacaoCor[l.situacao] }]}>
                     {situacaoLabel[l.situacao]}
                   </Text>
@@ -210,6 +216,7 @@ export default function CartoesScreen() {
             <TextInput
               style={styles.input}
               placeholder="Ex: Nubank, Inter, Bradesco..."
+              placeholderTextColor={colors.inputPlaceholder}
               value={novoNome}
               onChangeText={setNovoNome}
               autoFocus
@@ -218,6 +225,7 @@ export default function CartoesScreen() {
             <TextInput
               style={styles.input}
               placeholder="Ex: 5"
+              placeholderTextColor={colors.inputPlaceholder}
               keyboardType="number-pad"
               value={novoDia}
               onChangeText={t => setNovoDia(t.replace(/\D/g, ''))}
@@ -251,6 +259,7 @@ export default function CartoesScreen() {
             <TextInput
               style={styles.input}
               placeholder="Ex: 5"
+              placeholderTextColor={colors.inputPlaceholder}
               keyboardType="number-pad"
               value={eDia}
               onChangeText={t => setEDia(t.replace(/\D/g, ''))}
@@ -274,45 +283,47 @@ export default function CartoesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', elevation: 2, marginBottom: 8 },
-  navBtn: { fontSize: 22, color: '#4CAF50', paddingHorizontal: 12 },
-  mesTitle: { fontSize: 18, fontWeight: 'bold', color: '#1a1a2e' },
-  totalCard: { backgroundColor: '#1565C0', borderRadius: 12, padding: 16, marginBottom: 12, alignItems: 'center' },
-  totalLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 13 },
-  totalValor: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  cardHeaderLeft: { flex: 1 },
-  cardNome: { fontSize: 16, fontWeight: 'bold', color: '#1a1a2e' },
-  cardVencimento: { fontSize: 12, color: '#1565C0', fontWeight: '600', marginTop: 2 },
-  cardTotal: { fontSize: 14, color: '#e53935', fontWeight: '600', marginTop: 2 },
-  cardVazio: { fontSize: 13, color: '#aaa', marginTop: 2 },
-  cardActions: { flexDirection: 'row', gap: 4 },
-  btnAct: { padding: 6 },
-  btnActText: { fontSize: 18 },
-  lancamento: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#f0f0f0' },
-  lancamentoLeft: { flex: 1 },
-  lancamentoDesc: { fontSize: 14, color: '#333' },
-  lancamentoMeta: { fontSize: 12, color: '#999', marginTop: 2 },
-  lancamentoRight: { alignItems: 'flex-end' },
-  lancamentoValor: { fontSize: 14, color: '#e53935', fontWeight: '600' },
-  lancamentoSituacao: { fontSize: 11, marginTop: 2 },
-  empty: { textAlign: 'center', marginTop: 40, color: '#aaa', fontSize: 16, lineHeight: 24 },
-  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#1565C0', justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
-  errorBox: { backgroundColor: '#ffebee', borderRadius: 8, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#ef9a9a' },
-  errorText: { color: '#c62828', fontSize: 14, textAlign: 'center' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modal: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '100%', maxWidth: 420 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1a1a2e', marginBottom: 4 },
-  label: { fontSize: 13, fontWeight: '600', color: '#444', marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 16, borderWidth: 1, borderColor: '#ddd' },
-  hint: { fontSize: 12, color: '#888', marginTop: 10, fontStyle: 'italic' },
-  modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ddd' },
-  btnCancelText: { color: '#666', fontSize: 15 },
-  btnSave: { flex: 1, backgroundColor: '#1565C0', borderRadius: 8, padding: 14, alignItems: 'center' },
-  btnSaveText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border, marginBottom: 8 },
+    navBtn: { fontSize: 22, color: c.green, paddingHorizontal: 12 },
+    mesTitle: { fontSize: 18, fontWeight: 'bold', color: c.text },
+    totalCard: { backgroundColor: c.blue, borderRadius: 12, padding: 16, marginBottom: 12, alignItems: 'center' },
+    totalLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 13 },
+    totalValor: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+    card: { backgroundColor: c.surface, borderRadius: 12, padding: 16, marginBottom: 12 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+    cardHeaderLeft: { flex: 1 },
+    cardNome: { fontSize: 16, fontWeight: 'bold', color: c.text },
+    cardVencimento: { fontSize: 12, color: '#64B5F6', fontWeight: '600', marginTop: 2 },
+    cardTotal: { fontSize: 14, color: c.red, fontWeight: '600', marginTop: 2 },
+    cardVazio: { fontSize: 13, color: c.textTertiary, marginTop: 2 },
+    cardActions: { flexDirection: 'row', gap: 4 },
+    btnAct: { padding: 6 },
+    btnActText: { fontSize: 18 },
+    lancamento: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.border },
+    lancamentoLeft: { flex: 1 },
+    lancamentoDesc: { fontSize: 14, color: c.text },
+    lancamentoMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    lancamentoRight: { alignItems: 'flex-end' },
+    lancamentoValor: { fontSize: 14, color: c.red, fontWeight: '600' },
+    lancamentoSituacao: { fontSize: 11, marginTop: 2 },
+    empty: { textAlign: 'center', marginTop: 40, color: c.textSecondary, fontSize: 16, lineHeight: 24 },
+    fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.blue, justifyContent: 'center', alignItems: 'center', elevation: 5 },
+    fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
+    errorBox: { backgroundColor: c.redDim, borderRadius: 8, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: c.redBorder },
+    errorText: { color: c.redBorder, fontSize: 14, textAlign: 'center' },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    modal: { backgroundColor: c.surfaceElevated, borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: c.border },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: c.text, marginBottom: 4 },
+    label: { fontSize: 13, fontWeight: '600', color: c.textSecondary, marginBottom: 6, marginTop: 12, textTransform: 'uppercase', letterSpacing: 0.4 },
+    input: { backgroundColor: c.inputBg, borderRadius: 8, padding: 12, fontSize: 16, borderWidth: 1, borderColor: c.inputBorder, color: c.text },
+    hint: { fontSize: 12, color: c.textSecondary, marginTop: 10, fontStyle: 'italic' },
+    modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
+    btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: c.border },
+    btnCancelText: { color: c.textSecondary, fontSize: 15 },
+    btnSave: { flex: 1, backgroundColor: c.blue, borderRadius: 8, padding: 14, alignItems: 'center' },
+    btnSaveText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+  });
+}

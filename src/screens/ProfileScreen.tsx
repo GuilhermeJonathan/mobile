@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Switch } from 'react-native';
 import { authService, UserInfo } from '../services/authService';
 import { resetToLogin } from '../navigation/navigationRef';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorScheme } from '../theme/colors';
 
 export default function ProfileScreen() {
+  const { colors, isDark, toggleTheme } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -39,7 +44,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color={colors.green} />
       </View>
     );
   }
@@ -73,6 +78,22 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Tema */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowLabel}>Tema</Text>
+            <Text style={styles.themeHint}>{isDark ? '🌙 Escuro' : '☀️ Claro'}</Text>
+          </View>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#ddd', true: colors.green }}
+            thumbColor="#fff"
+          />
+        </View>
+      </View>
+
       {/* Logout */}
       <TouchableOpacity style={styles.btnLogout} onPress={handleLogout} disabled={loggingOut}>
         {loggingOut
@@ -84,25 +105,31 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5', padding: 24 },
-  avatarWrap: { alignItems: 'center', marginTop: 24, marginBottom: 32 },
-  avatar: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: '#1a1a2e', justifyContent: 'center', alignItems: 'center',
-    elevation: 4,
-  },
-  avatarText: { color: '#fff', fontSize: 32, fontWeight: 'bold' },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, elevation: 2, marginBottom: 32 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 12 },
-  rowLabel: { fontSize: 14, color: '#888', flex: 1 },
-  rowRight: { flex: 2, alignItems: 'flex-end' },
-  rowValue: { fontSize: 15, color: '#1a1a2e', fontWeight: '500', textAlign: 'right', flex: 2 },
-  expiryHint: { fontSize: 12, color: '#FF9800', marginTop: 2 },
-  divider: { height: 1, backgroundColor: '#f0f0f0' },
-  btnLogout: {
-    backgroundColor: '#e53935', borderRadius: 12, padding: 16,
-    alignItems: 'center', elevation: 2,
-  },
-  btnLogoutText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background, padding: 24 },
+    avatarWrap: { alignItems: 'center', marginTop: 24, marginBottom: 32 },
+    avatar: {
+      width: 80, height: 80, borderRadius: 40,
+      backgroundColor: c.surface, justifyContent: 'center', alignItems: 'center',
+      borderWidth: 2, borderColor: c.green,
+    },
+    avatarText: { color: c.green, fontSize: 32, fontWeight: 'bold' },
+    card: {
+      backgroundColor: c.surface, borderRadius: 12, padding: 16,
+      marginBottom: 16, borderWidth: 1, borderColor: c.border,
+    },
+    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+    rowLabel: { fontSize: 14, color: c.textSecondary, flex: 1 },
+    rowRight: { flex: 2, alignItems: 'flex-end' },
+    rowValue: { fontSize: 15, color: c.text, fontWeight: '500', textAlign: 'right', flex: 2 },
+    expiryHint: { fontSize: 12, color: c.orange, marginTop: 2 },
+    themeHint: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+    divider: { height: 1, backgroundColor: c.border },
+    btnLogout: {
+      backgroundColor: c.red, borderRadius: 12, padding: 16,
+      alignItems: 'center', marginTop: 8,
+    },
+    btnLogoutText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  });
+}

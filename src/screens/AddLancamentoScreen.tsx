@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator, Modal,
@@ -7,6 +7,8 @@ import {
 import { lancamentosService, categoriasService, cartoesService } from '../services/api';
 import { Categoria, CartaoCredito, SituacaoLancamento, TipoLancamento } from '../types';
 import DatePickerField from '../components/DatePickerField';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorScheme } from '../theme/colors';
 
 type Modo = 'avista' | 'parcelado' | 'recorrente';
 
@@ -45,6 +47,9 @@ const SITUACAO_PADRAO: Record<TipoLancamento, SituacaoLancamento> = {
 };
 
 export default function AddLancamentoScreen({ route, navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const { mes, ano } = route.params;
 
   const [descricao,   setDescricao]   = useState('');
@@ -168,14 +173,14 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
           <TextInput
             style={styles.input}
             placeholder="Ex: Netflix, Aluguel, Salário..."
-            placeholderTextColor="#666"
+            placeholderTextColor={colors.inputPlaceholder}
             value={descricao} onChangeText={setDescricao}
           />
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={styles.label}>Valor (R$)</Text>
               <TextInput
-                style={styles.input} placeholder="0,00" placeholderTextColor="#666"
+                style={styles.input} placeholder="0,00" placeholderTextColor={colors.inputPlaceholder}
                 keyboardType="decimal-pad" value={valor} onChangeText={setValor}
               />
             </View>
@@ -275,6 +280,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
                   keyboardType="number-pad"
                   value={parcelas}
                   onChangeText={t => setParcelas(t.replace(/\D/g, '') || '2')}
+                  placeholderTextColor={colors.inputPlaceholder}
                 />
                 <TouchableOpacity
                   style={styles.stepperBtn}
@@ -348,7 +354,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>Nova Categoria</Text>
-            <TextInput style={styles.modalInput} placeholder="Nome da categoria" placeholderTextColor="#666" value={novaCategoria} onChangeText={setNovaCategoria} autoFocus />
+            <TextInput style={styles.modalInput} placeholder="Nome da categoria" placeholderTextColor={colors.inputPlaceholder} value={novaCategoria} onChangeText={setNovaCategoria} autoFocus />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.btnCancel} onPress={() => { setModalCatVisible(false); setNovaCategoria(''); }}>
                 <Text style={styles.btnCancelText}>Cancelar</Text>
@@ -366,7 +372,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>Novo Cartão</Text>
-            <TextInput style={styles.modalInput} placeholder="Nome do cartão" placeholderTextColor="#666" value={novoCartao} onChangeText={setNovoCartao} autoFocus />
+            <TextInput style={styles.modalInput} placeholder="Nome do cartão" placeholderTextColor={colors.inputPlaceholder} value={novoCartao} onChangeText={setNovoCartao} autoFocus />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.btnCancel} onPress={() => { setModalCartaoVisible(false); setNovoCartao(''); }}>
                 <Text style={styles.btnCancelText}>Cancelar</Text>
@@ -382,142 +388,144 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  // ── Bottom sheet backdrop + sheet
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: '#1a1a2e',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '92%',
-    paddingBottom: Platform.OS === 'ios' ? 0 : 12,
-  },
-  handle: {
-    width: 40, height: 4,
-    backgroundColor: '#ffffff40',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ffffff15',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  closeBtn: {
-    width: 32, height: 32,
-    borderRadius: 16,
-    backgroundColor: '#ffffff20',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    // ── Bottom sheet backdrop + sheet
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      maxHeight: '92%',
+      paddingBottom: Platform.OS === 'ios' ? 0 : 12,
+    },
+    handle: {
+      width: 40, height: 4,
+      backgroundColor: c.border,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginTop: 12,
+      marginBottom: 4,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    headerTitle: {
+      flex: 1,
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: c.text,
+    },
+    closeBtn: {
+      width: 32, height: 32,
+      borderRadius: 16,
+      backgroundColor: c.inputBorder,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    closeBtnText: { color: c.text, fontSize: 14, fontWeight: 'bold' },
 
-  scroll: { flex: 1 },
-  content: { padding: 20, paddingBottom: 40 },
+    scroll: { flex: 1 },
+    content: { padding: 20, paddingBottom: 40 },
 
-  // ── Form elements (dark theme)
-  label: { fontSize: 13, fontWeight: '600', color: '#aaa', marginBottom: 6, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: {
-    backgroundColor: '#ffffff12',
-    borderRadius: 8, padding: 14, fontSize: 16,
-    borderWidth: 1, borderColor: '#ffffff20',
-    color: '#fff',
-  },
-  row: { flexDirection: 'row' },
+    // ── Form elements
+    label: { fontSize: 13, fontWeight: '600', color: c.textSecondary, marginBottom: 6, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
+    input: {
+      backgroundColor: c.inputBg,
+      borderRadius: 8, padding: 14, fontSize: 16,
+      borderWidth: 1, borderColor: c.inputBorder,
+      color: c.text,
+    },
+    row: { flexDirection: 'row' },
 
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1, borderColor: '#ffffff25',
-    backgroundColor: '#ffffff10',
-  },
-  chipActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
-  chipCartao: { backgroundColor: '#1565C0', borderColor: '#1565C0' },
-  chipText: { fontSize: 14, color: '#ccc' },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
-  chipAdd: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1, borderColor: '#4CAF5080',
-    backgroundColor: 'transparent',
-  },
-  chipAddText: { fontSize: 14, color: '#4CAF50', fontWeight: '600' },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: {
+      paddingHorizontal: 14, paddingVertical: 8,
+      borderRadius: 20, borderWidth: 1, borderColor: c.border,
+      backgroundColor: c.inputBg,
+    },
+    chipActive: { backgroundColor: c.green, borderColor: c.green },
+    chipCartao: { backgroundColor: c.blue, borderColor: c.blue },
+    chipText: { fontSize: 14, color: c.textSecondary },
+    chipTextActive: { color: c.text, fontWeight: '600' },
+    chipAdd: {
+      paddingHorizontal: 14, paddingVertical: 8,
+      borderRadius: 20, borderWidth: 1, borderColor: c.greenBorder,
+      backgroundColor: 'transparent',
+    },
+    chipAddText: { fontSize: 14, color: c.green, fontWeight: '600' },
 
-  // ── Modo grid
-  modoGrid: { flexDirection: 'row', gap: 8 },
-  modoCard: {
-    flex: 1, borderRadius: 10, borderWidth: 1.5, borderColor: '#ffffff20',
-    backgroundColor: '#ffffff0d', padding: 12, alignItems: 'center',
-  },
-  modoCardActive: { borderColor: '#4CAF50', backgroundColor: '#4CAF5022' },
-  modoLabel: { fontSize: 13, fontWeight: '700', color: '#ccc', textAlign: 'center' },
-  modoLabelActive: { color: '#4CAF50' },
-  modoSub: { fontSize: 10, color: '#555', marginTop: 3, textAlign: 'center' },
-  modoSubActive: { color: '#4CAF5099' },
+    // ── Modo grid
+    modoGrid: { flexDirection: 'row', gap: 8 },
+    modoCard: {
+      flex: 1, borderRadius: 10, borderWidth: 1.5, borderColor: c.inputBorder,
+      backgroundColor: c.inputBg, padding: 12, alignItems: 'center',
+    },
+    modoCardActive: { borderColor: c.green, backgroundColor: c.greenDim },
+    modoLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, textAlign: 'center' },
+    modoLabelActive: { color: c.green },
+    modoSub: { fontSize: 10, color: c.textTertiary, marginTop: 3, textAlign: 'center' },
+    modoSubActive: { color: c.green },
 
-  // ── Stepper
-  stepperSection: { marginTop: 12 },
-  stepperLabel: { fontSize: 13, fontWeight: '600', color: '#aaa', marginBottom: 8 },
-  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  stepperBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: '#ffffff20', justifyContent: 'center', alignItems: 'center',
-  },
-  stepperBtnText: { color: '#fff', fontSize: 22, lineHeight: 26 },
-  stepperInput: {
-    width: 64, textAlign: 'center', backgroundColor: '#ffffff15',
-    borderRadius: 8, padding: 10, fontSize: 20, fontWeight: 'bold',
-    borderWidth: 1, borderColor: '#ffffff25', color: '#fff',
-  },
+    // ── Stepper
+    stepperSection: { marginTop: 12 },
+    stepperLabel: { fontSize: 13, fontWeight: '600', color: c.textSecondary, marginBottom: 8 },
+    stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    stepperBtn: {
+      width: 42, height: 42, borderRadius: 21,
+      backgroundColor: c.inputBorder, justifyContent: 'center', alignItems: 'center',
+    },
+    stepperBtnText: { color: c.text, fontSize: 22, lineHeight: 26 },
+    stepperInput: {
+      width: 64, textAlign: 'center', backgroundColor: c.border,
+      borderRadius: 8, padding: 10, fontSize: 20, fontWeight: 'bold',
+      borderWidth: 1, borderColor: c.inputBorder, color: c.text,
+    },
 
-  // ── Info recorrente
-  recorrenteInfo: {
-    marginTop: 12, backgroundColor: '#7B1FA215', borderRadius: 10,
-    padding: 14, borderWidth: 1, borderColor: '#CE93D840',
-  },
-  recorrenteInfoTitle: { fontSize: 13, fontWeight: '700', color: '#CE93D8', marginBottom: 4 },
-  recorrenteInfoText: { fontSize: 12, color: '#CE93D8AA', lineHeight: 18 },
+    // ── Info recorrente
+    recorrenteInfo: {
+      marginTop: 12, backgroundColor: c.purpleDim, borderRadius: 10,
+      padding: 14, borderWidth: 1, borderColor: c.purpleBorder,
+    },
+    recorrenteInfoTitle: { fontSize: 13, fontWeight: '700', color: c.purpleLight, marginBottom: 4 },
+    recorrenteInfoText: { fontSize: 12, color: c.purpleLight, lineHeight: 18 },
 
-  // ── Preview parcelado
-  previewBox: {
-    marginTop: 12, backgroundColor: '#4CAF5015', borderRadius: 10,
-    padding: 14, borderWidth: 1, borderColor: '#4CAF5040',
-  },
-  previewTitle: { fontSize: 11, fontWeight: '700', color: '#4CAF50', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  previewLine: { fontSize: 15, color: '#ddd' },
-  previewValor: { fontWeight: 'bold', color: '#4CAF50' },
-  previewHint: { fontSize: 12, color: '#888', marginTop: 4 },
+    // ── Preview parcelado
+    previewBox: {
+      marginTop: 12, backgroundColor: c.greenDim, borderRadius: 10,
+      padding: 14, borderWidth: 1, borderColor: c.greenBorder,
+    },
+    previewTitle: { fontSize: 11, fontWeight: '700', color: c.green, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+    previewLine: { fontSize: 15, color: c.textSecondary },
+    previewValor: { fontWeight: 'bold', color: c.green },
+    previewHint: { fontSize: 12, color: c.textSecondary, marginTop: 4 },
 
-  errorBox: { backgroundColor: '#c6282820', borderRadius: 8, padding: 12, marginTop: 16, borderWidth: 1, borderColor: '#ef9a9a40' },
-  errorText: { color: '#ef9a9a', fontSize: 14, textAlign: 'center' },
+    errorBox: { backgroundColor: c.redDim, borderRadius: 8, padding: 12, marginTop: 16, borderWidth: 1, borderColor: c.redBorder },
+    errorText: { color: c.red, fontSize: 14, textAlign: 'center' },
 
-  button: { backgroundColor: '#4CAF50', borderRadius: 10, padding: 16, alignItems: 'center', marginTop: 24 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    button: { backgroundColor: c.green, borderRadius: 10, padding: 16, alignItems: 'center', marginTop: 24 },
+    buttonText: { color: c.text, fontSize: 16, fontWeight: 'bold' },
 
-  // ── Sub-modals (categoria / cartão)
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modal: { backgroundColor: '#1e2240', borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: '#ffffff15' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 16 },
-  modalInput: {
-    backgroundColor: '#ffffff12', borderRadius: 8, padding: 14, fontSize: 16,
-    borderWidth: 1, borderColor: '#ffffff20', color: '#fff',
-  },
-  modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ffffff25' },
-  btnCancelText: { color: '#aaa', fontSize: 15 },
-  btnSave: { flex: 1, backgroundColor: '#4CAF50', borderRadius: 8, padding: 14, alignItems: 'center' },
-});
+    // ── Sub-modals (categoria / cartão)
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    modal: { backgroundColor: c.surfaceElevated, borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: c.border },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: c.text, marginBottom: 16 },
+    modalInput: {
+      backgroundColor: c.inputBg, borderRadius: 8, padding: 14, fontSize: 16,
+      borderWidth: 1, borderColor: c.inputBorder, color: c.text,
+    },
+    modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
+    btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: c.border },
+    btnCancelText: { color: c.textSecondary, fontSize: 15 },
+    btnSave: { flex: 1, backgroundColor: c.green, borderRadius: 8, padding: 14, alignItems: 'center' },
+  });
+}

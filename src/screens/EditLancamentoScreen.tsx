@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator, Modal,
 } from 'react-native';
 import { lancamentosService, categoriasService, cartoesService } from '../services/api';
 import { Categoria, CartaoCredito, Lancamento, SituacaoLancamento, TipoLancamento, TipoReceita } from '../types';
+import { fmtBRL } from '../utils/currency';
+import { useTheme } from '../theme/ThemeContext';
+import type { ColorScheme } from '../theme/colors';
 
 const TIPOS = [
   { label: 'Crédito', value: TipoLancamento.Credito },
@@ -49,7 +52,14 @@ function dateToBR(iso: string): string {
   return `${day}/${mon}/${d.getFullYear()}`;
 }
 
+function isConfirmado(s: SituacaoLancamento) {
+  return s === SituacaoLancamento.Pago || s === SituacaoLancamento.Recebido;
+}
+
 export default function EditLancamentoScreen({ route, navigation }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const lancamento: Lancamento = route.params.lancamento;
 
   const isHorista = lancamento.receitaRecorrenteId != null && lancamento.receitaTipo === TipoReceita.Horista;
@@ -199,6 +209,38 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* Banner de pagamento confirmado */}
+        {isConfirmado(lancamento.situacao) && (
+          <View style={styles.pagamentoBanner}>
+            <View style={styles.pagamentoBannerRow}>
+              <Text style={styles.pagamentoBannerIcon}>
+                {lancamento.situacao === SituacaoLancamento.Recebido ? '✅' : '✅'}
+              </Text>
+              <Text style={styles.pagamentoBannerTitulo}>
+                {lancamento.situacao === SituacaoLancamento.Recebido ? 'Recebido' : 'Pago'}
+                {' · '}{fmtBRL(lancamento.valor)}
+              </Text>
+            </View>
+            {lancamento.dataPagamento && (
+              <View style={styles.pagamentoBannerDetalhe}>
+                <Text style={styles.pagamentoBannerLabel}>📅 Data da confirmação</Text>
+                <Text style={styles.pagamentoBannerValor}>
+                  {dateToBR(lancamento.dataPagamento)}
+                </Text>
+              </View>
+            )}
+            {lancamento.contaBancariaNome && (
+              <View style={styles.pagamentoBannerDetalhe}>
+                <Text style={styles.pagamentoBannerLabel}>🏦 Conta</Text>
+                <Text style={styles.pagamentoBannerValor}>{lancamento.contaBancariaNome}</Text>
+              </View>
+            )}
+            {!lancamento.contaBancariaNome && (
+              <Text style={styles.pagamentoBannerSemConta}>Sem conta bancária vinculada</Text>
+            )}
+          </View>
+        )}
+
         {/* Info de parcela */}
         {lancamento.totalParcelas && lancamento.totalParcelas > 1 && !lancamento.isRecorrente && (
           <View style={styles.parcelaInfo}>
@@ -224,7 +266,12 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
         )}
 
         <Text style={styles.label}>Descrição</Text>
-        <TextInput style={styles.input} value={descricao} onChangeText={setDescricao} />
+        <TextInput
+          style={styles.input}
+          value={descricao}
+          onChangeText={setDescricao}
+          placeholderTextColor={colors.inputPlaceholder}
+        />
 
         {/* ── Campos Horista ── */}
         {isHorista ? (
@@ -238,6 +285,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
                   value={valorHora}
                   onChangeText={handleValorHoraChange}
                   placeholder="Ex: 150,00"
+                  placeholderTextColor={colors.inputPlaceholder}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -248,6 +296,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
                   value={quantidadeHoras}
                   onChangeText={handleQuantidadeHorasChange}
                   placeholder="Ex: 160"
+                  placeholderTextColor={colors.inputPlaceholder}
                 />
               </View>
             </View>
@@ -269,6 +318,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
                 value={data}
                 onChangeText={t => setData(formatDateInput(t))}
                 maxLength={10}
+                placeholderTextColor={colors.inputPlaceholder}
               />
             </View>
           </>
@@ -281,6 +331,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
                 keyboardType="decimal-pad"
                 value={valor}
                 onChangeText={setValor}
+                placeholderTextColor={colors.inputPlaceholder}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -292,6 +343,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
                 value={data}
                 onChangeText={t => setData(formatDateInput(t))}
                 maxLength={10}
+                placeholderTextColor={colors.inputPlaceholder}
               />
             </View>
           </View>
@@ -350,7 +402,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
                 </TouchableOpacity>
               ))}
               {cartoes.length === 0 && (
-                <Text style={{ fontSize: 13, color: '#aaa', marginTop: 4 }}>Nenhum cartão cadastrado</Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>Nenhum cartão cadastrado</Text>
               )}
             </View>
           </>
@@ -437,6 +489,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
               value={novaCategoria}
               onChangeText={setNovaCategoria}
               autoFocus
+              placeholderTextColor={colors.inputPlaceholder}
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.btnCancel} onPress={() => { setModalVisible(false); setNovaCategoria(''); }}>
@@ -453,44 +506,65 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  content: { padding: 20, paddingBottom: 40 },
-  parcelaInfo: { backgroundColor: '#E3F2FD', borderRadius: 8, padding: 10, marginBottom: 4, borderWidth: 1, borderColor: '#90CAF9' },
-  parcelaInfoText: { color: '#1565C0', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  recorrenteInfo: { backgroundColor: '#F3E5F5', borderRadius: 8, padding: 10, marginBottom: 4, borderWidth: 1, borderColor: '#CE93D8' },
-  recorrenteInfoText: { color: '#7B1FA2', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  horistaBanner: { backgroundColor: '#FFF8E1', borderRadius: 8, padding: 10, marginBottom: 4, borderWidth: 1, borderColor: '#FFD54F' },
-  horistaBannerText: { color: '#F57F17', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  horaPreview: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: '#E8F5E9', borderRadius: 8, padding: 12, marginTop: 8,
-    borderWidth: 1, borderColor: '#A5D6A7',
-  },
-  horaPreviewLabel: { fontSize: 13, color: '#388E3C', fontWeight: '600' },
-  horaPreviewValor: { fontSize: 18, color: '#2E7D32', fontWeight: 'bold' },
-  label: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 6, marginTop: 16 },
-  input: { backgroundColor: '#fff', borderRadius: 8, padding: 14, fontSize: 16, borderWidth: 1, borderColor: '#ddd' },
-  row: { flexDirection: 'row' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
-  chipActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
-  chipCartao: { backgroundColor: '#1565C0', borderColor: '#1565C0' },
-  chipText: { fontSize: 14, color: '#444' },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
-  chipAdd: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#4CAF50', backgroundColor: '#fff' },
-  chipAddText: { fontSize: 14, color: '#4CAF50', fontWeight: '600' },
-  errorBox: { backgroundColor: '#ffebee', borderRadius: 8, padding: 12, marginTop: 16, borderWidth: 1, borderColor: '#ef9a9a' },
-  errorText: { color: '#c62828', fontSize: 14, textAlign: 'center' },
-  button: { backgroundColor: '#4CAF50', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 24 },
-  buttonDelete: { backgroundColor: '#e53935', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 12 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modal: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '100%', maxWidth: 420 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1a1a2e', marginBottom: 4 },
-  modalSub: { fontSize: 13, color: '#888', marginBottom: 16 },
-  modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ddd' },
-  btnCancelText: { color: '#666', fontSize: 15 },
-  btnSave: { flex: 1, backgroundColor: '#4CAF50', borderRadius: 8, padding: 14, alignItems: 'center' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.surface },
+    content: { padding: 20, paddingBottom: 40 },
+
+    pagamentoBanner: {
+      backgroundColor: c.greenDim, borderRadius: 12, padding: 16,
+      marginBottom: 8, borderWidth: 1, borderColor: c.greenBorder,
+    },
+    pagamentoBannerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
+    pagamentoBannerIcon: { fontSize: 20 },
+    pagamentoBannerTitulo: { fontSize: 16, fontWeight: 'bold', color: c.green },
+    pagamentoBannerDetalhe: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      paddingVertical: 6, borderTopWidth: 1, borderTopColor: c.greenBorder,
+    },
+    pagamentoBannerLabel: { fontSize: 13, color: c.green, opacity: 0.8 },
+    pagamentoBannerValor: { fontSize: 13, fontWeight: '700', color: c.green },
+    pagamentoBannerSemConta: {
+      fontSize: 12, color: c.green, opacity: 0.6, marginTop: 4,
+      borderTopWidth: 1, borderTopColor: c.greenBorder, paddingTop: 6,
+    },
+
+    parcelaInfo: { backgroundColor: c.blueDim, borderRadius: 8, padding: 10, marginBottom: 4, borderWidth: 1, borderColor: c.blueBorder },
+    parcelaInfoText: { color: '#64B5F6', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    recorrenteInfo: { backgroundColor: c.purpleDim, borderRadius: 8, padding: 10, marginBottom: 4, borderWidth: 1, borderColor: c.purpleBorder },
+    recorrenteInfoText: { color: c.purpleLight, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    horistaBanner: { backgroundColor: '#F57F1715', borderRadius: 8, padding: 10, marginBottom: 4, borderWidth: 1, borderColor: '#FFD54F40' },
+    horistaBannerText: { color: '#FFD54F', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    horaPreview: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      backgroundColor: c.greenDim, borderRadius: 8, padding: 12, marginTop: 8,
+      borderWidth: 1, borderColor: c.greenBorder,
+    },
+    horaPreviewLabel: { fontSize: 13, color: c.green, fontWeight: '600' },
+    horaPreviewValor: { fontSize: 18, color: c.green, fontWeight: 'bold' },
+    label: { fontSize: 13, fontWeight: '600', color: c.textSecondary, marginBottom: 6, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.4 },
+    input: { backgroundColor: c.inputBg, borderRadius: 8, padding: 14, fontSize: 16, borderWidth: 1, borderColor: c.inputBorder, color: c.text },
+    row: { flexDirection: 'row' },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: c.inputBorder, backgroundColor: c.inputBg },
+    chipActive: { backgroundColor: c.green, borderColor: c.green },
+    chipCartao: { backgroundColor: c.blue, borderColor: c.blue },
+    chipText: { fontSize: 14, color: c.textSecondary },
+    chipTextActive: { color: '#fff', fontWeight: '600' },
+    chipAdd: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: c.greenBorder, backgroundColor: 'transparent' },
+    chipAddText: { fontSize: 14, color: c.green, fontWeight: '600' },
+    errorBox: { backgroundColor: c.redDim, borderRadius: 8, padding: 12, marginTop: 16, borderWidth: 1, borderColor: c.redBorder },
+    errorText: { color: c.redBorder, fontSize: 14, textAlign: 'center' },
+    button: { backgroundColor: c.green, borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 24 },
+    buttonDelete: { backgroundColor: c.red, borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 12 },
+    buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    modal: { backgroundColor: c.surfaceElevated, borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: c.border },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: c.text, marginBottom: 4 },
+    modalSub: { fontSize: 13, color: c.textSecondary, marginBottom: 16, lineHeight: 18 },
+    modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
+    btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: c.border },
+    btnCancelText: { color: c.textSecondary, fontSize: 15 },
+    btnSave: { flex: 1, backgroundColor: c.green, borderRadius: 8, padding: 14, alignItems: 'center' },
+  });
+}

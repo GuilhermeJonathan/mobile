@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resetToLogin } from '../navigation/navigationRef';
 
-const API_BASE_URL = 'https://localhost:7066/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:7066/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
