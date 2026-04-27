@@ -43,11 +43,34 @@ export interface ParceladosVigentesResult {
   itens: ParceladoVigenteItem[];
 }
 
+export interface ResumoMes {
+  mes: number;
+  totalCreditos: number;
+  totalDebitos: number;
+  saldo: number;
+}
+
+export interface ResumoCatAnual {
+  categoria: string;
+  total: number;
+}
+
+export interface ResumoAnual {
+  ano: number;
+  totalCreditos: number;
+  totalDebitos: number;
+  saldo: number;
+  meses: ResumoMes[];
+  topCategorias: ResumoCatAnual[];
+}
+
 export const lancamentosService = {
   getByMes: (mes: number, ano: number) =>
     api.get(`/lancamentos/${mes}/${ano}`).then(r => r.data),
   getParceladosVigentes: (): Promise<ParceladosVigentesResult> =>
     api.get('/lancamentos/parcelados-vigentes').then(r => r.data),
+  getResumoAnual: (ano: number): Promise<ResumoAnual> =>
+    api.get(`/lancamentos/resumo-anual/${ano}`).then(r => r.data),
   getDashboard: (mes: number, ano: number) =>
     api.get(`/lancamentos/dashboard/${mes}/${ano}`).then(r => r.data),
   create: (data: object) => api.post('/lancamentos', data).then(r => r.data),

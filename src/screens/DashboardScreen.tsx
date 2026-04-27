@@ -601,6 +601,19 @@ export default function DashboardScreen() {
         </View>
       )}
 
+      {/* Card de Visão Anual */}
+      <TouchableOpacity
+        style={styles.anualCard}
+        onPress={() => (navigation as any).navigate('Anual')}
+        activeOpacity={0.75}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.anualCardTitle}>📅 Visão Anual</Text>
+          <Text style={styles.anualCardSub}>Resumo completo de {ano}</Text>
+        </View>
+        <Text style={{ color: colors.textSecondary, fontSize: 20 }}>›</Text>
+      </TouchableOpacity>
+
       {/* Card de Dívidas Parceladas */}
       <TouchableOpacity
         style={styles.dividasCard}
@@ -650,6 +663,16 @@ function makeStyles(c: ColorScheme) {
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     legendDot: { width: 10, height: 10, borderRadius: 5 },
     legendText: { fontSize: 11, color: c.textSecondary },
+
+    anualCard: {
+      flexDirection: 'row', alignItems: 'center',
+      marginHorizontal: 16, marginTop: 12,
+      backgroundColor: c.surface, borderRadius: 14,
+      padding: 16, borderWidth: 1, borderColor: c.border,
+      borderLeftWidth: 4, borderLeftColor: c.green,
+    },
+    anualCardTitle: { fontSize: 14, fontWeight: '700', color: c.text },
+    anualCardSub:   { fontSize: 12, color: c.textSecondary, marginTop: 2 },
 
     dividasCard: {
       flexDirection: 'row', alignItems: 'center',

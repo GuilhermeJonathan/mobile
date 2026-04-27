@@ -21,6 +21,7 @@ import AdminUsersScreen from '../screens/AdminUsersScreen';
 import ExtratoContaScreen from '../screens/ExtratoContaScreen';
 import ImportarFaturaScreen from '../screens/ImportarFaturaScreen';
 import DividasScreen from '../screens/DividasScreen';
+import AnualScreen from '../screens/AnualScreen';
 import UserDrawer from '../components/UserDrawer';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
@@ -174,6 +175,16 @@ export default function AppNavigator() {
             title: 'Importar Fatura',
             headerStyle: { backgroundColor: '#1a1a2e' },
             headerTintColor: '#fff',
+          }}
+        />
+        <Stack.Screen
+          name="Anual"
+          component={AnualScreen}
+          options={{
+            headerShown: true,
+            title: 'Visão Anual',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
           }}
         />
         <Stack.Screen
