@@ -145,6 +145,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
       // Recarrega para refletir saldo atualizado
       const data = await lancamentosService.getByMes(mes, ano);
       setLancamentos(data);
+      refreshBadge();
     } catch {
       setLancamentos(prev => prev.map(l => l.id === item.id ? { ...l, situacao: item.situacao } : l));
     } finally {
@@ -235,6 +236,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
     // Recarrega lista
     const data = await lancamentosService.getByMes(mes, ano);
     setLancamentos(data);
+    refreshBadge();
   }
 
   type RawItem =

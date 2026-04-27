@@ -49,7 +49,10 @@ const linking = {
 function MainTabs() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const insets = useSafeAreaInsets();
-  const { badge } = useVencimentos();
+  const { badge, refresh } = useVencimentos();
+
+  // Garante que os alertas sejam do usuário atual a cada login
+  useEffect(() => { refresh(); }, []);
 
   return (
     <>

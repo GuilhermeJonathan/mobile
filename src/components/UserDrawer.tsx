@@ -32,7 +32,7 @@ function fmtData(iso: string): string {
 export default function UserDrawer({ visible, onClose }: Props) {
   const { colors, isDark, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { badge, alertas } = useVencimentos();
+  const { badge, alertas, clear: clearAlertas } = useVencimentos();
   const slideAnim = useRef(new Animated.Value(DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -58,6 +58,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
   async function handleLogout() {
     setLoggingOut(true);
+    clearAlertas();          // limpa dados do usuário atual antes de trocar sessão
     await authService.logout();
     onClose();
     resetToLogin();

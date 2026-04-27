@@ -14,12 +14,14 @@ interface VencimentosContextData {
   badge: number;
   alertas: VencimentoAlerta[];
   refresh: () => void;
+  clear: () => void;
 }
 
 const VencimentosContext = createContext<VencimentosContextData>({
   badge: 0,
   alertas: [],
   refresh: () => {},
+  clear: () => {},
 });
 
 export function VencimentosProvider({ children }: { children: React.ReactNode }) {
@@ -70,10 +72,15 @@ export function VencimentosProvider({ children }: { children: React.ReactNode })
     }
   }, []);
 
+  const clear = useCallback(() => {
+    setAlertas([]);
+    setBadge(0);
+  }, []);
+
   useEffect(() => { refresh(); }, [refresh]);
 
   return (
-    <VencimentosContext.Provider value={{ badge, alertas, refresh }}>
+    <VencimentosContext.Provider value={{ badge, alertas, refresh, clear }}>
       {children}
     </VencimentosContext.Provider>
   );
