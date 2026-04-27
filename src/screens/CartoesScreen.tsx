@@ -28,7 +28,7 @@ const situacaoCor: Record<number, string> = {
   [SituacaoLancamento.Vencido]: '#e53935',
 };
 
-export default function CartoesScreen() {
+export default function CartoesScreen({ navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -205,6 +205,17 @@ export default function CartoesScreen() {
         )}
         contentContainerStyle={{ padding: 12, paddingBottom: 80 }}
       />
+
+      {/* FAB importar fatura */}
+      <TouchableOpacity
+        style={[styles.fab, { bottom: 88, backgroundColor: '#1565C0' }]}
+        onPress={() => navigation.navigate('ImportarFatura', {
+          cartaoId: cartoes[0]?.id ?? '',
+          cartaoNome: cartoes[0]?.nome ?? '',
+        })}
+      >
+        <Text style={{ fontSize: 20 }}>📄</Text>
+      </TouchableOpacity>
 
       {/* FAB adicionar cartão */}
       <TouchableOpacity style={styles.fab} onPress={() => { setError(''); setCriarVisible(true); }}>

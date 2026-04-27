@@ -87,6 +87,47 @@ export const horasService = {
   delete: (id: string) => api.delete(`/horas/${id}`),
 };
 
+export interface FaturaTransacao {
+  descricao: string;
+  data: string;
+  valor: number;
+  mes: number;
+  ano: number;
+  parcelaAtual: number | null;
+  totalParcelas: number | null;
+  secaoCartao: string;
+  titularCartao: string;
+  categoriaNome: string;  // do Excel col E, ou "Outros"
+}
+
+export interface ImportarFaturaItem {
+  descricao: string;
+  data: string;
+  valor: number;
+  mes: number;
+  ano: number;
+  cartaoId: string;
+  categoriaNome: string;  // handler resolve/cria no backend
+  parcelaAtual: number | null;
+  totalParcelas: number | null;
+}
+
+export const faturasService = {
+  preview: async (arquivo: File, mesFatura: number, anoFatura: number): Promise<FaturaTransacao[]> => {
+    const formData = new FormData();
+    formData.append('arquivo', arquivo);
+    formData.append('mesFatura', String(mesFatura));
+    formData.append('anoFatura', String(anoFatura));
+    const response = await api.post('/faturas/preview', formData, {
+      headers: { 'Content-Type': undefined },
+    });
+    return response.data;
+  },
+
+  importar: (items: ImportarFaturaItem[]): Promise<number> =>
+    api.post('/faturas/importar', { items }).then(r => r.data),
+};
+
 // Invite service — uses the Login API directly with auth token
 const loginApi = axios.create({
   baseURL: LOGIN_API_URL,

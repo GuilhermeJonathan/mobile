@@ -18,6 +18,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import InvitesScreen from '../screens/InvitesScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
 import ExtratoContaScreen from '../screens/ExtratoContaScreen';
+import ImportarFaturaScreen from '../screens/ImportarFaturaScreen';
 import UserDrawer from '../components/UserDrawer';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
@@ -162,6 +163,16 @@ export default function AppNavigator() {
           name="EditLancamento"
           component={EditLancamentoScreen}
           options={{ headerShown: true, title: 'Editar Lançamento', headerStyle: { backgroundColor: '#1a1a2e' }, headerTintColor: '#fff' }}
+        />
+        <Stack.Screen
+          name="ImportarFatura"
+          component={ImportarFaturaScreen}
+          options={{
+            headerShown: true,
+            title: 'Importar Fatura',
+            headerStyle: { backgroundColor: '#1a1a2e' },
+            headerTintColor: '#fff',
+          }}
         />
         <Stack.Screen
           name="ExtratoConta"
