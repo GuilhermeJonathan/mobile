@@ -302,7 +302,11 @@ export default function LancamentosScreen({ navigation }: any) {
   const totalDespesas = lancamentos.filter(l => !l.cartaoId && l.tipo !== TipoLancamento.Credito).length;
   const totalCartoes  = new Set(lancamentos.filter(l => !!l.cartaoId).map(l => l.cartaoId)).size;
 
-  if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color="#4CAF50" />;
+  if (loading) return (
+    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color={colors.green} />
+    </View>
+  );
 
   const listItems = buildListItems();
 

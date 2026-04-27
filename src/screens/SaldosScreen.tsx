@@ -99,7 +99,11 @@ export default function SaldosScreen() {
 
   const totalGeral = contas.reduce((s, c) => s + c.saldo, 0);
 
-  if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={colors.green} />;
+  if (loading) return (
+    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color={colors.green} />
+    </View>
+  );
 
   return (
     <>
