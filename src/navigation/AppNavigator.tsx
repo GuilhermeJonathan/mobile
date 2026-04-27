@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, ActivityIndicator, View, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { darkColors } from '../theme/colors';
 import { authService } from '../services/authService';
 import { navigationRef } from './navigationRef';
 import LoginScreen from '../screens/LoginScreen';
@@ -70,17 +71,17 @@ function MainTabs() {
           };
           return <Text style={{ fontSize: size - 4 }}>{icons[route.name]}</Text>;
         },
-        tabBarActiveTintColor: '#4CAF50',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: darkColors.green,
+        tabBarInactiveTintColor: darkColors.textTertiary,
         tabBarStyle: {
-          backgroundColor: '#1a1a2e',
-          borderTopColor: '#ffffff15',
+          backgroundColor: darkColors.surface,
+          borderTopColor: darkColors.border,
           paddingBottom: insets.bottom,
           height: 60 + insets.bottom,
         },
         tabBarLabelStyle: { fontSize: 11 },
-        headerStyle: { backgroundColor: '#1a1a2e' },
-        headerTintColor: '#fff',
+        headerStyle: { backgroundColor: darkColors.surface },
+        headerTintColor: darkColors.text,
         headerTitleStyle: { fontWeight: 'bold' },
         headerRight: () => (
           <TouchableOpacity
@@ -92,7 +93,7 @@ function MainTabs() {
               {badge > 0 && (
                 <View style={{
                   position: 'absolute', top: -4, right: -4,
-                  backgroundColor: '#e53935', borderRadius: 8,
+                  backgroundColor: darkColors.red, borderRadius: 8,
                   minWidth: 16, height: 16,
                   justifyContent: 'center', alignItems: 'center',
                   paddingHorizontal: 3,
@@ -135,8 +136,8 @@ export default function AppNavigator() {
 
   if (checking) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#1a1a2e', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+      <View style={{ flex: 1, backgroundColor: darkColors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={darkColors.green} />
       </View>
     );
   }

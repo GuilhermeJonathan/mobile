@@ -1,52 +1,52 @@
 export type ColorScheme = typeof darkColors;
 
 export const darkColors = {
-  // Backgrounds
-  background:        '#0f0f1a',
-  surface:           '#1a1a2e',
-  surfaceElevated:   '#1e2240',
-  surfaceSubtle:     '#16213e',
+  // Backgrounds — GitHub Dark
+  background:        '#0d1117',
+  surface:           '#161b22',
+  surfaceElevated:   '#21262d',
+  surfaceSubtle:     '#010409',
 
   // Inputs
-  inputBg:           '#ffffff12',
-  inputBorder:       '#ffffff20',
-  inputPlaceholder:  '#666677',
+  inputBg:           '#0d111780',
+  inputBorder:       '#30363d',
+  inputPlaceholder:  '#484f58',
 
   // Text
-  text:              '#ffffff',
-  textSecondary:     '#9aa0b4',
-  textTertiary:      '#666677',
+  text:              '#e6edf3',
+  textSecondary:     '#8b949e',
+  textTertiary:      '#484f58',
 
   // Borders / dividers
-  border:            '#ffffff15',
+  border:            '#30363d',
 
-  // Accents (same in both themes)
-  green:             '#4CAF50',
-  greenDim:          '#4CAF5020',
-  greenBorder:       '#4CAF5050',
-  red:               '#ef5350',
-  redDim:            '#ef535015',
-  redBorder:         '#ef535040',
-  orange:            '#FF9800',
-  blue:              '#1565C0',
-  blueDim:           '#1565C020',
-  blueBorder:        '#1565C050',
-  purple:            '#7B1FA2',
-  purpleDim:         '#7B1FA215',
-  purpleBorder:      '#CE93D840',
-  purpleLight:       '#CE93D8',
+  // Accents
+  green:             '#3fb950',
+  greenDim:          '#3fb95018',
+  greenBorder:       '#3fb95050',
+  red:               '#f85149',
+  redDim:            '#f8514915',
+  redBorder:         '#f8514940',
+  orange:            '#d29922',
+  blue:              '#58a6ff',
+  blueDim:           '#58a6ff18',
+  blueBorder:        '#58a6ff50',
+  purple:            '#bc8cff',
+  purpleDim:         '#bc8cff15',
+  purpleBorder:      '#bc8cff40',
+  purpleLight:       '#bc8cff',
 
   // Specific
-  navBtn:            '#4CAF50',
+  navBtn:            '#3fb950',
   checkmark:         '#ffffff',
-  cartaoRowBg:       '#1565C018',
-  cartaoRowBorder:   '#1565C0',
-  itemConfirmedBorder: '#4CAF50',
-  barBg:             '#ffffff15',
-  chartCenter:       '#1a1a2e',
-  tooltipBg:         '#1e2240',
-  tooltipBorder:     '#ffffff20',
-  gridLine:          '#ffffff20',
+  cartaoRowBg:       '#58a6ff12',
+  cartaoRowBorder:   '#58a6ff',
+  itemConfirmedBorder: '#3fb950',
+  barBg:             '#21262d',
+  chartCenter:       '#161b22',
+  tooltipBg:         '#21262d',
+  tooltipBorder:     '#30363d',
+  gridLine:          '#21262d',
 };
 
 export const lightColors: ColorScheme = {
