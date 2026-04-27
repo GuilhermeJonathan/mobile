@@ -431,6 +431,9 @@ export default function LancamentosScreen({ navigation, route }: any) {
                   <Text style={styles.receitaBadgeText}>📌 Fixo</Text>
                 </View>
               )}
+              <Text style={styles.itemMeta}>
+                {new Date(item.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+              </Text>
             </View>
           </View>
 
