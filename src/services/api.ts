@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resetToLogin } from '../navigation/navigationRef';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:7066/api';
+const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:7228';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -84,4 +85,29 @@ export const horasService = {
   create: (data: object) => api.post('/horas', data).then(r => r.data),
   update: (id: string, data: object) => api.put(`/horas/${id}`, data),
   delete: (id: string) => api.delete(`/horas/${id}`),
+};
+
+// Invite service — uses the Login API directly with auth token
+const loginApi = axios.create({
+  baseURL: LOGIN_API_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+loginApi.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem('@cf_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+export const inviteService = {
+  validate: (token: string) =>
+    loginApi.get<{ isValid: boolean; email: string | null; expiresAt: string | null }>(
+      `/invite/${token}`
+    ).then(r => r.data),
+
+  create: (email?: string, expirationDays?: number) =>
+    loginApi.post<{ token: string; expiresAt: string; link: string }>(
+      '/invite',
+      { email: email ?? null, expirationDays: expirationDays ?? 7 }
+    ).then(r => r.data),
 };

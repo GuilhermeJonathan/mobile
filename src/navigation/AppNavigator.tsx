@@ -14,6 +14,8 @@ import SaldosScreen from '../screens/SaldosScreen';
 import AddLancamentoScreen from '../screens/AddLancamentoScreen';
 import EditLancamentoScreen from '../screens/EditLancamentoScreen';
 import ReceitasScreen from '../screens/ReceitasScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import InvitesScreen from '../screens/InvitesScreen';
 import UserDrawer from '../components/UserDrawer';
 
 const Stack = createNativeStackNavigator();
@@ -24,6 +26,10 @@ const linking = {
   config: {
     screens: {
       Login: 'login',
+      Register: {
+        path: 'register',
+        parse: { inviteToken: (invite: string) => invite },
+      },
       Main: {
         screens: {
           Dashboard: 'dashboard',
@@ -112,7 +118,9 @@ export default function AppNavigator() {
     <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={isLoggedIn ? 'Main' : 'Login'}>
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="Invites" component={InvitesScreen} />
         <Stack.Screen
           name="AddLancamento"
           component={AddLancamentoScreen}

@@ -51,4 +51,31 @@ export const authService = {
       expiresAt: tokenExpiresAt(token),
     };
   },
+
+  async isAdmin(): Promise<boolean> {
+    const token = await AsyncStorage.getItem('@cf_token');
+    if (!token) return false;
+    const payload = decodeToken(token);
+    // UserType.Internal = 1 → token emite "1" como string
+    return payload?.userType === '1';
+  },
+
+  async register(
+    inviteToken: string,
+    name: string,
+    email: string,
+    password: string,
+    document?: string,
+  ): Promise<string> {
+    const { data } = await axios.post(`${LOGIN_API_URL}/user/register`, {
+      inviteToken,
+      name,
+      email,
+      password,
+      document: document ?? null,
+    });
+    const token: string = data.accessToken;
+    await AsyncStorage.setItem('@cf_token', token);
+    return token;
+  },
 };

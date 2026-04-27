@@ -1,3 +1,5 @@
+import { UserType } from '../types/UserType';
+
 export interface JwtPayload {
   nameid?: string;   // ClaimTypes.NameIdentifier
   unique_name?: string; // ClaimTypes.Name
@@ -59,4 +61,12 @@ export function tokenExpiresAt(token: string): Date | null {
   const payload = decodeToken(token);
   if (!payload?.exp) return null;
   return new Date(payload.exp * 1000);
+}
+
+export function getUserType(token: string): UserType | null {
+  const payload = decodeToken(token);
+  if (!payload?.userType) return null;
+  const num = parseInt(payload.userType, 10);
+  if (isNaN(num)) return null;
+  return num as UserType;
 }

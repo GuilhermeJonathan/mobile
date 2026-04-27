@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authService, UserInfo } from '../services/authService';
 import { resetToLogin } from '../navigation/navigationRef';
 import { useTheme } from '../theme/ThemeContext';
+import { navigationRef } from '../navigation/navigationRef';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
@@ -22,11 +23,13 @@ export default function UserDrawer({ visible, onClose }: Props) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (visible) {
       authService.getUserInfo().then(setUser);
+      authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
       Animated.parallel([
         Animated.timing(slideAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
@@ -93,6 +96,22 @@ export default function UserDrawer({ visible, onClose }: Props) {
             thumbColor="#fff"
           />
         </View>
+
+        {isAdmin && (
+          <>
+            <View style={s.divider} />
+            <TouchableOpacity
+              style={s.row}
+              onPress={() => {
+                onClose();
+                navigationRef.current?.navigate('Invites' as never);
+              }}
+            >
+              <Text style={s.rowIcon}>🎟️</Text>
+              <Text style={s.rowLabel}>Convites</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         <View style={s.divider} />
 
