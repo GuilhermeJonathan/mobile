@@ -191,7 +191,11 @@ export default function ReceitasScreen() {
 
   const totalMensal = receitas.reduce((s, r) => s + r.valor, 0);
 
-  if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color="#4CAF50" />;
+  if (loading) return (
+    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color={colors.green} />
+    </View>
+  );
 
   return (
     <>

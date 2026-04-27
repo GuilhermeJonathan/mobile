@@ -393,7 +393,11 @@ export default function DashboardScreen() {
     setLoading(true);
   }
 
-  if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color="#4CAF50" />;
+  if (loading) return (
+    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color={colors.green} />
+    </View>
+  );
 
   const saldoColor = (dashboard?.saldo ?? 0) >= 0 ? '#4CAF50' : '#e53935';
   const totalDespesas = dashboard?.totalDebitos ?? 0;
