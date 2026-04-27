@@ -46,6 +46,16 @@ const SITUACAO_PADRAO: Record<TipoLancamento, SituacaoLancamento> = {
   [TipoLancamento.Pix]:     SituacaoLancamento.Pago,
 };
 
+function applyValorMask(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  const num = parseInt(digits, 10);
+  const reais = Math.floor(num / 100);
+  const cents = num % 100;
+  const reaisStr = reais === 0 ? '0' : reais.toLocaleString('pt-BR');
+  return `${reaisStr},${String(cents).padStart(2, '0')}`;
+}
+
 export default function AddLancamentoScreen({ route, navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -116,7 +126,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   }
 
   const parcelasNum = Math.max(1, parseInt(parcelas) || 1);
-  const valorNum    = parseFloat(valor.replace(',', '.')) || 0;
+  const valorNum    = parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0;
   const categoriasFiltradas = categorias.filter(
     c => c.tipo === tipo || c.tipo === TipoLancamento.Debito
   );
@@ -181,7 +191,8 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
               <Text style={styles.label}>Valor (R$)</Text>
               <TextInput
                 style={styles.input} placeholder="0,00" placeholderTextColor={colors.inputPlaceholder}
-                keyboardType="decimal-pad" value={valor} onChangeText={setValor}
+                keyboardType="decimal-pad" value={valor}
+                onChangeText={(raw) => setValor(applyValorMask(raw))}
               />
             </View>
             <View style={{ flex: 1 }}>

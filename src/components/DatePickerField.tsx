@@ -52,20 +52,61 @@ export default function DatePickerField({ value, onChange, label, dark = false }
   const labelStyle = [styles.label, dark && styles.labelDark];
   const textStyle  = [styles.inputText, dark && styles.inputTextDark];
 
-  // ── Web: campo de texto com máscara dd/mm/aaaa ───────────────────────────
+  // ── Web: campo visual DD/MM/AAAA + picker nativo oculto ─────────────────
   if (Platform.OS === 'web') {
+    const htmlValue = [
+      value.getFullYear(),
+      String(value.getMonth() + 1).padStart(2, '0'),
+      String(value.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    const containerStyle: React.CSSProperties = {
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+    };
+    const visibleStyle: React.CSSProperties = {
+      backgroundColor: dark ? 'rgba(255,255,255,0.07)' : '#fff',
+      border: `1px solid ${dark ? 'rgba(255,255,255,0.125)' : '#ddd'}`,
+      borderRadius: 8,
+      padding: '14px',
+      color: dark ? '#fff' : '#1a1a2e',
+      fontSize: 15,
+      width: '100%',
+      boxSizing: 'border-box',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    };
+    const hiddenInputStyle: React.CSSProperties = {
+      position: 'absolute',
+      inset: 0,
+      opacity: 0,
+      width: '100%',
+      height: '100%',
+      cursor: 'pointer',
+    };
+
     return (
       <View>
         {label && <Text style={labelStyle}>{label}</Text>}
-        <TextInput
-          style={[inputStyle, { color: dark ? '#fff' : '#1a1a2e' }]}
-          value={textValue}
-          onChangeText={handleTextChange}
-          placeholder="DD/MM/AAAA"
-          placeholderTextColor={dark ? '#666' : '#aaa'}
-          keyboardType="numeric"
-          maxLength={10}
-        />
+        {React.createElement('div', { style: containerStyle },
+          React.createElement('div', { style: visibleStyle },
+            React.createElement('span', null, formatBR(value)),
+            React.createElement('span', null, '📅'),
+          ),
+          React.createElement('input', {
+            type: 'date',
+            value: htmlValue,
+            onChange: (e: any) => {
+              const [y, m, d] = e.target.value.split('-').map(Number);
+              const date = new Date(y, m - 1, d);
+              if (!isNaN(date.getTime())) onChange(date);
+            },
+            style: hiddenInputStyle,
+          }),
+        )}
       </View>
     );
   }
