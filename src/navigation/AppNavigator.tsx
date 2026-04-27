@@ -16,6 +16,7 @@ import EditLancamentoScreen from '../screens/EditLancamentoScreen';
 import ReceitasScreen from '../screens/ReceitasScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import InvitesScreen from '../screens/InvitesScreen';
+import AdminUsersScreen from '../screens/AdminUsersScreen';
 import UserDrawer from '../components/UserDrawer';
 
 const Stack = createNativeStackNavigator();
@@ -121,6 +122,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Invites" component={InvitesScreen} />
+        <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
         <Stack.Screen
           name="AddLancamento"
           component={AddLancamentoScreen}

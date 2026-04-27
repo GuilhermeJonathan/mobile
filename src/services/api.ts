@@ -99,6 +99,27 @@ loginApi.interceptors.request.use(async (config) => {
   return config;
 });
 
+export interface UserListItem {
+  id: string;
+  name: string;
+  email: string;
+  document: string;
+  userTypeId: number;
+  isActive: boolean;
+  isBlocked: boolean;
+  createdAt: string;
+}
+
+export const adminService = {
+  listUsers: (page = 1, pageSize = 50) =>
+    loginApi.get<{ items: UserListItem[]; totalCount: number }>(
+      `/user?currentPage=${page}&pageSize=${pageSize}`
+    ).then(r => r.data),
+
+  setBlock: (id: string, block: boolean) =>
+    loginApi.patch(`/user/${id}/block`, { block }),
+};
+
 export const inviteService = {
   validate: (token: string) =>
     loginApi.get<{ isValid: boolean; email: string | null; expiresAt: string | null }>(

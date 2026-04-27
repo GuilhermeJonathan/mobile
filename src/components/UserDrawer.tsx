@@ -102,10 +102,14 @@ export default function UserDrawer({ visible, onClose }: Props) {
             <View style={s.divider} />
             <TouchableOpacity
               style={s.row}
-              onPress={() => {
-                onClose();
-                navigationRef.current?.navigate('Invites' as never);
-              }}
+              onPress={() => { onClose(); navigationRef.current?.navigate('AdminUsers' as never); }}
+            >
+              <Text style={s.rowIcon}>👥</Text>
+              <Text style={s.rowLabel}>Usuários</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.row}
+              onPress={() => { onClose(); navigationRef.current?.navigate('Invites' as never); }}
             >
               <Text style={s.rowIcon}>🎟️</Text>
               <Text style={s.rowLabel}>Convites</Text>
