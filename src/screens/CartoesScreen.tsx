@@ -186,12 +186,19 @@ export default function CartoesScreen({ navigation }: any) {
               <View key={l.id} style={styles.lancamento}>
                 <View style={styles.lancamentoLeft}>
                   <Text style={styles.lancamentoDesc}>{l.descricao}</Text>
-                  <Text style={styles.lancamentoMeta}>
-                    {new Date(l.data).toLocaleDateString('pt-BR')}
-                    {l.totalParcelas && l.totalParcelas > 1
-                      ? ` · ${l.parcelaAtual}/${l.totalParcelas}x`
-                      : ''}
-                  </Text>
+                  <View style={styles.lancamentoMetaRow}>
+                    {l.categoriaNome ? (
+                      <View style={styles.catBadge}>
+                        <Text style={styles.catBadgeText}>{l.categoriaNome}</Text>
+                      </View>
+                    ) : null}
+                    <Text style={styles.lancamentoMeta}>
+                      {new Date(l.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                      {l.totalParcelas && l.totalParcelas > 1
+                        ? ` · ${l.parcelaAtual}/${l.totalParcelas}x`
+                        : ''}
+                    </Text>
+                  </View>
                 </View>
                 <View style={styles.lancamentoRight}>
                   <Text style={styles.lancamentoValor}>{fmtBRL(l.valor)}</Text>
@@ -320,7 +327,10 @@ function makeStyles(c: ColorScheme) {
     lancamento: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.border },
     lancamentoLeft: { flex: 1 },
     lancamentoDesc: { fontSize: 14, color: c.text },
-    lancamentoMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    lancamentoMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' },
+    lancamentoMeta: { fontSize: 12, color: c.textSecondary },
+    catBadge: { backgroundColor: c.surfaceElevated, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+    catBadgeText: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
     lancamentoRight: { alignItems: 'flex-end' },
     lancamentoValor: { fontSize: 14, color: c.red, fontWeight: '600' },
     lancamentoSituacao: { fontSize: 11, marginTop: 2 },

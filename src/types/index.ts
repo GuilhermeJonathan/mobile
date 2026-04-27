@@ -89,6 +89,7 @@ export interface CartaoLancamento {
   situacao: SituacaoLancamento;
   parcelaAtual?: number;
   totalParcelas?: number;
+  categoriaNome?: string;
 }
 
 export interface HorasTrabalhadas {
