@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, ActivityIndicator, View, TouchableOpacity } from 'react-native';
 import { authService } from '../services/authService';
-import { navigationRef, navigateTo } from './navigationRef';
+import { navigationRef } from './navigationRef';
 import LoginScreen from '../screens/LoginScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import LancamentosScreen from '../screens/LancamentosScreen';
@@ -12,8 +12,8 @@ import CartoesScreen from '../screens/CartoesScreen';
 import SaldosScreen from '../screens/SaldosScreen';
 import AddLancamentoScreen from '../screens/AddLancamentoScreen';
 import EditLancamentoScreen from '../screens/EditLancamentoScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import ReceitasScreen from '../screens/ReceitasScreen';
+import UserDrawer from '../components/UserDrawer';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -36,20 +36,13 @@ const linking = {
   },
 };
 
-function ProfileButton() {
-  return (
-    <TouchableOpacity
-      onPress={() => navigateTo('Profile')}
-      style={{ marginRight: 14, padding: 4 }}
-    >
-      <Text style={{ fontSize: 22 }}>👤</Text>
-    </TouchableOpacity>
-  );
-}
-
 function MainTabs() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   return (
-    <Tab.Navigator
+    <>
+      <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ size }) => {
           const icons: Record<string, string> = {
@@ -68,7 +61,14 @@ function MainTabs() {
         headerStyle: { backgroundColor: '#1a1a2e' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold' },
-        headerRight: () => <ProfileButton />,
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => setDrawerOpen(true)}
+            style={{ marginRight: 14, padding: 4 }}
+          >
+            <Text style={{ fontSize: 22 }}>👤</Text>
+          </TouchableOpacity>
+        ),
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
@@ -77,6 +77,7 @@ function MainTabs() {
       <Tab.Screen name="Cartões" component={CartoesScreen} />
       <Tab.Screen name="Saldos" component={SaldosScreen} />
     </Tab.Navigator>
+    </>
   );
 }
 
@@ -94,7 +95,7 @@ export default function AppNavigator() {
 
   if (checking) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#1a1a2e', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#4CAF50" />
       </View>
     );
@@ -118,11 +119,6 @@ export default function AppNavigator() {
           name="EditLancamento"
           component={EditLancamentoScreen}
           options={{ headerShown: true, title: 'Editar Lançamento', headerStyle: { backgroundColor: '#1a1a2e' }, headerTintColor: '#fff' }}
-        />
-        <Stack.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{ headerShown: true, title: 'Minha Conta', headerStyle: { backgroundColor: '#1a1a2e' }, headerTintColor: '#fff' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
