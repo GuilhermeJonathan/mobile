@@ -26,7 +26,7 @@ type ModalState =
   | { mode: 'create' }
   | { mode: 'edit'; conta: SaldoConta };
 
-export default function SaldosScreen() {
+export default function SaldosScreen({ navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -129,7 +129,16 @@ export default function SaldosScreen() {
         renderItem={({ item }) => {
           const t = tipoInfo(item.tipo);
           return (
-            <TouchableOpacity style={styles.card} onPress={() => openEdit(item)} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate('ExtratoConta', {
+                contaBancariaId: item.id,
+                banco: item.banco,
+                emoji: t.emoji,
+                saldo: item.saldo,
+              })}
+              activeOpacity={0.8}
+            >
               <View style={styles.cardLeft}>
                 <Text style={styles.cardEmoji}>{t.emoji}</Text>
                 <View>
@@ -141,9 +150,14 @@ export default function SaldosScreen() {
                 <Text style={[styles.cardSaldo, { color: item.saldo >= 0 ? colors.green : colors.red }]}>
                   {fmtBRL(item.saldo)}
                 </Text>
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => handleExcluir(item)}>
-                  <Text style={styles.deleteBtnText}>✕</Text>
-                </TouchableOpacity>
+                <View style={styles.cardActions}>
+                  <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(item)}>
+                    <Text style={styles.editBtnText}>✏️</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.deleteBtn} onPress={() => handleExcluir(item)}>
+                    <Text style={styles.deleteBtnText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </TouchableOpacity>
           );
@@ -246,9 +260,12 @@ function makeStyles(c: ColorScheme) {
     cardEmoji: { fontSize: 28 },
     cardNome:  { fontSize: 15, fontWeight: '700', color: c.text },
     cardTipo:  { fontSize: 12, color: c.textSecondary, marginTop: 2 },
-    cardRight: { alignItems: 'flex-end', gap: 6 },
-    cardSaldo: { fontSize: 16, fontWeight: 'bold' },
-    deleteBtn: { backgroundColor: c.redDim, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+    cardRight:    { alignItems: 'flex-end', gap: 6 },
+    cardSaldo:    { fontSize: 16, fontWeight: 'bold' },
+    cardActions:  { flexDirection: 'row', gap: 6 },
+    editBtn:      { backgroundColor: c.surfaceSubtle, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+    editBtnText:  { fontSize: 12 },
+    deleteBtn:    { backgroundColor: c.redDim, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
     deleteBtnText: { color: c.red, fontSize: 12, fontWeight: '700' },
 
     empty: { alignItems: 'center', marginTop: 60 },

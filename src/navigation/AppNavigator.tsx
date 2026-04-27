@@ -17,6 +17,7 @@ import ReceitasScreen from '../screens/ReceitasScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import InvitesScreen from '../screens/InvitesScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
+import ExtratoContaScreen from '../screens/ExtratoContaScreen';
 import UserDrawer from '../components/UserDrawer';
 
 const Stack = createNativeStackNavigator();
@@ -136,6 +137,16 @@ export default function AppNavigator() {
           name="EditLancamento"
           component={EditLancamentoScreen}
           options={{ headerShown: true, title: 'Editar Lançamento', headerStyle: { backgroundColor: '#1a1a2e' }, headerTintColor: '#fff' }}
+        />
+        <Stack.Screen
+          name="ExtratoConta"
+          component={ExtratoContaScreen}
+          options={({ route }: any) => ({
+            headerShown: true,
+            title: `Extrato · ${route.params?.banco ?? 'Conta'}`,
+            headerStyle: { backgroundColor: '#1a1a2e' },
+            headerTintColor: '#fff',
+          })}
         />
       </Stack.Navigator>
     </NavigationContainer>
