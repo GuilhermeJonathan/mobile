@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Platform, View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -52,51 +52,34 @@ export default function DatePickerField({ value, onChange, label, dark = false }
   const labelStyle = [styles.label, dark && styles.labelDark];
   const textStyle  = [styles.inputText, dark && styles.inputTextDark];
 
-  // ── Web: campo visual DD/MM/AAAA + picker nativo oculto ─────────────────
+  // ── Web: campo visual DD/MM/AAAA + picker nativo via ref ────────────────
   if (Platform.OS === 'web') {
+    const dateRef = useRef<any>(null);
+
     const htmlValue = [
       value.getFullYear(),
       String(value.getMonth() + 1).padStart(2, '0'),
       String(value.getDate()).padStart(2, '0'),
     ].join('-');
 
-    const containerStyle: React.CSSProperties = {
-      position: 'relative',
-      display: 'flex',
-      alignItems: 'center',
-    };
-    const visibleStyle: React.CSSProperties = {
-      backgroundColor: dark ? 'rgba(255,255,255,0.07)' : '#fff',
-      border: `1px solid ${dark ? 'rgba(255,255,255,0.125)' : '#ddd'}`,
-      borderRadius: 8,
-      padding: '14px',
-      color: dark ? '#fff' : '#1a1a2e',
-      fontSize: 15,
-      width: '100%',
-      boxSizing: 'border-box',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    };
-    const hiddenInputStyle: React.CSSProperties = {
-      position: 'absolute',
-      inset: 0,
-      opacity: 0,
-      width: '100%',
-      height: '100%',
-      cursor: 'pointer',
-    };
+    function openPicker() {
+      if (dateRef.current?.showPicker) {
+        dateRef.current.showPicker();
+      } else {
+        dateRef.current?.click();
+      }
+    }
 
     return (
       <View>
         {label && <Text style={labelStyle}>{label}</Text>}
-        {React.createElement('div', { style: containerStyle },
-          React.createElement('div', { style: visibleStyle },
-            React.createElement('span', null, formatBR(value)),
-            React.createElement('span', null, '📅'),
-          ),
+        <TouchableOpacity style={[inputStyle]} onPress={openPicker} activeOpacity={0.7}>
+          <Text style={textStyle}>{formatBR(value)}</Text>
+          <Text style={styles.icon}>📅</Text>
+        </TouchableOpacity>
+        {React.createElement('div', { style: { position: 'relative', height: 0, overflow: 'visible' } },
           React.createElement('input', {
+            ref: dateRef,
             type: 'date',
             value: htmlValue,
             onChange: (e: any) => {
@@ -104,8 +87,16 @@ export default function DatePickerField({ value, onChange, label, dark = false }
               const date = new Date(y, m - 1, d);
               if (!isNaN(date.getTime())) onChange(date);
             },
-            style: hiddenInputStyle,
-          }),
+            style: {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              opacity: 0,
+              pointerEvents: 'none',
+              width: '100%',
+              height: '1px',
+            },
+          })
         )}
       </View>
     );
