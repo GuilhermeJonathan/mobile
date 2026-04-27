@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated, Dimensions, Modal, StyleSheet, Switch,
-  Text, TouchableOpacity, TouchableWithoutFeedback, View, ActivityIndicator,
+  Text, TouchableOpacity, TouchableWithoutFeedback, View, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authService, UserInfo } from '../services/authService';
 import { resetToLogin } from '../navigation/navigationRef';
 import { useTheme } from '../theme/ThemeContext';
 import { navigationRef } from '../navigation/navigationRef';
+import { useVencimentos } from '../contexts/VencimentosContext';
+import { fmtBRL } from '../utils/currency';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
@@ -16,9 +18,21 @@ interface Props {
   onClose: () => void;
 }
 
+const TIPO_CONFIG = {
+  vencido: { cor: '#e53935', label: 'Vencido',     icon: '🔴' },
+  hoje:    { cor: '#FF9800', label: 'Vence hoje',  icon: '⚠️' },
+  breve:   { cor: '#FF9800', label: 'Vence em breve', icon: '🟠' },
+};
+
+function fmtData(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
 export default function UserDrawer({ visible, onClose }: Props) {
   const { colors, isDark, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
+  const { badge, alertas } = useVencimentos();
   const slideAnim = useRef(new Animated.Value(DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -70,6 +84,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
       {/* Drawer */}
       <Animated.View style={[s.drawer, { transform: [{ translateX: slideAnim }] }]}>
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}>
 
         {/* Header com avatar */}
         <View style={s.header}>
@@ -82,6 +97,52 @@ export default function UserDrawer({ visible, onClose }: Props) {
           <Text style={s.email} numberOfLines={1}>{user?.email ?? '—'}</Text>
           <Text style={s.expiry}>{formatExpiry(user?.expiresAt ?? null)}</Text>
         </View>
+
+        {/* Central de alertas */}
+        {alertas.length > 0 && (
+          <>
+            <View style={s.divider} />
+            <View style={s.alertHeader}>
+              <Text style={s.alertTitle}>🔔 Alertas</Text>
+              <View style={s.alertBadge}>
+                <Text style={s.alertBadgeText}>{badge}</Text>
+              </View>
+            </View>
+            {alertas.map(a => {
+              const cfg = TIPO_CONFIG[a.tipo];
+              return (
+                <TouchableOpacity
+                  key={a.id}
+                  style={s.alertItem}
+                  onPress={() => {
+                    onClose();
+                    const filtroSit = a.tipo === 'vencido' ? 'vencido' : 'pendente';
+                    const now = new Date();
+                    (navigationRef.current as any)?.navigate('Main', {
+                      screen: 'Lançamentos',
+                      params: {
+                        filtroSit,
+                        mes: now.getMonth() + 1,
+                        ano: now.getFullYear(),
+                      },
+                    });
+                  }}
+                >
+                  <Text style={s.alertItemIcon}>{cfg.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.alertItemDesc} numberOfLines={1}>{a.descricao}</Text>
+                    <Text style={[s.alertItemLabel, { color: cfg.cor }]}>
+                      {cfg.label} · {fmtData(a.data)}
+                    </Text>
+                  </View>
+                  <Text style={[s.alertItemValor, { color: cfg.cor }]}>
+                    {fmtBRL(a.valor)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </>
+        )}
 
         <View style={s.divider} />
 
@@ -130,6 +191,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
           }
         </TouchableOpacity>
 
+        </ScrollView>
       </Animated.View>
     </Modal>
   );
@@ -189,5 +251,27 @@ function styles(c: ReturnType<typeof import('../theme/ThemeContext').useTheme>['
     },
     logoutIcon: { fontSize: 18 },
     logoutText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+
+    alertHeader: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingHorizontal: 20, paddingTop: 12, paddingBottom: 6,
+    },
+    alertTitle: { fontSize: 14, fontWeight: '700', color: c.text, flex: 1 },
+    alertBadge: {
+      backgroundColor: '#e53935', borderRadius: 10,
+      minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center',
+      paddingHorizontal: 5,
+    },
+    alertBadgeText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
+
+    alertItem: {
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: 20, paddingVertical: 10, gap: 10,
+      borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    alertItemIcon:  { fontSize: 16 },
+    alertItemDesc:  { fontSize: 13, fontWeight: '600', color: c.text },
+    alertItemLabel: { fontSize: 11, marginTop: 2 },
+    alertItemValor: { fontSize: 13, fontWeight: '700' },
   });
 }

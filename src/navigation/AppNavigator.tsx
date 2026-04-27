@@ -19,6 +19,7 @@ import InvitesScreen from '../screens/InvitesScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
 import ExtratoContaScreen from '../screens/ExtratoContaScreen';
 import UserDrawer from '../components/UserDrawer';
+import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -48,6 +49,7 @@ const linking = {
 function MainTabs() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const insets = useSafeAreaInsets();
+  const { badge } = useVencimentos();
 
   return (
     <>
@@ -81,13 +83,32 @@ function MainTabs() {
             onPress={() => setDrawerOpen(true)}
             style={{ marginRight: 14, padding: 4 }}
           >
-            <Text style={{ fontSize: 22 }}>👤</Text>
+            <View>
+              <Text style={{ fontSize: 22 }}>👤</Text>
+              {badge > 0 && (
+                <View style={{
+                  position: 'absolute', top: -4, right: -4,
+                  backgroundColor: '#e53935', borderRadius: 8,
+                  minWidth: 16, height: 16,
+                  justifyContent: 'center', alignItems: 'center',
+                  paddingHorizontal: 3,
+                }}>
+                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>
+                    {badge > 99 ? '99+' : badge}
+                  </Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         ),
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Lançamentos" component={LancamentosScreen} />
+      <Tab.Screen
+        name="Lançamentos"
+        component={LancamentosScreen}
+        options={{ tabBarBadge: badge > 0 ? badge : undefined }}
+      />
       <Tab.Screen name="Receitas" component={ReceitasScreen} />
       <Tab.Screen name="Cartões" component={CartoesScreen} />
       <Tab.Screen name="Saldos" component={SaldosScreen} />
@@ -117,6 +138,7 @@ export default function AppNavigator() {
   }
 
   return (
+    <VencimentosProvider>
     <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={isLoggedIn ? 'Main' : 'Login'}>
         <Stack.Screen name="Login" component={LoginScreen} />
@@ -150,5 +172,6 @@ export default function AppNavigator() {
         />
       </Stack.Navigator>
     </NavigationContainer>
+    </VencimentosProvider>
   );
 }

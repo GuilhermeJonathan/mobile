@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, ActivityIndicator, Modal, ScrollView,
+  RefreshControl, ActivityIndicator, Modal, ScrollView, TextInput,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, saldosService } from '../services/api';
@@ -9,6 +9,7 @@ import { Lancamento, SaldoConta, SituacaoLancamento, TipoLancamento, TipoConta, 
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
+import { useVencimentos } from '../contexts/VencimentosContext';
 
 const TIPO_CONTA_EMOJI: Record<number, string> = {
   [TipoConta.ContaCorrente]: '🏦',
@@ -60,10 +61,12 @@ type ListItem =
   | { kind: 'date-header'; dateKey: string; label: string; totalCredito: number; totalDebito: number };
 
 type Filtro = 'todos' | 'receitas' | 'despesas';
+type FiltroSit = 'todos' | 'pendente' | 'vencido' | 'confirmado';
 
-export default function LancamentosScreen({ navigation }: any) {
+export default function LancamentosScreen({ navigation, route }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { refresh: refreshBadge } = useVencimentos();
 
   const now = new Date();
   const [mes, setMes] = useState(now.getMonth() + 1);
@@ -73,6 +76,8 @@ export default function LancamentosScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedCartoes, setExpandedCartoes] = useState<Set<string>>(new Set());
   const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [filtroSit, setFiltroSit] = useState<FiltroSit>('todos');
+  const [busca, setBusca] = useState('');
   const [toggling, setToggling] = useState<Set<string>>(new Set());
 
   // Modal de seleção de conta (lançamentos normais)
@@ -96,6 +101,21 @@ export default function LancamentosScreen({ navigation }: any) {
   }, [mes, ano]);
 
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
+
+  // Aplica filtro + mês vindo de navegação externa (ex: central de alertas / dashboard)
+  useEffect(() => {
+    const p = route.params;
+    if (!p) return;
+    let changed = false;
+    if (p.filtroSit) { setFiltroSit(p.filtroSit); changed = true; }
+    if (p.mes && p.ano) {
+      setMes(Number(p.mes));
+      setAno(Number(p.ano));
+      setLoading(true);
+      changed = true;
+    }
+    if (changed) navigation.setParams({ filtroSit: undefined, mes: undefined, ano: undefined });
+  }, [route.params?.filtroSit, route.params?.mes, route.params?.ano]);
 
   function navMes(delta: number) {
     const d = new Date(ano, mes - 1 + delta, 1);
@@ -171,6 +191,7 @@ export default function LancamentosScreen({ navigation }: any) {
 
       const data = await lancamentosService.getByMes(mes, ano);
       setLancamentos(data);
+      refreshBadge();
     } catch {
       setLancamentos(prev => prev.map(l => l.id === item.id ? { ...l, situacao: item.situacao } : l));
     } finally {
@@ -222,13 +243,26 @@ export default function LancamentosScreen({ navigation }: any) {
 
   function buildListItems(): ListItem[] {
     // ── Filtra ────────────────────────────────────────────────────────────────
+    const buscaLower = busca.trim().toLowerCase();
     const sem_cartao = lancamentos.filter(l => {
       if (l.cartaoId) return false;
       if (filtro === 'receitas') return l.tipo === TipoLancamento.Credito;
       if (filtro === 'despesas') return l.tipo !== TipoLancamento.Credito;
       return true;
+    }).filter(l => {
+      if (buscaLower && !l.descricao.toLowerCase().includes(buscaLower) &&
+          !(l.categoriaNome ?? '').toLowerCase().includes(buscaLower)) return false;
+      if (filtroSit === 'pendente') return l.situacao === SituacaoLancamento.AVencer || l.situacao === SituacaoLancamento.AReceber;
+      if (filtroSit === 'vencido')  return l.situacao === SituacaoLancamento.Vencido;
+      if (filtroSit === 'confirmado') return isConfirmado(l.situacao);
+      return true;
     });
-    const com_cartao = filtro === 'receitas' ? [] : lancamentos.filter(l => !!l.cartaoId);
+    // Cartões ficam ocultos quando há filtro de situação ativo
+    const com_cartao = filtro === 'receitas' || filtroSit !== 'todos' ? [] : lancamentos.filter(l => !!l.cartaoId).filter(l => {
+      if (buscaLower && !l.descricao.toLowerCase().includes(buscaLower) &&
+          !(l.cartaoNome ?? '').toLowerCase().includes(buscaLower)) return false;
+      return true;
+    });
 
     // ── Agrupa cartões ────────────────────────────────────────────────────────
     const grupos = new Map<string, { nome: string; items: Lancamento[] }>();
@@ -301,6 +335,16 @@ export default function LancamentosScreen({ navigation }: any) {
   const totalReceitas = lancamentos.filter(l => !l.cartaoId && l.tipo === TipoLancamento.Credito).length;
   const totalDespesas = lancamentos.filter(l => !l.cartaoId && l.tipo !== TipoLancamento.Credito).length;
   const totalCartoes  = new Set(lancamentos.filter(l => !!l.cartaoId).map(l => l.cartaoId)).size;
+
+  // ── Alertas de vencimento (hooks ANTES do early return) ───────────────────
+  const hoje    = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+  const em3dias = useMemo(() => { const d = new Date(hoje); d.setDate(d.getDate() + 3); return d; }, [hoje]);
+  const qtdVencidos = lancamentos.filter(l => l.situacao === SituacaoLancamento.Vencido && !l.cartaoId).length;
+  const qtdAVencer  = lancamentos.filter(l => {
+    if (l.situacao !== SituacaoLancamento.AVencer || l.cartaoId) return false;
+    const d = new Date(l.data); d.setHours(0,0,0,0);
+    return d >= hoje && d <= em3dias;
+  }).length;
 
   if (loading) return (
     <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
@@ -492,7 +536,46 @@ export default function LancamentosScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navMes(1)}><Text style={styles.navBtn}>▶</Text></TouchableOpacity>
       </View>
 
-      {/* ── Barra de filtros ── */}
+      {/* ── Banner de alertas ── */}
+      {(qtdVencidos > 0 || qtdAVencer > 0) && (
+        <View style={styles.alertBanner}>
+          {qtdVencidos > 0 && (
+            <TouchableOpacity
+              style={styles.alertChip}
+              onPress={() => { setFiltroSit('vencido'); setFiltro('todos'); }}
+            >
+              <Text style={styles.alertChipText}>🔴 {qtdVencidos} vencido{qtdVencidos > 1 ? 's' : ''}</Text>
+            </TouchableOpacity>
+          )}
+          {qtdAVencer > 0 && (
+            <TouchableOpacity
+              style={[styles.alertChip, styles.alertChipWarn]}
+              onPress={() => { setFiltroSit('pendente'); setFiltro('todos'); }}
+            >
+              <Text style={[styles.alertChipText, styles.alertChipWarnText]}>⚠️ {qtdAVencer} vencem em breve</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* ── Barra de busca ── */}
+      <View style={styles.searchBar}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por descrição ou categoria..."
+          placeholderTextColor={colors.inputPlaceholder}
+          value={busca}
+          onChangeText={setBusca}
+        />
+        {busca.length > 0 && (
+          <TouchableOpacity onPress={() => setBusca('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.searchClear}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* ── Barra de filtros por tipo ── */}
       <View style={styles.filterBar}>
         <TouchableOpacity
           style={[styles.filterChip, filtro === 'todos' && styles.filterChipAll]}
@@ -518,6 +601,26 @@ export default function LancamentosScreen({ navigation }: any) {
             ↓ Despesas{(totalDespesas + totalCartoes) > 0 ? ` (${totalDespesas + totalCartoes})` : ''}
           </Text>
         </TouchableOpacity>
+      </View>
+
+      {/* ── Filtros por situação ── */}
+      <View style={styles.sitBar}>
+        {([
+          { key: 'todos',      label: 'Todos'       },
+          { key: 'pendente',   label: '🟠 Pendente'  },
+          { key: 'vencido',    label: '🔴 Vencido'   },
+          { key: 'confirmado', label: '✓ Confirmado' },
+        ] as { key: FiltroSit; label: string }[]).map(opt => (
+          <TouchableOpacity
+            key={opt.key}
+            style={[styles.sitChip, filtroSit === opt.key && styles.sitChipActive]}
+            onPress={() => setFiltroSit(opt.key)}
+          >
+            <Text style={[styles.sitChipText, filtroSit === opt.key && styles.sitChipTextActive]}>
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <FlatList
@@ -703,6 +806,49 @@ function makeStyles(c: ColorScheme) {
       paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: c.border,
     },
     dateHeaderLabel: { fontSize: 12, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
+
+    alertBanner: {
+      flexDirection: 'row', flexWrap: 'wrap', gap: 8,
+      paddingHorizontal: 14, paddingVertical: 8,
+      backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    alertChip: {
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: c.redDim, borderRadius: 20,
+      paddingHorizontal: 12, paddingVertical: 6,
+      borderWidth: 1, borderColor: c.redBorder,
+    },
+    alertChipWarn: {
+      backgroundColor: '#FF980015', borderColor: '#FF980050',
+    },
+    alertChipText: { fontSize: 12, fontWeight: '700', color: c.red },
+    alertChipWarnText: { color: c.orange },
+
+    searchBar: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingHorizontal: 14, paddingVertical: 8,
+      backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    searchIcon: { fontSize: 15 },
+    searchInput: {
+      flex: 1, backgroundColor: c.inputBg, borderRadius: 8,
+      paddingHorizontal: 12, paddingVertical: 8,
+      fontSize: 14, color: c.text,
+      borderWidth: 1, borderColor: c.inputBorder,
+    },
+    searchClear: { fontSize: 14, color: c.textTertiary, paddingHorizontal: 4 },
+
+    sitBar: {
+      flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingVertical: 8,
+      backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    sitChip: {
+      paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16,
+      borderWidth: 1, borderColor: c.inputBorder, backgroundColor: c.inputBg,
+    },
+    sitChipActive: { backgroundColor: c.surfaceElevated, borderColor: c.green },
+    sitChipText: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
+    sitChipTextActive: { color: c.green },
 
     filterBar: {
       flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingVertical: 10,

@@ -9,6 +9,8 @@ import { Dashboard } from '../types';
 import { fmtBRL, fmtBRLCompact } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
+import { useVencimentos } from '../contexts/VencimentosContext';
+import { useNavigation } from '@react-navigation/native';
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
@@ -345,6 +347,8 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
 export default function DashboardScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { alertas } = useVencimentos();
+  const navigation = useNavigation();
 
   const now = new Date();
   const [mes, setMes] = useState(now.getMonth() + 1);
@@ -449,6 +453,56 @@ export default function DashboardScreen() {
           </View>
         </View>
       </View>
+
+      {/* Card de Pendências */}
+      {alertas.length > 0 && (() => {
+        const now2 = new Date();
+        const mesAtual = now2.getMonth() + 1;
+        const anoAtual = now2.getFullYear();
+
+        const vencidos  = alertas.filter(a => a.tipo === 'vencido');
+        const aVencer   = alertas.filter(a => a.tipo === 'hoje' || a.tipo === 'breve');
+        const totalVenc = vencidos.reduce((s, a) => s + a.valor, 0);
+        const totalAV   = aVencer.reduce((s, a) => s + a.valor, 0);
+
+        function navLanc(filtroSit: string) {
+          (navigation as any).navigate('Lançamentos', {
+            filtroSit,
+            mes: mesAtual,
+            ano: anoAtual,
+          });
+        }
+
+        return (
+          <View style={styles.pendenciasCard}>
+            <Text style={styles.pendenciasTitle}>⚠️ Pendências</Text>
+
+            {vencidos.length > 0 && (
+              <TouchableOpacity style={styles.pendenciaRow} onPress={() => navLanc('vencido')}>
+                <View style={styles.pendenciaLeft}>
+                  <Text style={styles.pendenciaIcon}>🔴</Text>
+                  <Text style={styles.pendenciaLabel}>
+                    {vencidos.length} {vencidos.length === 1 ? 'vencido' : 'vencidos'}
+                  </Text>
+                </View>
+                <Text style={[styles.pendenciaValor, { color: '#e53935' }]}>{fmtBRL(totalVenc)}</Text>
+              </TouchableOpacity>
+            )}
+
+            {aVencer.length > 0 && (
+              <TouchableOpacity style={[styles.pendenciaRow, { borderBottomWidth: 0 }]} onPress={() => navLanc('pendente')}>
+                <View style={styles.pendenciaLeft}>
+                  <Text style={styles.pendenciaIcon}>🟠</Text>
+                  <Text style={styles.pendenciaLabel}>
+                    {aVencer.length} {aVencer.length === 1 ? 'vence em breve' : 'vencem em breve'}
+                  </Text>
+                </View>
+                <Text style={[styles.pendenciaValor, { color: '#FF9800' }]}>{fmtBRL(totalAV)}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        );
+      })()}
 
       {/* Gráfico de categorias + donut + pizza */}
       {resumo.length > 0 && (() => {
@@ -574,5 +628,26 @@ function makeStyles(c: ColorScheme) {
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     legendDot: { width: 10, height: 10, borderRadius: 5 },
     legendText: { fontSize: 11, color: c.textSecondary },
+
+    pendenciasCard: {
+      marginHorizontal: 16, marginTop: 12,
+      backgroundColor: c.surface, borderRadius: 14,
+      overflow: 'hidden',
+      borderLeftWidth: 4, borderLeftColor: '#FF9800',
+    },
+    pendenciasTitle: {
+      fontSize: 13, fontWeight: '700', color: c.textSecondary,
+      letterSpacing: 0.4, textTransform: 'uppercase',
+      paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6,
+    },
+    pendenciaRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 16, paddingVertical: 12,
+      borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    pendenciaLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    pendenciaIcon: { fontSize: 16 },
+    pendenciaLabel: { fontSize: 14, color: c.text, fontWeight: '500' },
+    pendenciaValor: { fontSize: 15, fontWeight: '700' },
   });
 }
