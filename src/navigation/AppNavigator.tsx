@@ -20,6 +20,7 @@ import InvitesScreen from '../screens/InvitesScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
 import ExtratoContaScreen from '../screens/ExtratoContaScreen';
 import ImportarFaturaScreen from '../screens/ImportarFaturaScreen';
+import DividasScreen from '../screens/DividasScreen';
 import UserDrawer from '../components/UserDrawer';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
@@ -173,6 +174,16 @@ export default function AppNavigator() {
             title: 'Importar Fatura',
             headerStyle: { backgroundColor: '#1a1a2e' },
             headerTintColor: '#fff',
+          }}
+        />
+        <Stack.Screen
+          name="Dividas"
+          component={DividasScreen}
+          options={{
+            headerShown: true,
+            title: 'Dívidas Parceladas',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
           }}
         />
         <Stack.Screen

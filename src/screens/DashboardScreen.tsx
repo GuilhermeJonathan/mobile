@@ -358,11 +358,16 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [hideValues, setHideValues] = useState(false);
+  const [totalDividas, setTotalDividas] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const data = await lancamentosService.getDashboard(mes, ano);
+      const [data, dividas] = await Promise.all([
+        lancamentosService.getDashboard(mes, ano),
+        lancamentosService.getParceladosVigentes(),
+      ]);
       setDashboard(data);
+      setTotalDividas(dividas.totalDivida);
 
       // Busca 2 meses anteriores + atual + 9 meses futuros = 12 meses no total
       const months: { label: string; receitas: number; despesas: number; isFuture: boolean }[] = [];
@@ -596,6 +601,23 @@ export default function DashboardScreen() {
         </View>
       )}
 
+      {/* Card de Dívidas Parceladas */}
+      <TouchableOpacity
+        style={styles.dividasCard}
+        onPress={() => (navigation as any).navigate('Dividas')}
+        activeOpacity={0.75}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.dividasTitle}>💳 Dívidas Parceladas</Text>
+          <Text style={styles.dividasSub}>
+            {totalDividas !== null
+              ? hideValues ? '• • • • • •' : fmtBRL(totalDividas)
+              : 'Ver todas as compras em aberto'}
+          </Text>
+        </View>
+        <Text style={{ color: colors.textSecondary, fontSize: 20 }}>›</Text>
+      </TouchableOpacity>
+
       <View style={{ height: 24 }} />
     </ScrollView>
   );
@@ -628,6 +650,16 @@ function makeStyles(c: ColorScheme) {
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     legendDot: { width: 10, height: 10, borderRadius: 5 },
     legendText: { fontSize: 11, color: c.textSecondary },
+
+    dividasCard: {
+      flexDirection: 'row', alignItems: 'center',
+      marginHorizontal: 16, marginTop: 12,
+      backgroundColor: c.surface, borderRadius: 14,
+      padding: 16, borderWidth: 1, borderColor: c.border,
+      borderLeftWidth: 4, borderLeftColor: c.blue,
+    },
+    dividasTitle: { fontSize: 14, fontWeight: '700', color: c.text },
+    dividasSub:   { fontSize: 15, fontWeight: '600', color: c.red, marginTop: 3 },
 
     pendenciasCard: {
       marginHorizontal: 16, marginTop: 12,

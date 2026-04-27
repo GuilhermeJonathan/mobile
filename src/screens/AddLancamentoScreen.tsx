@@ -139,14 +139,19 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
 
     setLoading(true);
     try {
+      // Parcelado/recorrente: parcelas começam no mês de referência da tela.
+      // À vista: mês/ano vem da data selecionada (pagamento pontual).
+      const mesInicio = modo === 'avista' ? data.getMonth() + 1 : mes;
+      const anoInicio = modo === 'avista' ? data.getFullYear()   : ano;
+
       await lancamentosService.create({
         descricao: descricao.trim(),
         data: data.toISOString(),
         valor: valorNum,
         tipo,
         situacao,
-        mes: data.getMonth() + 1,
-        ano: data.getFullYear(),
+        mes: mesInicio,
+        ano: anoInicio,
         categoriaId: categoriaId ?? null,
         cartaoId: cartaoId ?? null,
         totalParcelas: modo === 'avista' ? 1 : modo === 'recorrente' ? 120 : parcelasNum,
