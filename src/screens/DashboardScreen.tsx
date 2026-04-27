@@ -353,6 +353,7 @@ export default function DashboardScreen() {
   const [projection, setProjection] = useState<{ label: string; receitas: number; despesas: number; isFuture: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [hideValues, setHideValues] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -416,18 +417,36 @@ export default function DashboardScreen() {
       </View>
 
       {/* Cards de resumo */}
+      <View style={styles.summaryHeader}>
+        <Text style={styles.summaryTitle}>Resumo do mês</Text>
+        <TouchableOpacity onPress={() => setHideValues(v => !v)} style={styles.eyeBtn}>
+          <Text style={styles.eyeIcon}>{hideValues ? '🙈' : '👁️'}</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.cards}>
         <View style={[styles.card, { borderLeftColor: '#4CAF50' }]}>
-          <Text style={styles.cardLabel}>Receitas</Text>
-          <Text style={[styles.cardValue, { color: '#4CAF50' }]}>{fmtBRL(dashboard?.totalCreditos ?? 0)}</Text>
+          <View style={styles.cardRow}>
+            <Text style={styles.cardLabel}>↑ Receitas</Text>
+            <Text style={[styles.cardValue, { color: '#4CAF50' }]}>
+              {hideValues ? '• • • • • •' : fmtBRL(dashboard?.totalCreditos ?? 0)}
+            </Text>
+          </View>
         </View>
         <View style={[styles.card, { borderLeftColor: '#e53935' }]}>
-          <Text style={styles.cardLabel}>Despesas</Text>
-          <Text style={[styles.cardValue, { color: '#e53935' }]}>{fmtBRL(dashboard?.totalDebitos ?? 0)}</Text>
+          <View style={styles.cardRow}>
+            <Text style={styles.cardLabel}>↓ Despesas</Text>
+            <Text style={[styles.cardValue, { color: '#e53935' }]}>
+              {hideValues ? '• • • • • •' : fmtBRL(dashboard?.totalDebitos ?? 0)}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.card, { borderLeftColor: saldoColor }]}>
-          <Text style={styles.cardLabel}>Saldo</Text>
-          <Text style={[styles.cardValue, { color: saldoColor }]}>{fmtBRL(dashboard?.saldo ?? 0)}</Text>
+        <View style={[styles.card, { borderLeftColor: saldoColor, borderBottomWidth: 0 }]}>
+          <View style={styles.cardRow}>
+            <Text style={styles.cardLabel}>= Saldo</Text>
+            <Text style={[styles.cardValue, { color: saldoColor, fontSize: 26 }]}>
+              {hideValues ? '• • • • • •' : fmtBRL(dashboard?.saldo ?? 0)}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -534,10 +553,15 @@ function makeStyles(c: ColorScheme) {
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
     navBtn: { fontSize: 22, color: c.green, paddingHorizontal: 12 },
     mesTitle: { fontSize: 20, fontWeight: 'bold', color: c.text },
-    cards: { paddingHorizontal: 16, gap: 10, flexDirection: 'row' },
-    card: { flex: 1, backgroundColor: c.surface, borderRadius: 10, padding: 10, borderLeftWidth: 4 },
-    cardLabel: { fontSize: 11, color: c.textSecondary, marginBottom: 4 },
-    cardValue: { fontSize: 15, fontWeight: 'bold' },
+    summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
+    summaryTitle: { fontSize: 13, color: c.textSecondary, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' },
+    eyeBtn: { padding: 6 },
+    eyeIcon: { fontSize: 20 },
+    cards: { paddingHorizontal: 16, gap: 0, backgroundColor: c.surface, borderRadius: 14, marginHorizontal: 16, overflow: 'hidden' },
+    card: { backgroundColor: c.surface, padding: 16, borderLeftWidth: 4, borderBottomWidth: 1, borderBottomColor: c.border },
+    cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    cardLabel: { fontSize: 14, color: c.textSecondary, fontWeight: '500' },
+    cardValue: { fontSize: 22, fontWeight: 'bold' },
     section: { margin: 16, marginTop: 12, backgroundColor: c.surface, borderRadius: 12, padding: 18, overflow: 'hidden' },
     sectionTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 4, color: c.text },
     sectionSub: { fontSize: 11, color: c.textTertiary, marginBottom: 12 },

@@ -6,6 +6,7 @@ const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:72
 
 export interface UserInfo {
   id: string;
+  name: string;
   email: string;
   expiresAt: Date | null;
 }
@@ -45,6 +46,7 @@ export const authService = {
     if (!payload) return null;
     return {
       id: payload.nameid ?? '',
+      name: payload.unique_name ?? '',
       email: payload.email ?? '',
       expiresAt: tokenExpiresAt(token),
     };

@@ -72,9 +72,10 @@ export default function UserDrawer({ visible, onClose }: Props) {
         <View style={s.header}>
           <View style={s.avatar}>
             <Text style={s.avatarText}>
-              {user?.email?.[0]?.toUpperCase() ?? '?'}
+              {user?.name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? '?'}
             </Text>
           </View>
+          {user?.name ? <Text style={s.name} numberOfLines={1}>{user.name}</Text> : null}
           <Text style={s.email} numberOfLines={1}>{user?.email ?? '—'}</Text>
           <Text style={s.expiry}>{formatExpiry(user?.expiresAt ?? null)}</Text>
         </View>
@@ -146,8 +147,9 @@ function styles(c: ReturnType<typeof import('../theme/ThemeContext').useTheme>['
       marginBottom: 4,
     },
     avatarText: { color: c.green, fontSize: 28, fontWeight: 'bold' },
-    email: { color: c.text, fontSize: 15, fontWeight: '600', textAlign: 'center' },
-    expiry: { color: c.textSecondary, fontSize: 12 },
+    name: { color: c.text, fontSize: 17, fontWeight: '700', textAlign: 'center' },
+    email: { color: c.textSecondary, fontSize: 13, textAlign: 'center' },
+    expiry: { color: c.textTertiary, fontSize: 12 },
     divider: { height: 1, backgroundColor: c.border, marginHorizontal: 16, marginVertical: 8 },
     row: {
       flexDirection: 'row', alignItems: 'center',

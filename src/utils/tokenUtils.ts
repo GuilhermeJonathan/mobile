@@ -1,5 +1,6 @@
 export interface JwtPayload {
   nameid?: string;   // ClaimTypes.NameIdentifier
+  unique_name?: string; // ClaimTypes.Name
   email?: string;    // ClaimTypes.Email
   userType?: string;
   exp?: number;
