@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, ActivityIndicator, View, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authService } from '../services/authService';
 import { navigationRef } from './navigationRef';
 import LoginScreen from '../screens/LoginScreen';
@@ -38,6 +39,7 @@ const linking = {
 
 function MainTabs() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   return (
     <>
@@ -56,7 +58,12 @@ function MainTabs() {
         },
         tabBarActiveTintColor: '#4CAF50',
         tabBarInactiveTintColor: '#999',
-        tabBarStyle: { backgroundColor: '#1a1a2e', borderTopColor: '#ffffff15' },
+        tabBarStyle: {
+          backgroundColor: '#1a1a2e',
+          borderTopColor: '#ffffff15',
+          paddingBottom: insets.bottom,
+          height: 60 + insets.bottom,
+        },
         tabBarLabelStyle: { fontSize: 11 },
         headerStyle: { backgroundColor: '#1a1a2e' },
         headerTintColor: '#fff',
