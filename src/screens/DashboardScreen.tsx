@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
+  View, Text, StyleSheet, ScrollView, Modal, FlatList,
   RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions,
 } from 'react-native';
 import Svg, { Rect, Text as SvgText, Line, Circle, Path, G } from 'react-native-svg';
@@ -20,35 +20,45 @@ const CATEGORY_COLORS = [
 ];
 
 // ─── Gráfico de barras horizontal para categorias ────────────────────────────
-function CategoryBarChart({ data, width }: { data: { categoria: string; total: number }[]; width: number }) {
+function CategoryBarChart({ data, width, onPress }: {
+  data: { categoria: string; total: number }[];
+  width: number;
+  onPress: (categoria: string, color: string) => void;
+}) {
   const { colors } = useTheme();
-  const barH = 26;
-  const gap = 8;
   const labelW = 90;
-  const chartW = width - labelW - 56;
+  const valueW = 72;
+  const chartW = width - labelW - valueW;
   const maxVal = Math.max(...data.map(d => d.total), 1);
-  const totalHeight = data.length * (barH + gap) + 10;
 
   return (
-    <Svg width={width} height={totalHeight}>
+    <View style={{ width, gap: 6 }}>
       {data.map((item, i) => {
-        const barWidth = Math.max((item.total / maxVal) * chartW, 4);
-        const y = i * (barH + gap);
+        const pct = Math.max((item.total / maxVal) * 100, 1);
         const color = CATEGORY_COLORS[i % CATEGORY_COLORS.length];
         return (
-          <G key={item.categoria}>
-            <SvgText x={0} y={y + barH / 2 + 5} fontSize={11} fill={colors.textSecondary}>
+          <TouchableOpacity
+            key={item.categoria}
+            onPress={() => onPress(item.categoria, color)}
+            activeOpacity={0.65}
+            style={{ flexDirection: 'row', alignItems: 'center', height: 26 }}
+          >
+            {/* Label */}
+            <Text style={{ width: labelW, fontSize: 11, color: colors.textSecondary }} numberOfLines={1}>
               {item.categoria.length > 11 ? item.categoria.slice(0, 10) + '…' : item.categoria}
-            </SvgText>
-            <Rect x={labelW} y={y + 2} width={chartW} height={barH - 4} rx={5} fill={colors.barBg} />
-            <Rect x={labelW} y={y + 2} width={barWidth} height={barH - 4} rx={5} fill={color} />
-            <SvgText x={labelW + barWidth + 5} y={y + barH / 2 + 5} fontSize={10} fill={colors.textTertiary} fontWeight="bold">
+            </Text>
+            {/* Barra */}
+            <View style={{ width: chartW, height: 18, backgroundColor: colors.barBg, borderRadius: 5, overflow: 'hidden' }}>
+              <View style={{ width: `${pct}%`, height: 18, backgroundColor: color, borderRadius: 5 }} />
+            </View>
+            {/* Valor */}
+            <Text style={{ width: valueW, fontSize: 10, color: colors.textTertiary, fontWeight: 'bold', textAlign: 'right' }}>
               {item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-            </SvgText>
-          </G>
+            </Text>
+          </TouchableOpacity>
         );
       })}
-    </Svg>
+    </View>
   );
 }
 
@@ -360,6 +370,11 @@ export default function DashboardScreen() {
   const [hideValues, setHideValues] = useState(false);
   const [totalDividas, setTotalDividas] = useState<number | null>(null);
 
+  // Modal de categoria
+  const [catModal, setCatModal] = useState<{ nome: string; color: string; total: number } | null>(null);
+  const [catLancs, setCatLancs] = useState<any[]>([]);
+  const [catLoading, setCatLoading] = useState(false);
+
   const load = useCallback(async () => {
     try {
       const [data, dividas] = await Promise.all([
@@ -396,6 +411,21 @@ export default function DashboardScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  async function abrirCategoria(categoria: string, color: string) {
+    const total = resumo.find(r => r.categoria === categoria)?.total ?? 0;
+    setCatModal({ nome: categoria, color, total });
+    setCatLancs([]);
+    setCatLoading(true);
+    try {
+      const todos = await lancamentosService.getByMes(mes, ano);
+      const filtrados = todos.filter((l: any) => l.categoriaNome === categoria &&
+        (l.tipo === 2 || l.tipo === 3)); // Debito | Pix
+      setCatLancs(filtrados);
+    } finally {
+      setCatLoading(false);
+    }
+  }
+
   function navMes(delta: number) {
     const d = new Date(ano, mes - 1 + delta, 1);
     setMes(d.getMonth() + 1);
@@ -414,8 +444,8 @@ export default function DashboardScreen() {
   const resumo = dashboard?.resumoDebitos ?? [];
 
   return (
+    <View style={styles.container}>
     <ScrollView
-      style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
     >
       {/* Navegação de mês */}
@@ -526,7 +556,7 @@ export default function DashboardScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.sectionTitle}>Despesas por Categoria</Text>
                   <View style={styles.chartWrap}>
-                    <CategoryBarChart data={resumo} width={barW} />
+                    <CategoryBarChart data={resumo} width={barW} onPress={abrirCategoria} />
                   </View>
                   <View style={styles.legendRow}>
                     {resumo.map((r, i) => (
@@ -559,7 +589,7 @@ export default function DashboardScreen() {
                 {/* Barras — largura total */}
                 <Text style={styles.sectionTitle}>Despesas por Categoria</Text>
                 <View style={styles.chartWrap}>
-                  <CategoryBarChart data={resumo} width={barW} />
+                  <CategoryBarChart data={resumo} width={barW} onPress={abrirCategoria} />
                 </View>
                 <View style={styles.legendRow}>
                   {resumo.map((r, i) => (
@@ -633,6 +663,66 @@ export default function DashboardScreen() {
 
       <View style={{ height: 24 }} />
     </ScrollView>
+
+    {/* ── Modal detalhes da categoria ── */}
+    <Modal
+      visible={!!catModal}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setCatModal(null)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalSheet}>
+          {catModal && (
+            <>
+              <View style={styles.modalHeader}>
+                <View style={[styles.modalDot, { backgroundColor: catModal.color }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalTitle}>{catModal.nome}</Text>
+                  <Text style={styles.modalSub}>
+                    {catLancs.length} lançamento{catLancs.length !== 1 ? 's' : ''} · {fmtBRL(catModal.total)}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setCatModal(null)} style={{ padding: 4 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 20 }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {catLoading ? (
+                <View style={{ padding: 32, alignItems: 'center' }}>
+                  <ActivityIndicator color={colors.green} />
+                </View>
+              ) : (
+                <FlatList
+                  data={catLancs}
+                  keyExtractor={item => item.id}
+                  style={{ maxHeight: 440 }}
+                  ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: colors.border }} />}
+                  renderItem={({ item }) => (
+                    <View style={styles.catItemRow}>
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <Text style={styles.catItemDesc}>{item.descricao}</Text>
+                        <Text style={styles.catItemMeta}>
+                          {new Date(item.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          {item.cartaoNome ? `  ·  💳 ${item.cartaoNome}` : ''}
+                          {item.isRecorrente
+                            ? '  ·  🔄 Recorrente'
+                            : item.parcelaAtual
+                              ? `  ·  ${item.parcelaAtual}/${item.totalParcelas}x`
+                              : ''}
+                        </Text>
+                      </View>
+                      <Text style={styles.catItemValor}>{fmtBRL(item.valor)}</Text>
+                    </View>
+                  )}
+                />
+              )}
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+    </View>
   );
 }
 
@@ -659,6 +749,20 @@ function makeStyles(c: ColorScheme) {
     chartRight: { flex: 1, alignItems: 'center' },
     chartWrap: { alignItems: 'flex-start', marginTop: 8 },
     projectionWrap: { alignItems: 'flex-start', marginTop: 8, marginHorizontal: -18 },
+
+    // Modal categoria
+    modalOverlay:  { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
+    modalSheet:    { backgroundColor: c.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+                     paddingBottom: 32, maxHeight: '80%' },
+    modalHeader:   { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16,
+                     borderBottomWidth: 1, borderBottomColor: c.border },
+    modalDot:      { width: 14, height: 14, borderRadius: 7 },
+    modalTitle:    { fontSize: 16, fontWeight: 'bold', color: c.text },
+    modalSub:      { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    catItemRow:    { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
+    catItemDesc:   { fontSize: 14, fontWeight: '600', color: c.text },
+    catItemMeta:   { fontSize: 12, color: c.textSecondary },
+    catItemValor:  { fontSize: 14, fontWeight: '700', color: c.red },
     legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     legendDot: { width: 10, height: 10, borderRadius: 5 },

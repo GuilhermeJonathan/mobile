@@ -201,7 +201,9 @@ export default function CartoesScreen({ navigation }: any) {
                   </View>
                 </View>
                 <View style={styles.lancamentoRight}>
-                  <Text style={styles.lancamentoValor}>{fmtBRL(l.valor)}</Text>
+                  <Text style={[styles.lancamentoValor, l.valor < 0 && { color: colors.green }]}>
+                    {l.valor < 0 ? `+${fmtBRL(Math.abs(l.valor))}` : fmtBRL(l.valor)}
+                  </Text>
                   <Text style={[styles.lancamentoSituacao, { color: situacaoCor[l.situacao] }]}>
                     {situacaoLabel[l.situacao]}
                   </Text>

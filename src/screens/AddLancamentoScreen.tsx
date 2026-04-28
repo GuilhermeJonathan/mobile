@@ -47,13 +47,14 @@ const SITUACAO_PADRAO: Record<TipoLancamento, SituacaoLancamento> = {
 };
 
 function applyValorMask(raw: string): string {
+  const negative = raw.startsWith('-');
   const digits = raw.replace(/\D/g, '');
-  if (!digits) return '';
+  if (!digits) return negative ? '-' : '';
   const num = parseInt(digits, 10);
   const reais = Math.floor(num / 100);
   const cents = num % 100;
   const reaisStr = reais === 0 ? '0' : reais.toLocaleString('pt-BR');
-  return `${reaisStr},${String(cents).padStart(2, '0')}`;
+  return `${negative ? '-' : ''}${reaisStr},${String(cents).padStart(2, '0')}`;
 }
 
 export default function AddLancamentoScreen({ route, navigation }: any) {
@@ -135,7 +136,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   async function handleSalvar() {
     setError('');
     if (!descricao.trim()) { setError('Informe a descrição.'); return; }
-    if (isNaN(valorNum) || valorNum <= 0) { setError('Informe um valor válido.'); return; }
+    if (isNaN(valorNum) || valorNum === 0) { setError('Informe um valor válido.'); return; }
 
     setLoading(true);
     try {
@@ -196,8 +197,9 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={styles.label}>Valor (R$)</Text>
               <TextInput
-                style={styles.input} placeholder="0,00" placeholderTextColor={colors.inputPlaceholder}
-                keyboardType="decimal-pad" value={valor}
+                style={[styles.input, valorNum < 0 && { color: colors.red }]}
+                placeholder="0,00" placeholderTextColor={colors.inputPlaceholder}
+                keyboardType="numbers-and-punctuation" value={valor}
                 onChangeText={(raw) => setValor(applyValorMask(raw))}
               />
             </View>
@@ -463,6 +465,7 @@ function makeStyles(c: ColorScheme) {
       color: c.text,
     },
     row: { flexDirection: 'row' },
+
 
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     chip: {

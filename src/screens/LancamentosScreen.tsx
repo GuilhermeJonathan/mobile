@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, ActivityIndicator, Modal, ScrollView, TextInput,
+  RefreshControl, ActivityIndicator, Modal, ScrollView, TextInput, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, saldosService } from '../services/api';
@@ -445,7 +445,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
               </Text>
             </View>
             <Text style={[styles.itemValor, { color: corValor }]}>
-              {item.tipo === TipoLancamento.Credito ? '+' : '-'} {fmtBRL(item.valor)}
+              {item.tipo === TipoLancamento.Credito || item.valor < 0 ? '+' : '-'} {fmtBRL(Math.abs(item.valor))}
             </Text>
           </View>
         </TouchableOpacity>
@@ -466,6 +466,144 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const saldoMes = totalMesCredito - totalMesDebito;
   const saldoCor = saldoMes >= 0 ? '#4CAF50' : '#e53935';
 
+  // ── Impressão ─────────────────────────────────────────────────────────────
+  function imprimir() {
+    if (Platform.OS !== 'web') return;
+
+    const nomeMes = `${MESES[mes - 1]}/${ano}`;
+    const fmt = (v: number) => Math.abs(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    // Agrupa itens por data
+    type Grupo = { label: string; itens: Lancamento[]; cartaoNome?: string };
+    const grupos: Grupo[] = [];
+
+    // Itens sem cartão agrupados por data
+    const semCartao = lancamentos.filter(l => !l.cartaoId);
+    const porData = new Map<string, Lancamento[]>();
+    for (const l of semCartao) {
+      const d = new Date(l.data);
+      const key = d.toISOString().slice(0, 10);
+      if (!porData.has(key)) porData.set(key, []);
+      porData.get(key)!.push(l);
+    }
+    const datasOrdenadas = [...porData.keys()].sort();
+    for (const key of datasOrdenadas) {
+      const d = new Date(key);
+      const label = `${String(d.getDate()).padStart(2,'0')} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+      grupos.push({ label, itens: porData.get(key)! });
+    }
+
+    // Itens de cartão agrupados por cartão
+    const porCartao = new Map<string, { nome: string; itens: Lancamento[] }>();
+    for (const l of lancamentos.filter(l => !!l.cartaoId)) {
+      if (!porCartao.has(l.cartaoId!)) porCartao.set(l.cartaoId!, { nome: l.cartaoNome ?? 'Cartão', itens: [] });
+      porCartao.get(l.cartaoId!)!.itens.push(l);
+    }
+    for (const [, c] of porCartao) {
+      grupos.push({ label: `💳 ${c.nome}`, itens: c.itens, cartaoNome: c.nome });
+    }
+
+    const linhasGrupo = grupos.map(g => {
+      const linhas = g.itens.map(l => {
+        const isCredito = l.tipo === TipoLancamento.Credito;
+        const sinal = isCredito || l.valor < 0 ? '+' : '−';
+        const cor = isCredito || l.valor < 0 ? '#2e7d32' : '#c62828';
+        const parcela = l.parcelaAtual && l.totalParcelas && l.totalParcelas > 1
+          ? (l.isRecorrente ? ' · Recorrente' : ` · ${l.parcelaAtual}/${l.totalParcelas}x`)
+          : '';
+        const cat = l.categoriaNome ? ` · ${l.categoriaNome}` : '';
+        const sit = situacaoLabel[l.situacao] ?? '';
+        return `
+          <tr>
+            <td>
+              <div class="desc">${l.descricao}</div>
+              <div class="meta">${sit}${cat}${parcela}</div>
+            </td>
+            <td class="valor" style="color:${cor}">${sinal} ${fmt(l.valor)}</td>
+          </tr>`;
+      }).join('');
+
+      const totalGrupo = g.itens.reduce((s, l) => s + l.valor, 0);
+      const totalCor = totalGrupo < 0 ? '#2e7d32' : '#c62828';
+      return `
+        <tr class="date-header"><td colspan="2">${g.label}</td></tr>
+        ${linhas}
+        <tr class="subtotal">
+          <td>Subtotal</td>
+          <td class="valor" style="color:${totalCor}">${totalGrupo < 0 ? '+' : '−'} ${fmt(totalGrupo)}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Lançamentos — ${nomeMes}</title>
+  <style>
+    @page { margin: 18mm 14mm; }
+    @media print { .no-print { display:none; } }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #222; margin: 0; }
+    h1 { font-size: 20px; margin: 0 0 2px; }
+    .subtitle { color: #666; font-size: 12px; margin-bottom: 16px; }
+    .summary { display: flex; gap: 0; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+    .summary-item { flex: 1; padding: 10px 14px; border-right: 1px solid #ddd; }
+    .summary-item:last-child { border-right: none; }
+    .summary-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: .5px; }
+    .summary-value { font-size: 16px; font-weight: bold; margin-top: 3px; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+    .desc { font-weight: 600; }
+    .meta { font-size: 10px; color: #888; margin-top: 2px; }
+    .valor { text-align: right; font-weight: bold; white-space: nowrap; width: 130px; }
+    .date-header td { background: #f4f4f4; font-weight: bold; font-size: 11px;
+                      color: #555; padding: 5px 8px; border-bottom: 1px solid #ddd; }
+    .subtotal td { background: #fafafa; font-size: 11px; color: #555;
+                   border-top: 1px solid #ddd; border-bottom: 2px solid #ddd; }
+    .btn { display:inline-block; margin-bottom:16px; padding:8px 18px; background:#1976d2;
+           color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; }
+  </style>
+</head>
+<body>
+  <button class="btn no-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  <h1>Controle Financeiro</h1>
+  <div class="subtitle">Lançamentos de ${nomeMes} · gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
+
+  <div class="summary">
+    <div class="summary-item">
+      <div class="summary-label">Receitas</div>
+      <div class="summary-value" style="color:#2e7d32">+ ${fmt(totalMesCredito)}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">Despesas</div>
+      <div class="summary-value" style="color:#c62828">− ${fmt(Math.abs(totalMesDebito))}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">Saldo</div>
+      <div class="summary-value" style="color:${saldoMes >= 0 ? '#2e7d32' : '#c62828'}">${saldoMes >= 0 ? '+' : '−'} ${fmt(saldoMes)}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr style="border-bottom:2px solid #ccc">
+        <th style="text-align:left;padding:6px 8px;font-size:11px;color:#888">DESCRIÇÃO</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;color:#888;width:130px">VALOR</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${linhasGrupo}
+    </tbody>
+  </table>
+</body>
+</html>`;
+
+    const win = (window as any).open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  }
+
   const renderResumo = () => (
     <View style={styles.resumoCard}>
       <View style={styles.resumoItem}>
@@ -475,7 +613,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
       <View style={styles.resumoDivider} />
       <View style={styles.resumoItem}>
         <Text style={styles.resumoLabel}>Despesas</Text>
-        <Text style={styles.resumoDebito}>-{fmtBRL(totalMesDebito)}</Text>
+        <Text style={styles.resumoDebito}>-{fmtBRL(Math.abs(totalMesDebito))}</Text>
       </View>
       <View style={styles.resumoDivider} />
       <View style={styles.resumoItem}>
@@ -518,8 +656,8 @@ export default function LancamentosScreen({ navigation, route }: any) {
             </View>
           </View>
           <View style={styles.cartaoRight}>
-            <Text style={[styles.itemValor, { color: colors.red }]}>
-              -{fmtBRL(item.total)}
+            <Text style={[styles.itemValor, { color: item.total < 0 ? colors.green : colors.red }]}>
+              {item.total < 0 ? '+' : '-'}{fmtBRL(Math.abs(item.total))}
             </Text>
             {todosConfirmados && (
               <Text style={styles.faturaPageText}>✓ Fatura paga</Text>
@@ -576,6 +714,11 @@ export default function LancamentosScreen({ navigation, route }: any) {
         {busca.length > 0 && (
           <TouchableOpacity onPress={() => setBusca('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={styles.searchClear}>✕</Text>
+          </TouchableOpacity>
+        )}
+        {Platform.OS === 'web' && (
+          <TouchableOpacity onPress={imprimir} style={styles.printBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.printBtnText}>🖨️</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -774,6 +917,8 @@ function makeStyles(c: ColorScheme) {
     container: { flex: 1, backgroundColor: c.background },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border },
     navBtn: { fontSize: 22, color: c.green, paddingHorizontal: 12 },
+    printBtn: { padding: 6, marginLeft: 4 },
+    printBtnText: { fontSize: 20 },
     mesTitle: { fontSize: 18, fontWeight: 'bold', color: c.text },
 
     item: {
