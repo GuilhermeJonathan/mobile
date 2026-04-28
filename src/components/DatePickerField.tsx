@@ -7,6 +7,8 @@ interface Props {
   onChange: (date: Date) => void;
   label?: string;
   dark?: boolean;
+  /** Quando true no Android, abre spinner sheet em vez do diálogo nativo (necessário quando dentro de um Modal) */
+  insideModal?: boolean;
 }
 
 function formatBR(date: Date): string {
@@ -31,7 +33,7 @@ function parseDate(ddmmyyyy: string): Date | null {
   return date;
 }
 
-export default function DatePickerField({ value, onChange, label, dark = false }: Props) {
+export default function DatePickerField({ value, onChange, label, dark = false, insideModal = false }: Props) {
   const [showPicker, setShowPicker] = useState(false);
   const [textValue, setTextValue] = useState(formatBR(value));
 
@@ -52,7 +54,7 @@ export default function DatePickerField({ value, onChange, label, dark = false }
   const labelStyle = [styles.label, dark && styles.labelDark];
   const textStyle  = [styles.inputText, dark && styles.inputTextDark];
 
-  // ── Web: campo visual DD/MM/AAAA + picker nativo via ref ────────────────
+  // ── Web: text input com máscara DD/MM/AAAA + botão 📅 que abre o calendário ──
   if (Platform.OS === 'web') {
     const dateRef = useRef<any>(null);
 
@@ -63,21 +65,42 @@ export default function DatePickerField({ value, onChange, label, dark = false }
     ].join('-');
 
     function openPicker() {
-      if (dateRef.current?.showPicker) {
-        dateRef.current.showPicker();
-      } else {
-        dateRef.current?.click();
-      }
+      try { dateRef.current?.showPicker(); } catch { dateRef.current?.click(); }
     }
+
+    const bg     = dark ? 'rgba(255,255,255,0.07)' : '#fff';
+    const border = dark ? 'rgba(255,255,255,0.18)'  : '#ddd';
+    const color  = dark ? '#fff'                    : '#1a1a2e';
 
     return (
       <View>
         {label && <Text style={labelStyle}>{label}</Text>}
-        <TouchableOpacity style={[inputStyle]} onPress={openPicker} activeOpacity={0.7}>
-          <Text style={textStyle}>{formatBR(value)}</Text>
-          <Text style={styles.icon}>📅</Text>
-        </TouchableOpacity>
-        {React.createElement('div', { style: { position: 'relative', height: 0, overflow: 'visible' } },
+        {React.createElement('div', { style: { position: 'relative', display: 'flex' } },
+          // Text input com máscara — permite editar qualquer dígito livremente
+          React.createElement('input', {
+            type: 'text',
+            value: textValue,
+            placeholder: 'DD/MM/AAAA',
+            maxLength: 10,
+            onChange: (e: any) => handleTextChange(e.target.value),
+            style: {
+              flex: 1, padding: '14px', paddingRight: '48px',
+              backgroundColor: bg, color,
+              border: `1px solid ${border}`, borderRadius: '8px',
+              fontSize: '15px', boxSizing: 'border-box', outline: 'none',
+            },
+          }),
+          // Botão 📅
+          React.createElement('button', {
+            type: 'button',
+            onClick: openPicker,
+            style: {
+              position: 'absolute', right: 0, top: 0, bottom: 0,
+              width: '44px', background: 'transparent', border: 'none',
+              cursor: 'pointer', fontSize: '16px',
+            },
+          }, '📅'),
+          // Input date oculto posicionado ao final do campo → calendário abre abaixo
           React.createElement('input', {
             ref: dateRef,
             type: 'date',
@@ -88,13 +111,10 @@ export default function DatePickerField({ value, onChange, label, dark = false }
               if (!isNaN(date.getTime())) onChange(date);
             },
             style: {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              opacity: 0,
-              pointerEvents: 'none',
-              width: '100%',
-              height: '1px',
+              position: 'absolute', bottom: 0, right: 0,
+              width: '1px', height: '1px',
+              opacity: 0, pointerEvents: 'none',
+              border: 'none', padding: 0,
             },
           })
         )}
@@ -134,7 +154,39 @@ export default function DatePickerField({ value, onChange, label, dark = false }
     );
   }
 
-  // ── Android: picker inline ───────────────────────────────────────────────
+  // ── Android dentro de Modal: mesmo sheet do iOS (display="default" fica bloqueado por Modal pai) ──
+  if (Platform.OS === 'android' && insideModal) {
+    return (
+      <View>
+        {label && <Text style={labelStyle}>{label}</Text>}
+        <TouchableOpacity style={inputStyle} onPress={() => setShowPicker(true)}>
+          <Text style={textStyle}>{formatBR(value)}</Text>
+          <Text style={styles.icon}>📅</Text>
+        </TouchableOpacity>
+
+        <Modal visible={showPicker} transparent animationType="slide">
+          <View style={styles.iosOverlay}>
+            <View style={[styles.iosSheet, { backgroundColor: '#1e1e2e' }]}>
+              <View style={styles.iosToolbar}>
+                <TouchableOpacity onPress={() => setShowPicker(false)}>
+                  <Text style={styles.iosDone}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={value}
+                mode="date"
+                display="spinner"
+                onChange={(_, date) => { if (date) onChange(date); }}
+                textColor="#ffffff"
+              />
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+
+  // ── Android: picker inline nativo (fora de Modal) ────────────────────────
   return (
     <View>
       {label && <Text style={labelStyle}>{label}</Text>}

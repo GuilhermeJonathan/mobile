@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Modal,
+  StyleSheet, ActivityIndicator, Modal, Platform,
 } from 'react-native';
 import { authService } from '../services/authService';
 import { useTheme } from '../theme/ThemeContext';
@@ -10,6 +10,18 @@ import { ColorScheme } from '../theme/colors';
 export default function LoginScreen({ navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  // Fallback web: se a URL já contém ?invite= ou ?inviteToken=, vai direto para o cadastro
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('invite') ?? params.get('inviteToken');
+      if (token) {
+        navigation.replace('Register', { invite: token });
+      }
+    } catch {}
+  }, []);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

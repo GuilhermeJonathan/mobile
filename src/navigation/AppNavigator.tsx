@@ -77,7 +77,7 @@ function MainTabs() {
             Receitas: '📈',
             Cartões: '💳',
             Saldos: '🏦',
-            Orçamento: '🎯',
+            Orçamento: '📋',
           };
           return <Text style={{ fontSize: size - 4 }}>{icons[route.name]}</Text>;
         },

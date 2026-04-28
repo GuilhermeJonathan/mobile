@@ -2,10 +2,10 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   Modal, TextInput, ActivityIndicator, Alert, RefreshControl,
-  Dimensions, Platform,
+  Dimensions,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
+import DatePickerField from '../components/DatePickerField';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 import { fmtBRL } from '../utils/currency';
@@ -204,8 +204,8 @@ export default function MetasScreen() {
   const [titulo, setTitulo]         = useState('');
   const [descricao, setDescricao]   = useState('');
   const [valorMetaInput, setValorMetaInput] = useState('');
-  const [dataMetaInput, setDataMetaInput]   = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dataMetaDate, setDataMetaDate]     = useState<Date | null>(null);
+  const [hasDataMeta, setHasDataMeta]       = useState(false); // true = campo de data visível
   const [capaSelected, setCapaSelected]     = useState('');
   const [corSelected, setCorSelected]       = useState(CORES[0]);
   const [saving, setSaving]         = useState(false);
@@ -229,7 +229,7 @@ export default function MetasScreen() {
   function abrirNova() {
     setEditMeta(null);
     setTitulo(''); setDescricao(''); setValorMetaInput('');
-    setDataMetaInput(''); setCapaSelected(''); setCorSelected(CORES[0]);
+    setDataMetaDate(null); setHasDataMeta(false); setCapaSelected(''); setCorSelected(CORES[0]);
     setModalMeta(true);
   }
 
@@ -238,7 +238,9 @@ export default function MetasScreen() {
     setTitulo(meta.titulo);
     setDescricao(meta.descricao ?? '');
     setValorMetaInput(applyValorMask(String(Math.round(meta.valorMeta * 100))));
-    setDataMetaInput(meta.dataMeta ? meta.dataMeta.slice(0, 10) : '');
+    const existingDate = meta.dataMeta ? new Date(meta.dataMeta) : null;
+    setDataMetaDate(existingDate);
+    setHasDataMeta(!!existingDate);
     setCapaSelected(meta.capa ?? '');
     setCorSelected(meta.corFundo ?? CORES[0]);
     setModalMeta(true);
@@ -247,7 +249,7 @@ export default function MetasScreen() {
   async function salvar() {
     if (!titulo.trim() || !valorMetaInput) return;
     const valorMeta = maskToNumber(valorMetaInput);
-    const dataMeta  = dataMetaInput ? new Date(dataMetaInput + 'T00:00:00').toISOString() : null;
+    const dataMeta  = dataMetaDate ? dataMetaDate.toISOString() : null;
     setSaving(true);
     try {
       const body = {
@@ -435,27 +437,32 @@ export default function MetasScreen() {
             />
 
             <Text style={s.fieldLabel}>Data limite</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <TouchableOpacity
-                style={[s.input, { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={{ color: dataMetaInput ? colors.text : colors.inputPlaceholder, fontSize: 15 }}>
-                  {dataMetaInput
-                    ? new Date(dataMetaInput + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                    : 'Sem data limite'}
-                </Text>
-                <Text style={{ fontSize: 16 }}>📅</Text>
-              </TouchableOpacity>
-              {dataMetaInput !== '' && (
+            {hasDataMeta ? (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <DatePickerField
+                    value={dataMetaDate ?? new Date()}
+                    onChange={setDataMetaDate}
+                    dark
+                    insideModal
+                  />
+                </View>
                 <TouchableOpacity
-                  onPress={() => setDataMetaInput('')}
-                  style={{ padding: 8, backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
+                  onPress={() => { setHasDataMeta(false); setDataMetaDate(null); }}
+                  style={{ padding: 13, backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.border, marginBottom: 0 }}
                 >
                   <Text style={{ color: colors.textSecondary, fontSize: 13 }}>✕</Text>
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[s.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                onPress={() => { setDataMetaDate(new Date()); setHasDataMeta(true); }}
+              >
+                <Text style={{ color: colors.inputPlaceholder, fontSize: 15 }}>Sem data limite</Text>
+                <Text style={{ fontSize: 16 }}>📅</Text>
+              </TouchableOpacity>
+            )}
 
 
             {/* Escolha de emoji */}
@@ -496,44 +503,6 @@ export default function MetasScreen() {
                 disabled={saving || !titulo.trim() || !valorMetaInput}
               >
                 {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.btnSaveText}>Salvar</Text>}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* ── Modal próprio para o DatePicker (evita conflito com modals React Native) ── */}
-      <Modal visible={showDatePicker} transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-        <View style={s.datePickerOverlay}>
-          <View style={s.datePickerCard}>
-            <Text style={s.datePickerTitle}>Data limite</Text>
-            <DateTimePicker
-              value={dataMetaInput ? new Date(dataMetaInput + 'T12:00:00') : new Date()}
-              mode="date"
-              display="spinner"
-              minimumDate={new Date()}
-              textColor={colors.text}
-              onChange={(_, date) => {
-                if (date) {
-                  const y = date.getFullYear();
-                  const m = String(date.getMonth() + 1).padStart(2, '0');
-                  const d = String(date.getDate()).padStart(2, '0');
-                  setDataMetaInput(`${y}-${m}-${d}`);
-                }
-              }}
-            />
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-              <TouchableOpacity
-                style={[s.btnCancel, { flex: 1 }]}
-                onPress={() => { setDataMetaInput(''); setShowDatePicker(false); }}
-              >
-                <Text style={s.btnCancelText}>Limpar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.btnSave, { flex: 1 }]}
-                onPress={() => setShowDatePicker(false)}
-              >
-                <Text style={s.btnSaveText}>Confirmar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -669,19 +638,6 @@ function styles(c: ColorScheme) {
     capaBtnSelected: { borderColor: c.green },
     corBtn:          { width: 36, height: 36, borderRadius: 8, borderWidth: 2, borderColor: 'transparent' },
     corBtnSelected:  { borderColor: '#fff', transform: [{ scale: 1.15 }] },
-    datePickerOverlay: {
-      flex: 1, backgroundColor: 'rgba(0,0,0,0.65)',
-      justifyContent: 'center', alignItems: 'center', padding: 24,
-    },
-    datePickerCard: {
-      backgroundColor: c.surfaceElevated, borderRadius: 16,
-      padding: 20, width: '100%', maxWidth: 380,
-      borderWidth: 1, borderColor: c.border,
-    },
-    datePickerTitle: {
-      fontSize: 16, fontWeight: '700', color: c.text,
-      textAlign: 'center', marginBottom: 8,
-    },
     btnCancel: { flex: 1, borderRadius: 8, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: c.border },
     btnCancelText: { color: c.textSecondary, fontSize: 15 },
     btnSave:    { flex: 1, backgroundColor: c.green, borderRadius: 8, padding: 14, alignItems: 'center' },
