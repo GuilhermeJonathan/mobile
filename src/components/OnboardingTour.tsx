@@ -10,14 +10,16 @@ import { authService } from '../services/authService';
 const TOUR_VERSION = 'v2';
 const tourKey = (userId: string) => `onboarding_tour_${TOUR_VERSION}_${userId}`;
 
-const { width: SW } = Dimensions.get('window');
 const TAB_COUNT = 6;
+
+type SpotType = 'none' | 'tab' | 'header';
 
 interface Step {
   title: string;
   desc: string;
   icon: string;
-  tabIdx: number | null; // null = sem destaque de aba
+  spotType: SpotType;
+  tabIdx?: number;
 }
 
 const STEPS: Step[] = [
@@ -25,55 +27,59 @@ const STEPS: Step[] = [
     icon: '👋',
     title: 'Bem-vindo ao Meu Financeiro!',
     desc: 'Vamos fazer um tour rápido para você conhecer tudo que o app oferece.',
-    tabIdx: null,
+    spotType: 'none',
   },
   {
     icon: '📊',
     title: 'Dashboard',
     desc: 'Visão geral do mês: saldo, total de gastos, alertas de vencimento e resumo das suas metas.',
-    tabIdx: 0,
+    spotType: 'tab', tabIdx: 0,
   },
   {
     icon: '💰',
     title: 'Lançamentos',
     desc: 'Registre receitas, despesas e Pix. Toque no botão ⊕ para adicionar. Filtre por mês e situação.',
-    tabIdx: 1,
+    spotType: 'tab', tabIdx: 1,
   },
   {
     icon: '💳',
     title: 'Cartões de Crédito',
     desc: 'Acompanhe cada fatura separadamente. Importe PDF de fatura para lançar tudo de uma vez.',
-    tabIdx: 3,
+    spotType: 'tab', tabIdx: 3,
   },
   {
     icon: '📋',
     title: 'Orçamento',
     desc: 'Defina limites de gasto por categoria. O app avisa quando você está chegando perto do limite.',
-    tabIdx: 5,
+    spotType: 'tab', tabIdx: 5,
   },
   {
     icon: '🎯',
     title: 'Metas & Família',
     desc: 'Toque no ícone 👤 no canto superior direito para acessar Metas, Família, alertas e configurações.',
-    tabIdx: null,
+    spotType: 'header',
   },
 ];
 
-interface Props {
-  /** Passa true assim que o usuário estiver autenticado e na tela principal */
-  active: boolean;
-}
+interface Props { active: boolean; }
 
 export default function OnboardingTour({ active }: Props) {
-  const insets = useSafeAreaInsets();
-  const [visible, setVisible]   = useState(false);
-  const [step, setStep]         = useState(0);
-  const [userId, setUserId]     = useState<string | null>(null);
-  const pulseAnim  = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim  = useRef(new Animated.Value(60)).current;
+  const insets       = useSafeAreaInsets();
+  const [visible, setVisible] = useState(false);
+  const [step, setStep]       = useState(0);
+  const [userId, setUserId]   = useState<string | null>(null);
+  // Dimensões podem mudar (resize web) → estado reativo
+  const [dims, setDims] = useState(Dimensions.get('window'));
 
-  // Busca o usuário atual e verifica se ele já viu o tour
+  const pulseAnim   = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim   = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    const sub = Dimensions.addEventListener('change', ({ window }) => setDims(window));
+    return () => sub.remove();
+  }, []);
+
   useEffect(() => {
     if (!active) return;
     authService.getUserInfo().then(user => {
@@ -85,25 +91,25 @@ export default function OnboardingTour({ active }: Props) {
     }).catch(() => {});
   }, [active]);
 
-  // Animação de entrada do card
+  // Entrada do card
   useEffect(() => {
     if (!visible) return;
     opacityAnim.setValue(0);
-    slideAnim.setValue(60);
+    slideAnim.setValue(50);
     Animated.parallel([
-      Animated.timing(opacityAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
+      Animated.timing(opacityAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
       Animated.spring(slideAnim,   { toValue: 0, tension: 80, friction: 10, useNativeDriver: true }),
     ]).start();
   }, [visible, step]);
 
-  // Pulso na aba destacada
+  // Pulso
   useEffect(() => {
-    if (!visible || STEPS[step].tabIdx === null) return;
+    if (!visible || STEPS[step].spotType === 'none') return;
     pulseAnim.setValue(1);
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.35, duration: 600, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1,    duration: 600, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.35, duration: 650, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1,    duration: 650, useNativeDriver: true }),
       ])
     );
     loop.start();
@@ -116,76 +122,100 @@ export default function OnboardingTour({ active }: Props) {
   }, [userId]);
 
   const next = useCallback(() => {
-    if (step < STEPS.length - 1) {
-      setStep(s => s + 1);
-    } else {
-      finish();
-    }
+    if (step < STEPS.length - 1) setStep(s => s + 1);
+    else finish();
   }, [step, finish]);
 
   if (!visible) return null;
 
-  const current      = STEPS[step];
-  const isLast       = step === STEPS.length - 1;
-  const tabBarH      = 60 + insets.bottom;
-  // Centro X de cada aba
-  const tabCenterX   = (current.tabIdx !== null)
-    ? (current.tabIdx + 0.5) * (SW / TAB_COUNT)
+  const { width: SW, height: SH } = dims;
+  const current   = STEPS[step];
+  const isLast    = step === STEPS.length - 1;
+  const tabBarH   = 60 + insets.bottom;
+  const headerTop = insets.top + 8; // topo do header
+
+  // ── Posições dos spotlights ──────────────────────────────────────────────
+  // Aba: centro X de cada aba, Y no centro da tab bar
+  const tabW    = SW / TAB_COUNT;
+  const tabCX   = current.spotType === 'tab' && current.tabIdx !== undefined
+    ? current.tabIdx * tabW + tabW / 2
     : null;
+  const tabCY   = SH - tabBarH + (60 / 2); // centro vertical da tab bar
+
+  // Header: ícone 👤 = segundo ícone da direita no header (após 🔍)
+  // Posição aproximada: SW - 44px do lado direito, verticalmente no centro do header
+  const headerCX = SW - 44;
+  const headerCY = headerTop + 28;
+
+  // ── Card: centralizado horizontalmente, acima da tab bar ───────────────
+  const cardMaxW  = Math.min(SW - 32, 520);
+  const cardLeft  = (SW - cardMaxW) / 2;
+  // Quando há spotlight de aba, sobe o card para não cobri-la
+  const cardBottom = current.spotType === 'tab'
+    ? tabBarH + 80
+    : tabBarH + 16;
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={finish}>
-      {/* Overlay escuro */}
-      <View style={s.overlay} pointerEvents="box-none">
+      <View style={StyleSheet.absoluteFillObject}>
 
-        {/* Destaque pulsante sobre a aba */}
-        {tabCenterX !== null && (
-          <Animated.View
-            style={[
-              s.tabSpot,
+        {/* Overlay escuro */}
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.72)' }]} />
+
+        {/* ── Spotlight ABA ── */}
+        {tabCX !== null && (
+          <>
+            <Animated.View style={[
+              s.spot,
               {
-                left:   tabCenterX - 28,
-                bottom: tabBarH - 4,
+                left:      tabCX - 28,
+                top:       tabCY - 28,
                 transform: [{ scale: pulseAnim }],
               },
-            ]}
-          />
+            ]} />
+            {/* Seta apontando para baixo */}
+            <View style={[s.arrowDown, { left: tabCX - 8, top: tabCY - 52 }]} />
+          </>
         )}
 
-        {/* Seta apontando para a aba */}
-        {tabCenterX !== null && (
-          <View style={[s.arrow, { left: tabCenterX - 8, bottom: tabBarH + 50 }]} />
+        {/* ── Spotlight HEADER (👤) ── */}
+        {current.spotType === 'header' && (
+          <>
+            <Animated.View style={[
+              s.spot,
+              {
+                left:      headerCX - 28,
+                top:       headerCY - 28,
+                transform: [{ scale: pulseAnim }],
+              },
+            ]} />
+            {/* Seta apontando para cima */}
+            <View style={[s.arrowUp, { left: headerCX - 8, top: headerCY + 32 }]} />
+          </>
         )}
 
-        {/* Card do passo */}
-        <Animated.View
-          style={[
-            s.card,
-            { opacity: opacityAnim, transform: [{ translateY: slideAnim }] },
-            // Sobe o card quando há destaque de aba para não cobrir a aba
-            tabCenterX !== null
-              ? { bottom: tabBarH + 80 }
-              : { bottom: tabBarH + 24 },
-          ]}
-        >
-          {/* Ícone */}
+        {/* ── Card ── */}
+        <Animated.View style={[
+          s.card,
+          {
+            position: 'absolute',
+            left:   cardLeft,
+            width:  cardMaxW,
+            bottom: cardBottom,
+            opacity: opacityAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}>
           <Text style={s.icon}>{current.icon}</Text>
-
-          {/* Título + desc */}
           <Text style={s.title}>{current.title}</Text>
           <Text style={s.desc}>{current.desc}</Text>
 
-          {/* Dots */}
           <View style={s.dots}>
             {STEPS.map((_, i) => (
-              <View
-                key={i}
-                style={[s.dot, i === step && s.dotActive]}
-              />
+              <View key={i} style={[s.dot, i === step && s.dotActive]} />
             ))}
           </View>
 
-          {/* Botões */}
           <View style={s.actions}>
             <TouchableOpacity style={s.skipBtn} onPress={finish}>
               <Text style={s.skipText}>Pular</Text>
@@ -195,64 +225,55 @@ export default function OnboardingTour({ active }: Props) {
             </TouchableOpacity>
           </View>
         </Animated.View>
+
       </View>
     </Modal>
   );
 }
 
 const s = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.72)',
-  },
-  tabSpot: {
+  spot: {
     position: 'absolute',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(63,185,80,0.25)',
-    borderWidth: 2,
-    borderColor: '#3fb950',
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: 'rgba(63,185,80,0.22)',
+    borderWidth: 2.5, borderColor: '#3fb950',
   },
-  arrow: {
+  arrowDown: {
     position: 'absolute',
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 14,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
+    width: 0, height: 0,
+    borderLeftWidth: 9, borderRightWidth: 9, borderTopWidth: 14,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent',
     borderTopColor: '#3fb950',
   },
-  card: {
+  arrowUp: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    width: 0, height: 0,
+    borderLeftWidth: 9, borderRightWidth: 9, borderBottomWidth: 14,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent',
+    borderBottomColor: '#3fb950',
+  },
+  card: {
     backgroundColor: '#1e1e2e',
     borderRadius: 20,
     padding: 24,
-    borderWidth: 1,
-    borderColor: '#3fb95066',
+    borderWidth: 1, borderColor: '#3fb95055',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
+    shadowOpacity: 0.45, shadowRadius: 20,
     elevation: 20,
   },
-  icon:  { fontSize: 44, textAlign: 'center', marginBottom: 12 },
-  title: { fontSize: 20, fontWeight: '800', color: '#fff', textAlign: 'center', marginBottom: 8 },
-  desc:  { fontSize: 14, color: 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 21 },
-  dots:  { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 20, marginBottom: 20 },
-  dot:       { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.25)' },
+  icon:      { fontSize: 44, textAlign: 'center', marginBottom: 12 },
+  title:     { fontSize: 20, fontWeight: '800', color: '#fff', textAlign: 'center', marginBottom: 8 },
+  desc:      { fontSize: 14, color: 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 21 },
+  dots:      { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 20, marginBottom: 20 },
+  dot:       { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.22)' },
   dotActive: { width: 22, backgroundColor: '#3fb950' },
-  actions: { flexDirection: 'row', gap: 12 },
+  actions:   { flexDirection: 'row', gap: 12 },
   skipBtn: {
     flex: 1, paddingVertical: 13, borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', alignItems: 'center',
   },
-  skipText: { color: 'rgba(255,255,255,0.55)', fontSize: 15 },
+  skipText: { color: 'rgba(255,255,255,0.5)', fontSize: 15 },
   nextBtn: {
     flex: 2, paddingVertical: 13, borderRadius: 10,
     backgroundColor: '#3fb950', alignItems: 'center',
