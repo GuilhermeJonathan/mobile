@@ -33,6 +33,41 @@ import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosCont
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// ─── Logo no header ───────────────────────────────────────────────────────────
+function AppHeaderTitle() {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+      {/* Mini mascote: círculo verde com M */}
+      <View style={{
+        width: 32, height: 32, borderRadius: 16,
+        backgroundColor: darkColors.green,
+        alignItems: 'center', justifyContent: 'center',
+        shadowColor: darkColors.green, shadowOpacity: 0.45,
+        shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+        elevation: 6,
+      }}>
+        {/* Olhos */}
+        <View style={{ flexDirection: 'row', gap: 7, marginBottom: 3, marginTop: -2 }}>
+          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#0d1117' }} />
+          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#0d1117' }} />
+        </View>
+        {/* Sorriso */}
+        <View style={{ height: 6, width: 13, overflow: 'hidden' }}>
+          <View style={{
+            height: 12, width: 12,
+            borderRadius: 6, borderWidth: 1.5,
+            borderColor: '#0d1117',
+            marginTop: -6, alignSelf: 'center',
+          }} />
+        </View>
+      </View>
+      <Text style={{ color: darkColors.text, fontWeight: '800', fontSize: 17 }}>
+        Meu Financeiro
+      </Text>
+    </View>
+  );
+}
+
 const linking = {
   prefixes: [],
   config: {
@@ -128,7 +163,11 @@ function MainTabs() {
         ),
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{ headerTitle: () => <AppHeaderTitle /> }}
+      />
       <Tab.Screen
         name="Lançamentos"
         component={LancamentosScreen}

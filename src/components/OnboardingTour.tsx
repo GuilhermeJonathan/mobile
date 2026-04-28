@@ -135,15 +135,15 @@ export default function OnboardingTour({ active }: Props) {
   const headerTop = insets.top + 8; // topo do header
 
   // ── Posições dos spotlights ──────────────────────────────────────────────
-  // Aba: centro X de cada aba, Y no centro da tab bar
-  const tabW    = SW / TAB_COUNT;
-  const tabCX   = current.spotType === 'tab' && current.tabIdx !== undefined
+  const tabW  = SW / TAB_COUNT;
+  const tabCX = current.spotType === 'tab' && current.tabIdx !== undefined
     ? current.tabIdx * tabW + tabW / 2
     : null;
-  const tabCY   = SH - tabBarH + (60 / 2); // centro vertical da tab bar
+  // Usa bottom para as abas — não depende de SH (confiável em web e mobile)
+  const tabSpotBottom  = insets.bottom + 2;       // círculo alinhado à tab bar
+  const tabArrowBottom = insets.bottom + 60 + 4;  // seta acima do círculo
 
-  // Header: ícone 👤 = segundo ícone da direita no header (após 🔍)
-  // Posição aproximada: SW - 44px do lado direito, verticalmente no centro do header
+  // Header: ícone 👤 fica nos últimos ~44px da direita, ~28px abaixo do topo
   const headerCX = SW - 44;
   const headerCY = headerTop + 28;
 
@@ -162,19 +162,18 @@ export default function OnboardingTour({ active }: Props) {
         {/* Overlay escuro */}
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.72)' }]} />
 
-        {/* ── Spotlight ABA ── */}
+        {/* ── Spotlight ABA — usa bottom para precisão independente de SH ── */}
         {tabCX !== null && (
           <>
-            <Animated.View style={[
-              s.spot,
-              {
-                left:      tabCX - 28,
-                top:       tabCY - 28,
-                transform: [{ scale: pulseAnim }],
-              },
-            ]} />
-            {/* Seta apontando para baixo */}
-            <View style={[s.arrowDown, { left: tabCX - 8, top: tabCY - 52 }]} />
+            <Animated.View style={[s.spot, {
+              left:   tabCX - 28,
+              bottom: tabSpotBottom,
+              transform: [{ scale: pulseAnim }],
+            }]} />
+            <View style={[s.arrowDown, {
+              left:   tabCX - 9,
+              bottom: tabArrowBottom,
+            }]} />
           </>
         )}
 

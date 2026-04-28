@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  ActivityIndicator, TextInput, Alert, RefreshControl,
+  ActivityIndicator, TextInput, Alert, RefreshControl, Platform, Modal,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { vinculosService, VinculoDto, MeuVinculoDto } from '../services/api';
@@ -25,6 +25,11 @@ export default function FamiliaScreen() {
   // Aceitar convite
   const [codigoInput, setCodigoInput]   = useState('');
   const [aceitando, setAceitando]       = useState(false);
+
+  // Confirmação customizada (web)
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string; message: string; onConfirm: () => void;
+  } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -72,41 +77,73 @@ export default function FamiliaScreen() {
     }
   }
 
+  function confirmar(title: string, message: string, onConfirm: () => void) {
+    if (Platform.OS === 'web') {
+      setConfirmModal({ title, message, onConfirm });
+    } else {
+      Alert.alert(title, message, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Confirmar', style: 'destructive', onPress: onConfirm },
+      ]);
+    }
+  }
+
   async function sairDaFamilia() {
     if (!meuVinculo?.vinculoId) return;
-    Alert.alert(
+    confirmar(
       'Sair da família',
       'Você voltará a ver apenas seus próprios dados. Confirmar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair', style: 'destructive',
-          onPress: async () => {
-            await vinculosService.remover(meuVinculo.vinculoId!);
-            setMeuVinculo(null);
-            await load();
-          },
-        },
-      ]
+      async () => {
+        try {
+          await vinculosService.remover(meuVinculo.vinculoId!);
+          setMeuVinculo(null);
+          await load();
+        } catch (e: any) {
+          const msg = e?.response?.data?.message ?? 'Erro ao sair da família.';
+          Alert.alert('Erro', msg);
+        }
+      }
     );
   }
 
   async function removerMembro(id: string, nome: string) {
-    Alert.alert(
+    confirmar(
       'Remover membro',
       `Remover "${nome}" da família?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover', style: 'destructive',
-          onPress: async () => {
-            await vinculosService.remover(id);
-            await load();
-          },
-        },
-      ]
+      async () => {
+        try {
+          await vinculosService.remover(id);
+          await load();
+        } catch (e: any) {
+          const msg = e?.response?.data?.message ?? 'Erro ao remover membro.';
+          Alert.alert('Erro', msg);
+        }
+      }
     );
   }
+
+  // ── Modal de confirmação (web) ────────────────────────────────────────────
+  const ConfirmModal = confirmModal ? (
+    <Modal visible transparent animationType="fade" onRequestClose={() => setConfirmModal(null)}>
+      <View style={s.confirmOverlay}>
+        <View style={s.confirmCard}>
+          <Text style={s.confirmTitle}>{confirmModal.title}</Text>
+          <Text style={s.confirmMsg}>{confirmModal.message}</Text>
+          <View style={s.confirmActions}>
+            <TouchableOpacity style={s.confirmCancelBtn} onPress={() => setConfirmModal(null)}>
+              <Text style={s.confirmCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.confirmDestroyBtn}
+              onPress={() => { setConfirmModal(null); confirmModal.onConfirm(); }}
+            >
+              <Text style={s.confirmDestroyText}>Confirmar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  ) : null;
 
   if (loading) {
     return (
@@ -119,37 +156,40 @@ export default function FamiliaScreen() {
   // ── Usuário é membro de outra família ──────────────────────────────────────
   if (meuVinculo?.ehMembro) {
     return (
-      <ScrollView
-        style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={s.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
-      >
-        <View style={s.bannerCard}>
-          <Text style={s.bannerIcon}>👨‍👩‍👧</Text>
-          <Text style={s.bannerTitle}>Você está em uma família</Text>
-          <Text style={s.bannerSub}>
-            Você está vendo e operando os dados de outro usuário.{'\n'}
-            Qualquer lançamento que você criar vai para a conta da família.
-          </Text>
-          <TouchableOpacity style={s.sairBtn} onPress={sairDaFamilia}>
-            <Text style={s.sairText}>Sair da família</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={{ flex: 1 }}>
+        {ConfirmModal}
+        <ScrollView
+          style={{ flex: 1, backgroundColor: colors.background }}
+          contentContainerStyle={s.scroll}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+        >
+          <View style={s.bannerCard}>
+            <Text style={s.bannerIcon}>👨‍👩‍👧</Text>
+            <Text style={s.bannerTitle}>Você está em uma família</Text>
+            <Text style={s.bannerSub}>
+              Você está vendo e operando os dados de outro usuário.{'\n'}
+              Qualquer lançamento que você criar vai para a conta da família.
+            </Text>
+            <TouchableOpacity style={s.sairBtn} onPress={sairDaFamilia}>
+              <Text style={s.sairText}>Sair da família</Text>
+            </TouchableOpacity>
+          </View>
 
-        <Text style={s.secTitle}>Como funciona</Text>
-        <View style={s.infoCard}>
-          {[
-            ['📊', 'Dashboard, lançamentos e saldos são do dono da família'],
-            ['➕', 'Tudo que você adicionar é salvo na conta da família'],
-            ['🔒', 'Seus próprios dados ficam preservados — basta sair para vê-los'],
-          ].map(([icon, text]) => (
-            <View key={text} style={s.infoRow}>
-              <Text style={s.infoIcon}>{icon}</Text>
-              <Text style={s.infoText}>{text}</Text>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
+          <Text style={s.secTitle}>Como funciona</Text>
+          <View style={s.infoCard}>
+            {[
+              ['📊', 'Dashboard, lançamentos e saldos são do dono da família'],
+              ['➕', 'Tudo que você adicionar é salvo na conta da família'],
+              ['🔒', 'Seus próprios dados ficam preservados — basta sair para vê-los'],
+            ].map(([icon, text]) => (
+              <View key={text} style={s.infoRow}>
+                <Text style={s.infoIcon}>{icon}</Text>
+                <Text style={s.infoText}>{text}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
     );
   }
 
@@ -158,11 +198,13 @@ export default function FamiliaScreen() {
   const membrosPendentes = membros.filter(m => !m.aceito);
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={s.scroll}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
-    >
+    <View style={{ flex: 1 }}>
+      {ConfirmModal}
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.background }}
+        contentContainerStyle={s.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+      >
       {/* ── Membros ativos ─────────────────────────────────────────────── */}
       {membrosAceitos.length > 0 && (
         <>
@@ -278,7 +320,8 @@ export default function FamiliaScreen() {
           <Text style={s.emptySub}>Convide alguém para compartilhar o controle financeiro</Text>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -350,5 +393,26 @@ function makeStyles(c: ColorScheme) {
     emptyIcon:  { fontSize: 48 },
     emptyTitle: { fontSize: 17, fontWeight: 'bold', color: c.text },
     emptySub:   { fontSize: 13, color: c.textSecondary, textAlign: 'center' },
+
+    // Confirm modal (web-safe)
+    confirmOverlay: {
+      flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+      justifyContent: 'center', alignItems: 'center', padding: 24,
+    },
+    confirmCard: {
+      width: '100%' as any, maxWidth: 360,
+      backgroundColor: c.surface, borderRadius: 16, padding: 24,
+      borderWidth: 1, borderColor: c.border,
+    },
+    confirmTitle:   { fontSize: 17, fontWeight: 'bold', color: c.text, marginBottom: 8 },
+    confirmMsg:     { fontSize: 14, color: c.textSecondary, lineHeight: 20, marginBottom: 20 },
+    confirmActions: { flexDirection: 'row', gap: 12 },
+    confirmCancelBtn: {
+      flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center',
+      borderWidth: 1, borderColor: c.border, backgroundColor: c.surfaceElevated,
+    },
+    confirmCancelText:  { color: c.text, fontSize: 15 },
+    confirmDestroyBtn:  { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', backgroundColor: c.red },
+    confirmDestroyText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   });
 }

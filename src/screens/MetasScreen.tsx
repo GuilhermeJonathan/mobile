@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   Modal, TextInput, ActivityIndicator, Alert, RefreshControl,
-  Dimensions,
+  Dimensions, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import DatePickerField from '../components/DatePickerField';
@@ -79,7 +79,11 @@ function MetaCard({
     : null;
 
   return (
-    <View style={[styles(colors).card, { backgroundColor: fundo }]}>
+    <TouchableOpacity
+      style={[styles(colors).card, { backgroundColor: fundo }]}
+      onPress={() => onEditar(meta)}
+      activeOpacity={0.88}
+    >
       {/* Linha topo: status + botões */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={[styles(colors).statusBadge, { backgroundColor: corStatus + '33', borderColor: corStatus + '66' }]}>
@@ -184,7 +188,7 @@ function MetaCard({
           <Text style={{ color: '#58a6ff', fontWeight: '700', fontSize: 13 }}>🎉 Meta atingida!</Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -214,6 +218,11 @@ export default function MetasScreen() {
   const [modalValor, setModalValor]   = useState<Meta | null>(null);
   const [novoValorInput, setNovoValorInput] = useState('');
   const [savingValor, setSavingValor] = useState(false);
+
+  // Confirmação customizada (web)
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string; message: string; onConfirm: () => void;
+  } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -286,26 +295,32 @@ export default function MetasScreen() {
   }
 
   function deletar(meta: Meta) {
-    Alert.alert(
-      'Excluir meta',
-      `Tem certeza que deseja excluir "${meta.titulo}"? Esta ação não pode ser desfeita.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await metasService.delete(meta.id);
-              await load();
-            } catch {
-              Alert.alert('Erro', 'Não foi possível excluir a meta. Tente novamente.');
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    const doDelete = async () => {
+      try {
+        await metasService.delete(meta.id);
+        await load();
+      } catch {
+        Alert.alert('Erro', 'Não foi possível excluir a meta. Tente novamente.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      setConfirmModal({
+        title: 'Excluir meta',
+        message: `Tem certeza que deseja excluir "${meta.titulo}"? Esta ação não pode ser desfeita.`,
+        onConfirm: doDelete,
+      });
+    } else {
+      Alert.alert(
+        'Excluir meta',
+        `Tem certeza que deseja excluir "${meta.titulo}"? Esta ação não pode ser desfeita.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Excluir', style: 'destructive', onPress: doDelete },
+        ],
+        { cancelable: true }
+      );
+    }
   }
 
   const metasFiltradas = useMemo(() => {
@@ -538,6 +553,29 @@ export default function MetasScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ── Modal confirmação exclusão (web) ─────────────────────────── */}
+      {confirmModal && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setConfirmModal(null)}>
+          <View style={s.overlayCenter}>
+            <View style={s.modalCard}>
+              <Text style={s.modalTitle}>{confirmModal.title}</Text>
+              <Text style={[s.modalSub, { marginBottom: 20 }]}>{confirmModal.message}</Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity style={s.btnCancel} onPress={() => setConfirmModal(null)}>
+                  <Text style={s.btnCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.btnSave, { backgroundColor: '#f85149' }]}
+                  onPress={() => { setConfirmModal(null); confirmModal.onConfirm(); }}
+                >
+                  <Text style={s.btnSaveText}>Excluir</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }

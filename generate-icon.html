@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Meu Financeiro – Gerador de Ícones</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d1117; color: #e6edf3;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 48px 24px;
+    }
+    h1  { font-size: 24px; font-weight: 800; margin-bottom: 6px; color: #3fb950; }
+    p   { font-size: 14px; color: #8b949e; margin-bottom: 40px; }
+    .previews {
+      display: flex; flex-wrap: wrap; gap: 32px;
+      justify-content: center; margin-bottom: 48px;
+    }
+    .preview-box {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .preview-box canvas {
+      border-radius: 16px;
+      border: 1px solid #30363d;
+      box-shadow: 0 8px 32px rgba(63,185,80,0.15);
+    }
+    .preview-box .label {
+      font-size: 12px; font-weight: 700; color: #8b949e;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    button {
+      background: #3fb950; color: #fff; border: none;
+      padding: 10px 22px; border-radius: 8px; font-size: 14px;
+      font-weight: 700; cursor: pointer; transition: opacity .15s;
+    }
+    button:hover { opacity: 0.85; }
+    .all-btn {
+      font-size: 16px; padding: 14px 36px; border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(63,185,80,0.3);
+    }
+    .note {
+      margin-top: 32px; font-size: 12px; color: #484f58;
+      text-align: center; max-width: 480px; line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Meu Financeiro</h1>
+  <p>Gera os PNGs para o Expo e substitui na pasta <code style="color:#3fb950">mobile/assets/</code></p>
+
+  <div class="previews">
+    <div class="preview-box">
+      <canvas id="prev-icon" width="200" height="200"></canvas>
+      <span class="label">icon.png · 1024×1024</span>
+      <button onclick="dl('icon', 1024, true, false)">⬇ Baixar</button>
+    </div>
+    <div class="preview-box">
+      <canvas id="prev-adaptive" width="200" height="200"></canvas>
+      <span class="label">adaptive-icon.png · 1024×1024</span>
+      <button onclick="dl('adaptive-icon', 1024, false, false)">⬇ Baixar</button>
+    </div>
+    <div class="preview-box">
+      <canvas id="prev-splash" width="200" height="200"></canvas>
+      <span class="label">splash-icon.png · 512×512</span>
+      <button onclick="dl('splash-icon', 512, false, true)">⬇ Baixar</button>
+    </div>
+    <div class="preview-box">
+      <canvas id="prev-favicon" width="64" height="64"></canvas>
+      <span class="label">favicon.png · 64×64</span>
+      <button onclick="dl('favicon', 64, true, false)">⬇ Baixar</button>
+    </div>
+  </div>
+
+  <button class="all-btn" onclick="dlAll()">⬇ Baixar todos os 4 arquivos</button>
+
+  <p class="note">
+    Após baixar, mova os arquivos para a pasta <strong>mobile/assets/</strong>
+    substituindo os existentes. Para o adaptive-icon, o Android aplica a máscara de forma
+    automaticamente — o fundo <code>#0d1117</code> já está configurado no <code>app.json</code>.
+  </p>
+
+  <script>
+    const GREEN      = '#3fb950';
+    const GREEN_DARK = '#2ea043';
+    const GREEN_LT   = '#56d364';
+    const BG1        = '#0d1117';
+    const BG2        = '#161b22';
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    // ── Ícone principal ────────────────────────────────────────────────────────
+    function drawFull(ctx, size, rounded) {
+      const s = size / 1024;
+      ctx.clearRect(0, 0, size, size);
+
+      if (rounded) {
+        ctx.save();
+        roundRect(ctx, 0, 0, size, size, 224 * s);
+        ctx.clip();
+      }
+
+      // Fundo
+      const bg = ctx.createLinearGradient(0, 0, size, size);
+      bg.addColorStop(0, BG1); bg.addColorStop(1, BG2);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
+
+      // Linha de gráfico decorativa
+      ctx.beginPath();
+      [[160,480],[260,360],[380,420],[500,300],[620,370],[740,260],[864,320]].forEach(([x,y], i) => {
+        i === 0 ? ctx.moveTo(x*s, y*s) : ctx.lineTo(x*s, y*s);
+      });
+      ctx.strokeStyle = 'rgba(63,185,80,0.28)';
+      ctx.lineWidth = 18*s; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // M com glow
+      ctx.save();
+      ctx.shadowColor = GREEN; ctx.shadowBlur = 40*s;
+      const gGrad = ctx.createLinearGradient(0, 200*s, 0, 650*s);
+      gGrad.addColorStop(0, GREEN_LT); gGrad.addColorStop(1, GREEN_DARK);
+      ctx.fillStyle = gGrad;
+      ctx.font = `900 ${430*s}px Arial, Helvetica, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('M', 512*s, 640*s);
+      ctx.restore();
+
+      // Círculo R$
+      ctx.beginPath();
+      ctx.arc(730*s, 308*s, 90*s, 0, Math.PI*2);
+      ctx.fillStyle = BG1; ctx.fill();
+      ctx.strokeStyle = GREEN; ctx.lineWidth = 6*s; ctx.stroke();
+
+      ctx.fillStyle = GREEN;
+      ctx.font = `900 ${90*s}px Arial, Helvetica, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('R$', 730*s, 310*s);
+
+      // Linha separadora
+      ctx.beginPath();
+      ctx.arc(184*s, 683*s, 3*s, Math.PI, 0);
+      ctx.lineTo((180+664)*s, 680*s);
+      ctx.arc((180+664)*s, 683*s, 3*s, 0, Math.PI);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(63,185,80,0.22)'; ctx.fill();
+
+      // FINANCEIRO
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = `300 ${68*s}px Arial, Helvetica, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('FINANCEIRO', 512*s, 760*s);
+
+      if (rounded) ctx.restore();
+    }
+
+    // ── Splash: só M + R$ badge, fundo escuro, sem texto ─────────────────────
+    function drawSplash(ctx, size) {
+      const s = size / 512;
+      ctx.clearRect(0, 0, size, size);
+
+      const bg = ctx.createLinearGradient(0, 0, size, size);
+      bg.addColorStop(0, BG1); bg.addColorStop(1, BG2);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
+
+      // M
+      ctx.save();
+      ctx.shadowColor = GREEN; ctx.shadowBlur = 32*s;
+      const gGrad = ctx.createLinearGradient(0, 50*s, 0, 340*s);
+      gGrad.addColorStop(0, GREEN_LT); gGrad.addColorStop(1, GREEN_DARK);
+      ctx.fillStyle = gGrad;
+      ctx.font = `900 ${320*s}px Arial, Helvetica, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('M', 256*s, 256*s);
+      ctx.restore();
+
+      // R$ badge
+      ctx.beginPath();
+      ctx.arc(376*s, 150*s, 68*s, 0, Math.PI*2);
+      ctx.fillStyle = BG1; ctx.fill();
+      ctx.strokeStyle = GREEN; ctx.lineWidth = 5*s; ctx.stroke();
+      ctx.fillStyle = GREEN;
+      ctx.font = `900 ${68*s}px Arial, Helvetica, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('R$', 376*s, 152*s);
+    }
+
+    // ── Favicon: círculo verde com M ──────────────────────────────────────────
+    function drawFavicon(ctx, size) {
+      const s = size / 64;
+      ctx.clearRect(0, 0, size, size);
+
+      ctx.save();
+      roundRect(ctx, 0, 0, size, size, 14*s);
+      ctx.clip();
+
+      const bg = ctx.createLinearGradient(0, 0, size, size);
+      bg.addColorStop(0, BG1); bg.addColorStop(1, BG2);
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
+
+      // M
+      const gGrad = ctx.createLinearGradient(0, 0, size, size);
+      gGrad.addColorStop(0, GREEN_LT); gGrad.addColorStop(1, GREEN_DARK);
+      ctx.fillStyle = gGrad;
+      ctx.font = `900 ${44*s}px Arial, Helvetica, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('M', 32*s, 34*s);
+      ctx.restore();
+    }
+
+    // ── Preview e download ────────────────────────────────────────────────────
+    function drawToCanvas(canvas, name, size, rounded, splash) {
+      const ctx = canvas.getContext('2d');
+      if (splash)        drawSplash(ctx, size);
+      else if (size < 100) drawFavicon(ctx, size);
+      else               drawFull(ctx, size, rounded);
+    }
+
+    function dl(name, size, rounded, splash) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      drawToCanvas(canvas, name, size, rounded, splash);
+      const a = document.createElement('a');
+      a.download = name + '.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+
+    function dlAll() {
+      dl('icon',           1024, true,  false);
+      setTimeout(() => dl('adaptive-icon', 1024, false, false), 200);
+      setTimeout(() => dl('splash-icon',    512, false, true),  400);
+      setTimeout(() => dl('favicon',         64, true,  false), 600);
+    }
+
+    // Renderiza previews ao carregar
+    window.addEventListener('load', () => {
+      const defs = [
+        { id: 'prev-icon',     size: 200, rounded: true,  splash: false },
+        { id: 'prev-adaptive', size: 200, rounded: false, splash: false },
+        { id: 'prev-splash',   size: 200, rounded: false, splash: true  },
+        { id: 'prev-favicon',  size: 64,  rounded: true,  splash: false },
+      ];
+      defs.forEach(({ id, size, rounded, splash }) => {
+        const c = document.getElementById(id);
+        drawToCanvas(c, id, size, rounded, splash);
+      });
+    });
+  </script>
+</body>
+</html>
