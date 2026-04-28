@@ -5,7 +5,7 @@ import {
   RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions,
 } from 'react-native';
 import Svg, { Rect, Text as SvgText, Line, Circle, Path, G } from 'react-native-svg';
-import { lancamentosService } from '../services/api';
+import { lancamentosService, categoriasService, OrcamentoItem } from '../services/api';
 import { Dashboard } from '../types';
 import { fmtBRL, fmtBRLCompact } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
@@ -394,6 +394,10 @@ export default function DashboardScreen() {
   const [totalDividas, setTotalDividas] = useState<number | null>(null);
   const [dividasLoading, setDividasLoading] = useState(false);
 
+  // Orçamento — carrega lazy junto com dívidas
+  const [orcamento, setOrcamento] = useState<OrcamentoItem[]>([]);
+  const [orcamentoLoading, setOrcamentoLoading] = useState(false);
+
   // Modal de categoria
   const [catModal, setCatModal] = useState<{ nome: string; color: string; total: number } | null>(null);
   const [catLancs, setCatLancs] = useState<any[]>([]);
@@ -421,11 +425,19 @@ export default function DashboardScreen() {
     setProjection([]);
     setProjectionVisible(false);
     setTotalDividas(null);
+    setOrcamento([]);
+
     setDividasLoading(true);
     lancamentosService.getParceladosVigentes()
       .then(r => setTotalDividas(r.totalDivida))
       .catch(() => setTotalDividas(null))
       .finally(() => setDividasLoading(false));
+
+    setOrcamentoLoading(true);
+    categoriasService.getOrcamento(mes, ano)
+      .then(setOrcamento)
+      .catch(() => setOrcamento([]))
+      .finally(() => setOrcamentoLoading(false));
   }, [mes, ano]));
 
   // Carrega projeção sob demanda — 1 chamada ao backend
@@ -736,6 +748,57 @@ export default function DashboardScreen() {
         <Text style={{ color: colors.textSecondary, fontSize: 20 }}>›</Text>
       </TouchableOpacity>
 
+      {/* Card de Orçamento — lazy */}
+      {(() => {
+        const comLimite = orcamento.filter(i => i.limiteMensal != null);
+        if (!orcamentoLoading && comLimite.length === 0) return null;
+
+        const estouradas = comLimite.filter(i => i.gastoAtual > (i.limiteMensal ?? 0));
+        const alertas80  = comLimite.filter(i => !estouradas.includes(i) && i.gastoAtual / (i.limiteMensal ?? 1) >= 0.8);
+        const totalGasto = comLimite.reduce((s, i) => s + i.gastoAtual, 0);
+        const totalLimite = comLimite.reduce((s, i) => s + (i.limiteMensal ?? 0), 0);
+        const pctGeral = totalLimite > 0 ? totalGasto / totalLimite : 0;
+        const corGeral = estouradas.length > 0 ? colors.red : pctGeral >= 0.8 ? colors.orange : colors.green;
+
+        return (
+          <TouchableOpacity
+            style={styles.orcamentoCard}
+            onPress={() => (navigation as any).navigate('Orcamento')}
+            activeOpacity={0.75}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.orcamentoTitle}>🎯 Orçamento</Text>
+              {orcamentoLoading ? (
+                <Text style={styles.orcamentoSub}>Calculando...</Text>
+              ) : (
+                <>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    <Text style={[styles.orcamentoValor, { color: corGeral }]}>
+                      {hideValues ? '• • •' : fmtBRL(totalGasto)}
+                    </Text>
+                    <Text style={styles.orcamentoSub}>
+                      de {hideValues ? '• • •' : fmtBRL(totalLimite)}
+                    </Text>
+                  </View>
+                  {/* Barra de progresso geral */}
+                  <View style={{ height: 4, backgroundColor: colors.border, borderRadius: 2, marginTop: 6 }}>
+                    <View style={{ height: 4, borderRadius: 2, backgroundColor: corGeral, width: `${Math.min(pctGeral * 100, 100)}%` as any }} />
+                  </View>
+                  {(estouradas.length > 0 || alertas80.length > 0) && (
+                    <Text style={[styles.orcamentoAlerta, { color: estouradas.length > 0 ? colors.red : colors.orange }]}>
+                      {estouradas.length > 0
+                        ? `🔴 ${estouradas.length} categoria${estouradas.length > 1 ? 's' : ''} acima do limite`
+                        : `🟠 ${alertas80.length} categoria${alertas80.length > 1 ? 's' : ''} acima de 80%`}
+                    </Text>
+                  )}
+                </>
+              )}
+            </View>
+            <Text style={{ color: colors.textSecondary, fontSize: 20 }}>›</Text>
+          </TouchableOpacity>
+        );
+      })()}
+
       <View style={{ height: 24 }} />
     </ScrollView>
 
@@ -870,6 +933,18 @@ function makeStyles(c: ColorScheme) {
     },
     dividasTitle: { fontSize: 14, fontWeight: '700', color: c.text },
     dividasSub:   { fontSize: 15, fontWeight: '600', color: c.red, marginTop: 3 },
+
+    orcamentoCard: {
+      flexDirection: 'row', alignItems: 'center',
+      marginHorizontal: 16, marginTop: 12,
+      backgroundColor: c.surface, borderRadius: 14,
+      padding: 16, borderWidth: 1, borderColor: c.border,
+      borderLeftWidth: 4, borderLeftColor: c.green,
+    },
+    orcamentoTitle:  { fontSize: 14, fontWeight: '700', color: c.text },
+    orcamentoValor:  { fontSize: 15, fontWeight: '700' },
+    orcamentoSub:    { fontSize: 12, color: c.textSecondary },
+    orcamentoAlerta: { fontSize: 12, fontWeight: '600', marginTop: 5 },
 
     pendenciasCard: {
       marginHorizontal: 16, marginTop: 12,

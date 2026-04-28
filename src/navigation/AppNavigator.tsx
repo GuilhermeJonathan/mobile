@@ -23,6 +23,7 @@ import ImportarFaturaScreen from '../screens/ImportarFaturaScreen';
 import DividasScreen from '../screens/DividasScreen';
 import AnualScreen from '../screens/AnualScreen';
 import BuscaLancamentosScreen from '../screens/BuscaLancamentosScreen';
+import OrcamentoScreen from '../screens/OrcamentoScreen';
 import UserDrawer from '../components/UserDrawer';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
@@ -71,6 +72,7 @@ function MainTabs() {
             Receitas: '📈',
             Cartões: '💳',
             Saldos: '🏦',
+            Orçamento: '🎯',
           };
           return <Text style={{ fontSize: size - 4 }}>{icons[route.name]}</Text>;
         },
@@ -128,6 +130,11 @@ function MainTabs() {
       <Tab.Screen name="Receitas" component={ReceitasScreen} />
       <Tab.Screen name="Cartões" component={CartoesScreen} />
       <Tab.Screen name="Saldos" component={SaldosScreen} />
+      <Tab.Screen
+        name="Orçamento"
+        component={OrcamentoScreen}
+        options={{ title: 'Orçamento' }}
+      />
     </Tab.Navigator>
     </>
   );
@@ -184,6 +191,16 @@ export default function AppNavigator() {
             title: 'Importar Fatura',
             headerStyle: { backgroundColor: '#1a1a2e' },
             headerTintColor: '#fff',
+          }}
+        />
+        <Stack.Screen
+          name="Orcamento"
+          component={OrcamentoScreen}
+          options={{
+            headerShown: true,
+            title: 'Orçamento por Categoria',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
           }}
         />
         <Stack.Screen

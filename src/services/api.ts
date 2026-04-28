@@ -124,10 +124,21 @@ export const lancamentosService = {
     api.get(`/lancamentos/busca?q=${encodeURIComponent(q)}&page=${page}&pageSize=${pageSize}`).then(r => r.data),
 };
 
+export interface OrcamentoItem {
+  categoriaId: string;
+  categoriaNome: string;
+  limiteMensal: number | null;
+  gastoAtual: number;
+}
+
 export const categoriasService = {
   getAll: () => api.get('/categorias').then(r => r.data),
   create: (data: object) => api.post('/categorias', data).then(r => r.data),
   delete: (id: string) => api.delete(`/categorias/${id}`),
+  atualizarLimite: (id: string, limiteMensal: number | null) =>
+    api.patch(`/categorias/${id}/limite`, { limiteMensal }),
+  getOrcamento: (mes: number, ano: number): Promise<OrcamentoItem[]> =>
+    api.get(`/categorias/orcamento/${mes}/${ano}`).then(r => r.data),
 };
 
 export const cartoesService = {
