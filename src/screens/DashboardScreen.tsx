@@ -5,7 +5,7 @@ import {
   RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions,
 } from 'react-native';
 import Svg, { Rect, Text as SvgText, Line, Circle, Path, G } from 'react-native-svg';
-import { lancamentosService, categoriasService, OrcamentoItem } from '../services/api';
+import { lancamentosService, categoriasService, OrcamentoItem, api } from '../services/api';
 import { Dashboard } from '../types';
 import { fmtBRL, fmtBRLCompact } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
@@ -398,6 +398,10 @@ export default function DashboardScreen() {
   const [orcamento, setOrcamento] = useState<OrcamentoItem[]>([]);
   const [orcamentoLoading, setOrcamentoLoading] = useState(false);
 
+  // Metas — carrega lazy
+  const [metas, setMetas] = useState<{ valorMeta: number; valorAtual: number; status: number }[]>([]);
+  const [metasLoading, setMetasLoading] = useState(false);
+
   // Modal de categoria
   const [catModal, setCatModal] = useState<{ nome: string; color: string; total: number } | null>(null);
   const [catLancs, setCatLancs] = useState<any[]>([]);
@@ -438,6 +442,12 @@ export default function DashboardScreen() {
       .then(setOrcamento)
       .catch(() => setOrcamento([]))
       .finally(() => setOrcamentoLoading(false));
+
+    setMetas([]);
+    setMetasLoading(true);
+    api.get('/metas').then(r => setMetas(r.data))
+      .catch(() => setMetas([]))
+      .finally(() => setMetasLoading(false));
   }, [mes, ano]));
 
   // Carrega projeção sob demanda — 1 chamada ao backend
@@ -799,6 +809,51 @@ export default function DashboardScreen() {
         );
       })()}
 
+      {/* Card de Metas — lazy */}
+      {(() => {
+        const ativas     = metas.filter(m => m.status === 1);
+        const concluidas = metas.filter(m => m.status === 2);
+        if (!metasLoading && metas.length === 0) return null;
+
+        const totalMeta  = ativas.reduce((s, m) => s + m.valorMeta, 0);
+        const totalAtual = ativas.reduce((s, m) => s + m.valorAtual, 0);
+        const pct        = totalMeta > 0 ? totalAtual / totalMeta : 0;
+
+        return (
+          <TouchableOpacity
+            style={styles.metasCard}
+            onPress={() => (navigation as any).navigate('Metas')}
+            activeOpacity={0.75}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.metasTitle}>🎯 Metas</Text>
+              {metasLoading ? (
+                <Text style={styles.metasSub}>Carregando...</Text>
+              ) : (
+                <>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <Text style={[styles.metasValor, { color: colors.green }]}>
+                      {hideValues ? '• • •' : fmtBRL(totalAtual)}
+                    </Text>
+                    <Text style={styles.metasSub}>
+                      de {hideValues ? '• • •' : fmtBRL(totalMeta)}
+                    </Text>
+                  </View>
+                  <View style={{ height: 4, backgroundColor: colors.border, borderRadius: 2, marginTop: 6 }}>
+                    <View style={{ height: 4, borderRadius: 2, backgroundColor: colors.green, width: `${Math.min(pct * 100, 100)}%` as any }} />
+                  </View>
+                  <Text style={styles.metasSub}>
+                    {ativas.length} ativa{ativas.length !== 1 ? 's' : ''}
+                    {concluidas.length > 0 ? `  ·  🎉 ${concluidas.length} concluída${concluidas.length !== 1 ? 's' : ''}` : ''}
+                  </Text>
+                </>
+              )}
+            </View>
+            <Text style={{ color: colors.textSecondary, fontSize: 20 }}>›</Text>
+          </TouchableOpacity>
+        );
+      })()}
+
       <View style={{ height: 24 }} />
     </ScrollView>
 
@@ -933,6 +988,17 @@ function makeStyles(c: ColorScheme) {
     },
     dividasTitle: { fontSize: 14, fontWeight: '700', color: c.text },
     dividasSub:   { fontSize: 15, fontWeight: '600', color: c.red, marginTop: 3 },
+
+    metasCard: {
+      flexDirection: 'row', alignItems: 'center',
+      marginHorizontal: 16, marginTop: 12,
+      backgroundColor: c.surface, borderRadius: 14,
+      padding: 16, borderWidth: 1, borderColor: c.border,
+      borderLeftWidth: 4, borderLeftColor: '#d29922',
+    },
+    metasTitle:  { fontSize: 14, fontWeight: '700', color: c.text },
+    metasValor:  { fontSize: 15, fontWeight: '700' },
+    metasSub:    { fontSize: 12, color: c.textSecondary, marginTop: 3 },
 
     orcamentoCard: {
       flexDirection: 'row', alignItems: 'center',

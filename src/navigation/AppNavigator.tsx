@@ -25,6 +25,7 @@ import AnualScreen from '../screens/AnualScreen';
 import BuscaLancamentosScreen from '../screens/BuscaLancamentosScreen';
 import OrcamentoScreen from '../screens/OrcamentoScreen';
 import FamiliaScreen from '../screens/FamiliaScreen';
+import MetasScreen from '../screens/MetasScreen';
 import UserDrawer from '../components/UserDrawer';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
@@ -38,7 +39,10 @@ const linking = {
       Login: 'login',
       Register: {
         path: 'register',
-        parse: { inviteToken: (invite: string) => invite },
+        parse: {
+          inviteToken: (v: string) => v,  // ?inviteToken=
+          invite:      (v: string) => v,  // ?invite= (formato do backend)
+        },
       },
       Main: {
         screens: {
@@ -192,6 +196,16 @@ export default function AppNavigator() {
             title: 'Importar Fatura',
             headerStyle: { backgroundColor: '#1a1a2e' },
             headerTintColor: '#fff',
+          }}
+        />
+        <Stack.Screen
+          name="Metas"
+          component={MetasScreen}
+          options={{
+            headerShown: true,
+            title: 'Metas',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
           }}
         />
         <Stack.Screen

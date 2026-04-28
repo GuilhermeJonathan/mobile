@@ -184,6 +184,17 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
         <View style={s.divider} />
 
+        {/* Metas */}
+        <TouchableOpacity
+          style={s.row}
+          onPress={() => { onClose(); navigationRef.current?.navigate('Metas' as never); }}
+        >
+          <Text style={s.rowIcon}>🎯</Text>
+          <Text style={s.rowLabel}>Metas</Text>
+        </TouchableOpacity>
+
+        <View style={s.divider} />
+
         {/* Família */}
         <TouchableOpacity
           style={s.row}

@@ -12,7 +12,8 @@ export default function RegisterScreen({ navigation, route }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const inviteToken: string = route?.params?.inviteToken ?? '';
+  // Aceita ?inviteToken= (mobile deep link) e ?invite= (link gerado pelo backend)
+  const inviteToken: string = route?.params?.inviteToken ?? route?.params?.invite ?? '';
 
   const [validating, setValidating] = useState(true);
   const [inviteValid, setInviteValid] = useState(false);
