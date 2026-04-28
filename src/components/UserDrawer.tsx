@@ -10,6 +10,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { navigationRef } from '../navigation/navigationRef';
 import { useVencimentos } from '../contexts/VencimentosContext';
 import { fmtBRL } from '../utils/currency';
+import { vinculosService, MeuVinculoDto } from '../services/api';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
@@ -39,11 +40,13 @@ export default function UserDrawer({ visible, onClose }: Props) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [meuVinculo, setMeuVinculo] = useState<MeuVinculoDto | null>(null);
 
   useEffect(() => {
     if (visible) {
       authService.getUserInfo().then(setUser);
       authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+      vinculosService.meuVinculo().then(setMeuVinculo).catch(() => setMeuVinculo(null));
       Animated.parallel([
         Animated.timing(slideAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
@@ -178,6 +181,29 @@ export default function UserDrawer({ visible, onClose }: Props) {
             </TouchableOpacity>
           </>
         )}
+
+        <View style={s.divider} />
+
+        {/* Família */}
+        <TouchableOpacity
+          style={s.row}
+          onPress={() => { onClose(); navigationRef.current?.navigate('Familia' as never); }}
+        >
+          <Text style={s.rowIcon}>👨‍👩‍👧</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={s.rowLabel}>Família</Text>
+            {meuVinculo?.ehMembro && (
+              <Text style={{ fontSize: 11, color: s.rowLabel.color === '#fff' ? '#aaa' : '#888', marginTop: 1 }}>
+                Você está na família de outro usuário
+              </Text>
+            )}
+          </View>
+          {meuVinculo?.ehMembro && (
+            <View style={{ backgroundColor: '#4CAF5033', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+              <Text style={{ color: '#4CAF50', fontSize: 10, fontWeight: '700' }}>MEMBRO</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         <View style={s.divider} />
 

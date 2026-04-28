@@ -6,6 +6,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, saldosService } from '../services/api';
 import { Lancamento, SaldoConta, SituacaoLancamento, TipoLancamento, TipoConta, TipoReceita } from '../types';
+import { authService } from '../services/authService';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
@@ -74,6 +75,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [expandedCartoes, setExpandedCartoes] = useState<Set<string>>(new Set());
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [filtroSit, setFiltroSit] = useState<FiltroSit>('todos');
@@ -91,6 +93,10 @@ export default function LancamentosScreen({ navigation, route }: any) {
     cartaoId: string; cartaoNome: string;
     total: number; items: Lancamento[];
   } | null>(null);
+
+  useEffect(() => {
+    authService.getUserInfo().then(info => setCurrentUserId(info?.id ?? null));
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -448,6 +454,11 @@ export default function LancamentosScreen({ navigation, route }: any) {
               <Text style={styles.itemMeta}>
                 {new Date(item.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
               </Text>
+              {item.criadoPorId && item.criadoPorId !== currentUserId && item.criadoPorNome && (
+                <View style={styles.autorBadge}>
+                  <Text style={styles.autorBadgeText}>👤 {item.criadoPorNome.split(' ')[0]}</Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -1113,6 +1124,8 @@ function makeStyles(c: ColorScheme) {
 
     parcelaBadge: { backgroundColor: '#FF980015', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1, borderColor: '#FF980040' },
     parcelaBadgeText: { fontSize: 11, color: c.orange, fontWeight: '600' },
+    autorBadge: { backgroundColor: '#58a6ff18', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1, borderColor: '#58a6ff40' },
+    autorBadgeText: { fontSize: 11, color: '#58a6ff', fontWeight: '600' },
     recorrenteBadge: { backgroundColor: c.purpleDim, borderRadius: 10, borderWidth: 1, borderColor: c.purpleBorder, paddingHorizontal: 7, paddingVertical: 1 },
     recorrenteBadgeText: { fontSize: 11, color: c.purpleLight, fontWeight: '600' },
 

@@ -4,6 +4,7 @@ import {
   FlatList, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { lancamentosService, BuscaLancamentoItem } from '../services/api';
+import { authService } from '../services/authService';
 import { SituacaoLancamento, TipoLancamento } from '../types';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
@@ -41,6 +42,11 @@ export default function BuscaLancamentosScreen({ navigation }: any) {
   const [loading, setLoading]       = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [buscou, setBuscou]         = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    authService.getUserInfo().then(info => setCurrentUserId(info?.id ?? null));
+  }, []);
   const debounceRef                 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const buscar = useCallback(async (termo: string, pg: number, append = false) => {
@@ -131,6 +137,9 @@ export default function BuscaLancamentosScreen({ navigation }: any) {
             )}
             {parcelaInfo && (
               <Text style={styles.itemMetaText}> · {parcelaInfo}</Text>
+            )}
+            {item.criadoPorId && item.criadoPorId !== currentUserId && item.criadoPorNome && (
+              <Text style={[styles.itemMetaText, { color: '#58a6ff' }]}> · 👤 {item.criadoPorNome.split(' ')[0]}</Text>
             )}
           </View>
         </View>

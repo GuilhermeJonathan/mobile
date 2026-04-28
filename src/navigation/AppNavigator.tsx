@@ -24,6 +24,7 @@ import DividasScreen from '../screens/DividasScreen';
 import AnualScreen from '../screens/AnualScreen';
 import BuscaLancamentosScreen from '../screens/BuscaLancamentosScreen';
 import OrcamentoScreen from '../screens/OrcamentoScreen';
+import FamiliaScreen from '../screens/FamiliaScreen';
 import UserDrawer from '../components/UserDrawer';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
@@ -191,6 +192,16 @@ export default function AppNavigator() {
             title: 'Importar Fatura',
             headerStyle: { backgroundColor: '#1a1a2e' },
             headerTintColor: '#fff',
+          }}
+        />
+        <Stack.Screen
+          name="Familia"
+          component={FamiliaScreen}
+          options={{
+            headerShown: true,
+            title: 'Família',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
           }}
         />
         <Stack.Screen

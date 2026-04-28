@@ -81,6 +81,8 @@ export interface BuscaLancamentoItem {
   totalParcelas: number | null;
   isRecorrente: boolean;
   grupoParcelas: string | null;
+  criadoPorId: string | null;
+  criadoPorNome: string | null;
 }
 
 export interface BuscaResult {
@@ -130,6 +132,32 @@ export interface OrcamentoItem {
   limiteMensal: number | null;
   gastoAtual: number;
 }
+
+export interface VinculoDto {
+  id: string;
+  nomeMembro: string;
+  aceito: boolean;
+  criadoEm: string;
+}
+
+export interface MeuVinculoDto {
+  ehMembro: boolean;
+  donoId: string | null;
+  vinculoId: string | null;
+}
+
+export const vinculosService = {
+  gerarConvite: (): Promise<{ codigo: string }> =>
+    api.post('/vinculos/convite').then(r => r.data),
+  aceitarConvite: (codigo: string, nomeMembro: string) =>
+    api.post('/vinculos/aceitar', { codigo, nomeMembro }),
+  listar: (): Promise<VinculoDto[]> =>
+    api.get('/vinculos').then(r => r.data),
+  meuVinculo: (): Promise<MeuVinculoDto> =>
+    api.get('/vinculos/meu').then(r => r.data),
+  remover: (id: string) =>
+    api.delete(`/vinculos/${id}`),
+};
 
 export const categoriasService = {
   getAll: () => api.get('/categorias').then(r => r.data),

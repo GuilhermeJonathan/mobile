@@ -41,6 +41,9 @@ export interface Lancamento {
   contaBancariaNome?: string;
   // Pagamento
   dataPagamento?: string;
+  // Autoria
+  criadoPorId?: string;
+  criadoPorNome?: string;
 }
 
 export enum TipoConta {
