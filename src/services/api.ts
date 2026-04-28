@@ -92,6 +92,8 @@ export const lancamentosService = {
   delete: (id: string) => api.delete(`/lancamentos/${id}`),
   deleteParcelasFuturas: (grupoParcelas: string, parcelaAtualFrom: number) =>
     api.delete(`/lancamentos/parcelas-futuras/${grupoParcelas}/${parcelaAtualFrom}`),
+  deleteGrupoParcelas: (grupoParcelas: string) =>
+    api.delete(`/lancamentos/grupo/${grupoParcelas}`),
 };
 
 export const categoriasService = {

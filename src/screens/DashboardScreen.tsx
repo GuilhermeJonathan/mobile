@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, ScrollView, Modal, FlatList,
   RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions,
@@ -399,15 +400,17 @@ export default function DashboardScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Total de dívidas: carrega em background após o dashboard principal (1 chamada leve)
-  useEffect(() => {
+  // Reseta dados lazy ao focar a tela (cobre troca de usuário sem mudança de mês)
+  useFocusEffect(useCallback(() => {
+    setProjection([]);
+    setProjectionVisible(false);
     setTotalDividas(null);
     setDividasLoading(true);
     lancamentosService.getParceladosVigentes()
       .then(r => setTotalDividas(r.totalDivida))
       .catch(() => setTotalDividas(null))
       .finally(() => setDividasLoading(false));
-  }, [mes, ano]);
+  }, [mes, ano]));
 
   // Carrega projeção sob demanda — 1 chamada ao backend
   async function carregarProjecao() {

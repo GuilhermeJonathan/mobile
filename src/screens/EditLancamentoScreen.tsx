@@ -204,6 +204,18 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
     }
   }
 
+  async function handleExcluirGrupoCompleto() {
+    setDeleteModalVisible(false);
+    setDeleting(true);
+    try {
+      await lancamentosService.deleteGrupoParcelas(lancamento.grupoParcelas!);
+      navigation.goBack();
+    } catch {
+      setError('Erro ao excluir grupo de parcelas.');
+      setDeleting(false);
+    }
+  }
+
   const categoriasFiltradas = categorias.filter(c => c.tipo === tipo || c.tipo === TipoLancamento.Debito);
 
   return (
@@ -455,6 +467,9 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.btnSave, { backgroundColor: '#e53935', marginBottom: 10 }]} onPress={handleExcluirEFuturas}>
                   <Text style={styles.buttonText}>Excluir esta e as próximas</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.btnSave, { backgroundColor: '#b71c1c', marginBottom: 10 }]} onPress={handleExcluirGrupoCompleto}>
+                  <Text style={styles.buttonText}>Excluir grupo inteiro</Text>
                 </TouchableOpacity>
               </>
             ) : (
