@@ -33,33 +33,52 @@ import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosCont
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// ─── Logo no header ───────────────────────────────────────────────────────────
+// ─── Logo cachorro no header ─────────────────────────────────────────────────
 function AppHeaderTitle() {
+  const head  = '#f5b84a';
+  const ear   = '#c8762a';
+  const dark  = '#0d1117';
+  const green = darkColors.green;
+
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-      {/* Mini mascote: círculo verde com M */}
-      <View style={{
-        width: 32, height: 32, borderRadius: 16,
-        backgroundColor: darkColors.green,
-        alignItems: 'center', justifyContent: 'center',
-        shadowColor: darkColors.green, shadowOpacity: 0.45,
-        shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-        elevation: 6,
-      }}>
-        {/* Olhos */}
-        <View style={{ flexDirection: 'row', gap: 7, marginBottom: 3, marginTop: -2 }}>
-          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#0d1117' }} />
-          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#0d1117' }} />
-        </View>
-        {/* Sorriso */}
-        <View style={{ height: 6, width: 13, overflow: 'hidden' }}>
-          <View style={{
-            height: 12, width: 12,
-            borderRadius: 6, borderWidth: 1.5,
-            borderColor: '#0d1117',
-            marginTop: -6, alignSelf: 'center',
-          }} />
-        </View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {/* Mini cachorro 36 × 36 */}
+      <View style={{ width: 36, height: 36 }}>
+        {/* Orelha esquerda */}
+        <View style={{
+          position: 'absolute', width: 10, height: 18, borderRadius: 5,
+          backgroundColor: ear, left: 2, top: 1,
+          transform: [{ rotate: '-18deg' }],
+        }} />
+        {/* Orelha direita */}
+        <View style={{
+          position: 'absolute', width: 10, height: 18, borderRadius: 5,
+          backgroundColor: ear, left: 24, top: 1,
+          transform: [{ rotate: '18deg' }],
+        }} />
+        {/* Cabeça */}
+        <View style={{
+          position: 'absolute', width: 28, height: 28, borderRadius: 14,
+          backgroundColor: head, left: 4, top: 5,
+          shadowColor: '#000', shadowOpacity: 0.25,
+          shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+          elevation: 4,
+        }} />
+        {/* Olho esquerdo */}
+        <View style={{
+          position: 'absolute', width: 4, height: 4, borderRadius: 2,
+          backgroundColor: dark, left: 11, top: 14,
+        }} />
+        {/* Olho direito */}
+        <View style={{
+          position: 'absolute', width: 4, height: 4, borderRadius: 2,
+          backgroundColor: dark, left: 21, top: 14,
+        }} />
+        {/* Coleira */}
+        <View style={{
+          position: 'absolute', width: 24, height: 5, borderRadius: 3,
+          backgroundColor: green, left: 6, top: 29,
+        }} />
       </View>
       <Text style={{ color: darkColors.text, fontWeight: '800', fontSize: 17 }}>
         Meu Financeiro
@@ -221,7 +240,11 @@ export default function AppNavigator() {
 
   return (
     <VencimentosProvider>
-    <NavigationContainer ref={navigationRef} linking={linking}>
+    <NavigationContainer
+      ref={navigationRef}
+      linking={linking}
+      documentTitle={{ formatter: () => 'Meu Financeiro' }}
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={isLoggedIn ? 'Main' : 'Login'}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />

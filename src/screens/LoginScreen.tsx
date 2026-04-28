@@ -7,66 +7,151 @@ import { authService } from '../services/authService';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 
-// ─── Mascote ─────────────────────────────────────────────────────────────────
+// ─── Mascote cachorro ─────────────────────────────────────────────────────────
 function LoginMascot({ color }: { color: string }) {
-  const dark = '#0d1117';
+  const head  = '#f5b84a';
+  const ear   = '#c8762a';
+  const snout = '#f8d898';
+  const dark  = '#0d1117';
+  const badge = '#e8a840';
+
   return (
     <View style={{ alignItems: 'center' }}>
-      {/* Orbit ring + floating emojis */}
-      <View style={{ width: 192, height: 192, alignItems: 'center', justifyContent: 'center' }}>
+      {/* Container 200 × 210 */}
+      <View style={{ width: 200, height: 210 }}>
+
+        {/* Orbit ring */}
         <View style={{
-          position: 'absolute', width: 172, height: 172, borderRadius: 86,
-          borderWidth: 1, borderColor: color + '30',
+          position: 'absolute', width: 178, height: 178, borderRadius: 89,
+          borderWidth: 1, borderColor: color + '35',
+          left: 11, top: 6,
         }} />
 
-        <Text style={{ position: 'absolute', top: 6,  right: 10, fontSize: 22 }}>💰</Text>
-        <Text style={{ position: 'absolute', top: 22, left: 8,  fontSize: 14, opacity: 0.7 }}>✨</Text>
-        <Text style={{ position: 'absolute', bottom: 10, left: 14, fontSize: 18 }}>📈</Text>
-        <Text style={{ position: 'absolute', bottom: 8,  right: 12, fontSize: 13, opacity: 0.65 }}>✨</Text>
+        {/* Floating emojis */}
+        <Text style={{ position: 'absolute', top: 4,  right: 10, fontSize: 20 }}>💰</Text>
+        <Text style={{ position: 'absolute', top: 22, left: 8,  fontSize: 13, opacity: 0.7 }}>✨</Text>
+        <Text style={{ position: 'absolute', bottom: 26, left: 10, fontSize: 17 }}>📈</Text>
+        <Text style={{ position: 'absolute', bottom: 24, right: 10, fontSize: 12, opacity: 0.65 }}>✨</Text>
 
-        {/* Glow */}
+        {/* ── Orelha esquerda ─── */}
         <View style={{
-          width: 124, height: 124, borderRadius: 62,
-          backgroundColor: color + '18',
+          position: 'absolute',
+          width: 30, height: 54, borderRadius: 15,
+          backgroundColor: ear,
+          left: 52, top: 34,
+          transform: [{ rotate: '-18deg' }],
+        }} />
+
+        {/* ── Orelha direita ─── */}
+        <View style={{
+          position: 'absolute',
+          width: 30, height: 54, borderRadius: 15,
+          backgroundColor: ear,
+          left: 118, top: 34,
+          transform: [{ rotate: '18deg' }],
+        }} />
+
+        {/* ── Cabeça ─── */}
+        <View style={{
+          position: 'absolute',
+          width: 106, height: 106, borderRadius: 53,
+          backgroundColor: head,
+          left: 47, top: 42,
+          shadowColor: '#000', shadowOpacity: 0.32,
+          shadowRadius: 14, shadowOffset: { width: 0, height: 5 },
+          elevation: 10,
+        }} />
+
+        {/* ── Focinho ─── */}
+        <View style={{
+          position: 'absolute',
+          width: 58, height: 44, borderRadius: 22,
+          backgroundColor: snout,
+          left: 71, top: 104,
+        }} />
+
+        {/* Olho esquerdo – branco */}
+        <View style={{
+          position: 'absolute', width: 24, height: 24, borderRadius: 12,
+          backgroundColor: 'white', left: 67, top: 70,
+        }} />
+        {/* Olho esquerdo – íris */}
+        <View style={{
+          position: 'absolute', width: 15, height: 15, borderRadius: 8,
+          backgroundColor: dark, left: 72, top: 76,
+        }} />
+        {/* Olho esquerdo – brilho */}
+        <View style={{
+          position: 'absolute', width: 5, height: 5, borderRadius: 3,
+          backgroundColor: 'white', left: 80, top: 74,
+        }} />
+
+        {/* Olho direito – branco */}
+        <View style={{
+          position: 'absolute', width: 24, height: 24, borderRadius: 12,
+          backgroundColor: 'white', left: 109, top: 70,
+        }} />
+        {/* Olho direito – íris */}
+        <View style={{
+          position: 'absolute', width: 15, height: 15, borderRadius: 8,
+          backgroundColor: dark, left: 113, top: 76,
+        }} />
+        {/* Olho direito – brilho */}
+        <View style={{
+          position: 'absolute', width: 5, height: 5, borderRadius: 3,
+          backgroundColor: 'white', left: 120, top: 74,
+        }} />
+
+        {/* Nariz */}
+        <View style={{
+          position: 'absolute', width: 20, height: 14, borderRadius: 8,
+          backgroundColor: dark, left: 90, top: 106,
+        }} />
+
+        {/* Sorriso – clip do semicírculo inferior */}
+        <View style={{
+          position: 'absolute', left: 82, top: 120,
+          width: 36, height: 15, overflow: 'hidden',
+        }}>
+          <View style={{
+            width: 34, height: 34, borderRadius: 17,
+            borderWidth: 3, borderColor: dark,
+            marginTop: -19, alignSelf: 'center',
+          }} />
+        </View>
+
+        {/* Blush esquerdo */}
+        <View style={{
+          position: 'absolute', width: 26, height: 15, borderRadius: 13,
+          backgroundColor: 'rgba(255,110,80,0.22)', left: 55, top: 112,
+        }} />
+        {/* Blush direito */}
+        <View style={{
+          position: 'absolute', width: 26, height: 15, borderRadius: 13,
+          backgroundColor: 'rgba(255,110,80,0.22)', left: 119, top: 112,
+        }} />
+
+        {/* Coleira */}
+        <View style={{
+          position: 'absolute', width: 92, height: 22, borderRadius: 11,
+          backgroundColor: color,
+          left: 54, top: 148,
+          shadowColor: color, shadowOpacity: 0.55,
+          shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
+          elevation: 8,
+        }} />
+
+        {/* Tag R$ */}
+        <View style={{
+          position: 'absolute', width: 30, height: 30, borderRadius: 15,
+          backgroundColor: badge,
+          borderWidth: 2.5, borderColor: color,
+          left: 85, top: 158,
           alignItems: 'center', justifyContent: 'center',
         }}>
-          {/* Face */}
-          <View style={{
-            width: 100, height: 100, borderRadius: 50,
-            backgroundColor: color,
-            alignItems: 'center', justifyContent: 'center',
-            shadowColor: color, shadowOpacity: 0.55,
-            shadowRadius: 22, shadowOffset: { width: 0, height: 4 },
-            elevation: 16,
-          }}>
-            {/* Eyes */}
-            <View style={{ flexDirection: 'row', gap: 22, marginBottom: 10, marginTop: -6 }}>
-              <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: dark }} />
-              <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: dark }} />
-            </View>
-            {/* Smile – clipping do semicírculo inferior */}
-            <View style={{ height: 17, width: 36, overflow: 'hidden' }}>
-              <View style={{
-                height: 34, width: 34,
-                borderRadius: 17,
-                borderWidth: 3,
-                borderColor: dark,
-                marginTop: -17,
-                alignSelf: 'center',
-              }} />
-            </View>
-          </View>
+          <Text style={{ color: dark, fontSize: 9, fontWeight: '900' }}>R$</Text>
         </View>
-      </View>
 
-      {/* Badge R$ */}
-      <View style={{
-        marginTop: -6,
-        backgroundColor: color + '1a', borderRadius: 12,
-        paddingVertical: 4, paddingHorizontal: 16,
-        borderWidth: 1.5, borderColor: color + '45',
-      }}>
-        <Text style={{ color, fontWeight: '900', fontSize: 13, letterSpacing: 2 }}>R$</Text>
       </View>
     </View>
   );
