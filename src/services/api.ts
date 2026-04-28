@@ -282,6 +282,24 @@ export const adminService = {
     loginApi.patch(`/user/${id}/block`, { block }),
 };
 
+export interface WhatsAppVinculoDto {
+  phoneNumber: string;
+  createdAt: string;
+}
+
+export const whatsappService = {
+  getVinculo: (): Promise<WhatsAppVinculoDto | null> =>
+    api.get<WhatsAppVinculoDto>('/whatsapp/vinculo')
+      .then(r => r.data)
+      .catch(e => e?.response?.status === 404 ? null : Promise.reject(e)),
+
+  vincular: (phoneNumber: string) =>
+    api.post('/whatsapp/vincular', { phoneNumber }),
+
+  desvincular: () =>
+    api.delete('/whatsapp/vinculo'),
+};
+
 export const inviteService = {
   validate: (token: string) =>
     loginApi.get<{ isValid: boolean; email: string | null; expiresAt: string | null }>(

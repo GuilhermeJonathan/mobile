@@ -26,6 +26,7 @@ import BuscaLancamentosScreen from '../screens/BuscaLancamentosScreen';
 import OrcamentoScreen from '../screens/OrcamentoScreen';
 import FamiliaScreen from '../screens/FamiliaScreen';
 import MetasScreen from '../screens/MetasScreen';
+import WhatsAppVincularScreen from '../screens/WhatsAppVincularScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
@@ -323,6 +324,13 @@ export default function AppNavigator() {
             title: 'Visão Anual',
             headerStyle: { backgroundColor: darkColors.surface },
             headerTintColor: darkColors.text,
+          }}
+        />
+        <Stack.Screen
+          name="WhatsApp"
+          component={WhatsAppVincularScreen}
+          options={{
+            headerShown: false,
           }}
         />
         <Stack.Screen

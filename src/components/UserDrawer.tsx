@@ -324,6 +324,17 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
           <View style={s.divider} />
 
+          {/* ── WhatsApp ────────────────────────────────────────────── */}
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => { onClose(); navigationRef.current?.navigate('WhatsApp' as never); }}
+          >
+            <Text style={s.rowIcon}>💬</Text>
+            <Text style={s.rowLabel}>Vincular WhatsApp</Text>
+          </TouchableOpacity>
+
+          <View style={s.divider} />
+
           {/* ── Logout ─────────────────────────────────────────────── */}
           <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} disabled={loggingOut}>
             {loggingOut
