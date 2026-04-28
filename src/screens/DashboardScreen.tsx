@@ -364,45 +364,33 @@ export default function DashboardScreen() {
   const [mes, setMes] = useState(now.getMonth() + 1);
   const [ano, setAno] = useState(now.getFullYear());
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [projection, setProjection] = useState<{ label: string; receitas: number; despesas: number; isFuture: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [hideValues, setHideValues] = useState(false);
+
+  // Projeção — carrega só quando o usuário expandir
+  const [projection, setProjection] = useState<{ label: string; receitas: number; despesas: number; isFuture: boolean }[]>([]);
+  const [projectionVisible, setProjectionVisible] = useState(false);
+  const [projectionLoading, setProjectionLoading] = useState(false);
+
+  // Dívidas — carrega só quando o usuário expandir
   const [totalDividas, setTotalDividas] = useState<number | null>(null);
+  const [dividasLoading, setDividasLoading] = useState(false);
 
   // Modal de categoria
   const [catModal, setCatModal] = useState<{ nome: string; color: string; total: number } | null>(null);
   const [catLancs, setCatLancs] = useState<any[]>([]);
   const [catLoading, setCatLoading] = useState(false);
 
+  // Carga inicial: apenas o dashboard do mês (1 chamada)
   const load = useCallback(async () => {
     try {
-      const [data, dividas] = await Promise.all([
-        lancamentosService.getDashboard(mes, ano),
-        lancamentosService.getParceladosVigentes(),
-      ]);
+      const data = await lancamentosService.getDashboard(mes, ano);
       setDashboard(data);
-      setTotalDividas(dividas.totalDivida);
-
-      // Busca 2 meses anteriores + atual + 9 meses futuros = 12 meses no total
-      const months: { label: string; receitas: number; despesas: number; isFuture: boolean }[] = [];
-      const nowDate = new Date();
-      const currentMes = nowDate.getMonth() + 1;
-      const currentAno = nowDate.getFullYear();
-
-      for (let offset = -2; offset <= 9; offset++) {
-        const d = new Date(ano, mes - 1 + offset, 1);
-        const m = d.getMonth() + 1;
-        const a = d.getFullYear();
-        const isFuture = a > currentAno || (a === currentAno && m > currentMes);
-        try {
-          const dd: Dashboard = await lancamentosService.getDashboard(m, a);
-          months.push({ label: MESES[m - 1], receitas: dd.totalCreditos, despesas: dd.totalDebitos, isFuture });
-        } catch {
-          months.push({ label: MESES[m - 1], receitas: 0, despesas: 0, isFuture });
-        }
-      }
-      setProjection(months);
+      // Reseta lazy data ao trocar de mês
+      setProjection([]);
+      setProjectionVisible(false);
+      setTotalDividas(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -410,6 +398,50 @@ export default function DashboardScreen() {
   }, [mes, ano]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Total de dívidas: carrega em background após o dashboard principal (1 chamada leve)
+  useEffect(() => {
+    setTotalDividas(null);
+    setDividasLoading(true);
+    lancamentosService.getParceladosVigentes()
+      .then(r => setTotalDividas(r.totalDivida))
+      .catch(() => setTotalDividas(null))
+      .finally(() => setDividasLoading(false));
+  }, [mes, ano]);
+
+  // Carrega projeção sob demanda — 1 chamada ao backend
+  async function carregarProjecao() {
+    if (projectionLoading) return;
+    setProjectionLoading(true);
+    try {
+      const nowDate = new Date();
+      const currentMes = nowDate.getMonth() + 1;
+      const currentAno = nowDate.getFullYear();
+      const data = await lancamentosService.getProjecao(mes, ano);
+      const months = data.map(d => ({
+        label: d.label,
+        receitas: d.totalCreditos,
+        despesas: d.totalDebitos,
+        isFuture: d.ano > currentAno || (d.ano === currentAno && d.mes > currentMes),
+      }));
+      setProjection(months);
+      setProjectionVisible(true);
+    } finally {
+      setProjectionLoading(false);
+    }
+  }
+
+  // Carrega total de dívidas sob demanda
+  async function carregarDividas() {
+    if (dividasLoading || totalDividas !== null) return;
+    setDividasLoading(true);
+    try {
+      const result = await lancamentosService.getParceladosVigentes();
+      setTotalDividas(result.totalDivida);
+    } finally {
+      setDividasLoading(false);
+    }
+  }
 
   async function abrirCategoria(categoria: string, color: string) {
     const total = resumo.find(r => r.categoria === categoria)?.total ?? 0;
@@ -620,11 +652,24 @@ export default function DashboardScreen() {
         );
       })()}
 
-      {/* Gráfico de projeção */}
-      {projection.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Projeção — 12 meses</Text>
-          <Text style={styles.sectionSub}>Histórico + meses futuros com lançamentos já cadastrados</Text>
+      {/* Gráfico de projeção — lazy */}
+      <TouchableOpacity
+        style={styles.projecaoCard}
+        onPress={() => { if (!projectionVisible) carregarProjecao(); else setProjectionVisible(false); }}
+        activeOpacity={0.75}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.anualCardTitle}>📈 Projeção — 12 meses</Text>
+          <Text style={styles.anualCardSub}>Histórico + meses futuros cadastrados</Text>
+        </View>
+        {projectionLoading
+          ? <ActivityIndicator size="small" color={colors.blue} />
+          : <Text style={{ color: colors.textSecondary, fontSize: 20 }}>{projectionVisible ? '▲' : '▼'}</Text>
+        }
+      </TouchableOpacity>
+
+      {projectionVisible && projection.length > 0 && (
+        <View style={[styles.section, { marginTop: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]}>
           <View style={styles.projectionWrap}>
             <ProjectionChart data={projection} />
           </View>
@@ -644,7 +689,7 @@ export default function DashboardScreen() {
         <Text style={{ color: colors.textSecondary, fontSize: 20 }}>›</Text>
       </TouchableOpacity>
 
-      {/* Card de Dívidas Parceladas */}
+      {/* Card de Dívidas Parceladas — lazy */}
       <TouchableOpacity
         style={styles.dividasCard}
         onPress={() => (navigation as any).navigate('Dividas')}
@@ -653,9 +698,11 @@ export default function DashboardScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.dividasTitle}>💳 Dívidas Parceladas</Text>
           <Text style={styles.dividasSub}>
-            {totalDividas !== null
-              ? hideValues ? '• • • • • •' : fmtBRL(totalDividas)
-              : 'Ver todas as compras em aberto'}
+            {dividasLoading
+              ? 'Calculando...'
+              : totalDividas !== null
+                ? hideValues ? '• • • • • •' : fmtBRL(totalDividas)
+                : 'Ver todas as compras em aberto'}
           </Text>
         </View>
         <Text style={{ color: colors.textSecondary, fontSize: 20 }}>›</Text>
@@ -768,6 +815,13 @@ function makeStyles(c: ColorScheme) {
     legendDot: { width: 10, height: 10, borderRadius: 5 },
     legendText: { fontSize: 11, color: c.textSecondary },
 
+    projecaoCard: {
+      flexDirection: 'row', alignItems: 'center',
+      marginHorizontal: 16, marginTop: 12,
+      backgroundColor: c.surface, borderRadius: 14,
+      padding: 16, borderWidth: 1, borderColor: c.border,
+      borderLeftWidth: 4, borderLeftColor: c.blue,
+    },
     anualCard: {
       flexDirection: 'row', alignItems: 'center',
       marginHorizontal: 16, marginTop: 12,

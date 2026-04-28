@@ -64,6 +64,14 @@ export interface ResumoAnual {
   topCategorias: ResumoCatAnual[];
 }
 
+export interface ProjecaoMes {
+  mes: number;
+  ano: number;
+  label: string;
+  totalCreditos: number;
+  totalDebitos: number;
+}
+
 export const lancamentosService = {
   getByMes: (mes: number, ano: number) =>
     api.get(`/lancamentos/${mes}/${ano}`).then(r => r.data),
@@ -71,6 +79,8 @@ export const lancamentosService = {
     api.get('/lancamentos/parcelados-vigentes').then(r => r.data),
   getResumoAnual: (ano: number): Promise<ResumoAnual> =>
     api.get(`/lancamentos/resumo-anual/${ano}`).then(r => r.data),
+  getProjecao: (mes: number, ano: number): Promise<ProjecaoMes[]> =>
+    api.get(`/lancamentos/projecao/${mes}/${ano}`).then(r => r.data),
   getDashboard: (mes: number, ano: number) =>
     api.get(`/lancamentos/dashboard/${mes}/${ano}`).then(r => r.data),
   create: (data: object) => api.post('/lancamentos', data).then(r => r.data),
