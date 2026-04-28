@@ -571,6 +571,59 @@ export default function DashboardScreen() {
         </View>
       </View>
 
+      {/* Card de Saúde Financeira */}
+      {(dashboard?.diasReserva !== null || dashboard?.comprometimentoRenda !== null) && (() => {
+        const dias = dashboard?.diasReserva ?? null;
+        const comp = dashboard?.comprometimentoRenda ?? null;
+
+        // Cor dos dias de reserva: ≥90 verde, ≥30 amarelo, <30 vermelho
+        const diasColor = dias === null ? colors.textSecondary
+          : dias >= 90 ? '#4CAF50'
+          : dias >= 30 ? '#FF9800'
+          : '#e53935';
+
+        // Cor do comprometimento: ≤70% verde, ≤90% amarelo, >90% vermelho
+        const compColor = comp === null ? colors.textSecondary
+          : comp <= 70 ? '#4CAF50'
+          : comp <= 90 ? '#FF9800'
+          : '#e53935';
+
+        return (
+          <View style={[styles.saudeCard]}>
+            <Text style={styles.saudeTitle}>❤️ Saúde Financeira</Text>
+            <View style={styles.saudeRow}>
+              {/* Dias de Reserva */}
+              {dias !== null && (
+                <View style={styles.saudeItem}>
+                  <Text style={[styles.saudeValor, { color: diasColor }]}>
+                    {hideValues ? '• • •' : `${dias}d`}
+                  </Text>
+                  <Text style={styles.saudeLabel}>Reserva</Text>
+                  <Text style={styles.saudeSub}>
+                    {dias >= 180 ? '🟢 Excelente' : dias >= 90 ? '🟡 Adequada' : dias >= 30 ? '🟠 Atenção' : '🔴 Crítica'}
+                  </Text>
+                </View>
+              )}
+              {dias !== null && comp !== null && (
+                <View style={styles.saudeDivider} />
+              )}
+              {/* Comprometimento de Renda */}
+              {comp !== null && (
+                <View style={styles.saudeItem}>
+                  <Text style={[styles.saudeValor, { color: compColor }]}>
+                    {hideValues ? '• • •' : `${comp.toFixed(0)}%`}
+                  </Text>
+                  <Text style={styles.saudeLabel}>Comprometido</Text>
+                  <Text style={styles.saudeSub}>
+                    {comp <= 50 ? '🟢 Saudável' : comp <= 70 ? '🟡 Moderado' : comp <= 90 ? '🟠 Elevado' : '🔴 Crítico'}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        );
+      })()}
+
       {/* Card de Pendências */}
       {alertas.length > 0 && (() => {
         const now2 = new Date();
@@ -1011,6 +1064,20 @@ function makeStyles(c: ColorScheme) {
     orcamentoValor:  { fontSize: 15, fontWeight: '700' },
     orcamentoSub:    { fontSize: 12, color: c.textSecondary },
     orcamentoAlerta: { fontSize: 12, fontWeight: '600', marginTop: 5 },
+
+    saudeCard: {
+      marginHorizontal: 16, marginTop: 12,
+      backgroundColor: c.surface, borderRadius: 14,
+      padding: 16, borderWidth: 1, borderColor: c.border,
+      borderLeftWidth: 4, borderLeftColor: '#e91e63',
+    },
+    saudeTitle: { fontSize: 13, fontWeight: '700', color: c.textSecondary, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 12 },
+    saudeRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
+    saudeItem: { alignItems: 'center', flex: 1 },
+    saudeDivider: { width: 1, height: 54, backgroundColor: c.border },
+    saudeValor: { fontSize: 28, fontWeight: '800', lineHeight: 34 },
+    saudeLabel: { fontSize: 12, color: c.textSecondary, marginTop: 2, fontWeight: '600' },
+    saudeSub: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
 
     pendenciasCard: {
       marginHorizontal: 16, marginTop: 12,

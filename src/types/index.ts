@@ -71,6 +71,8 @@ export interface Dashboard {
   variacaoCreditos: number | null;
   variacaoDebitos: number | null;
   variacaoSaldo: number | null;
+  diasReserva: number | null;
+  comprometimentoRenda: number | null;
 }
 
 export interface Categoria {
