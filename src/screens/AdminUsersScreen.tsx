@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
-  ActivityIndicator, Modal, Platform, RefreshControl,
+  ActivityIndicator, Modal, Platform, RefreshControl, Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { adminService, UserListItem } from '../services/api';
@@ -98,11 +98,18 @@ export default function AdminUsersScreen({ navigation }: any) {
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} onPress={() => setSelected(item)} activeOpacity={0.75}>
             {/* Avatar */}
-            <View style={[styles.avatar, item.isBlocked && styles.avatarBlocked]}>
-              <Text style={styles.avatarText}>
-                {item.name?.[0]?.toUpperCase() ?? '?'}
-              </Text>
-            </View>
+            {item.avatarUrl ? (
+              <Image
+                source={{ uri: item.avatarUrl }}
+                style={[styles.avatar, item.isBlocked && styles.avatarBlocked]}
+              />
+            ) : (
+              <View style={[styles.avatar, item.isBlocked && styles.avatarBlocked]}>
+                <Text style={[styles.avatarText, item.isBlocked && { color: colors.red }]}>
+                  {item.name?.[0]?.toUpperCase() ?? '?'}
+                </Text>
+              </View>
+            )}
 
             {/* Info */}
             <View style={styles.info}>
@@ -140,11 +147,18 @@ export default function AdminUsersScreen({ navigation }: any) {
             {selected && (
               <>
                 {/* Avatar grande */}
-                <View style={[styles.modalAvatar, selected.isBlocked && styles.avatarBlocked]}>
-                  <Text style={styles.modalAvatarText}>
-                    {selected.name?.[0]?.toUpperCase() ?? '?'}
-                  </Text>
-                </View>
+                {selected.avatarUrl ? (
+                  <Image
+                    source={{ uri: selected.avatarUrl }}
+                    style={[styles.modalAvatar, selected.isBlocked && styles.avatarBlocked]}
+                  />
+                ) : (
+                  <View style={[styles.modalAvatar, selected.isBlocked && styles.avatarBlocked]}>
+                    <Text style={styles.modalAvatarText}>
+                      {selected.name?.[0]?.toUpperCase() ?? '?'}
+                    </Text>
+                  </View>
+                )}
 
                 <Text style={styles.modalName}>{selected.name}</Text>
                 <Text style={styles.modalEmail}>{selected.email}</Text>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, ActivityIndicator, View, TouchableOpacity } from 'react-native';
+import { Text, ActivityIndicator, View, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { darkColors } from '../theme/colors';
 import { authService } from '../services/authService';
@@ -95,11 +95,17 @@ const linking = {
 
 function MainTabs() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl]   = useState<string | null>(null);
   const insets = useSafeAreaInsets();
   const { badge, refresh } = useVencimentos();
 
   // Garante que os alertas sejam do usuário atual a cada login
   useEffect(() => { refresh(); }, []);
+
+  // Carrega avatar ao montar e quando o drawer fecha (pode ter sido atualizado)
+  useEffect(() => {
+    authService.getUserInfo().then(u => setAvatarUrl(u?.avatarUrl ?? null));
+  }, [drawerOpen]);
 
   return (
     <>
@@ -138,12 +144,19 @@ function MainTabs() {
             >
               <Text style={{ fontSize: 20 }}>🔍</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setDrawerOpen(true)}
-              style={{ padding: 4 }}
-            >
+            <TouchableOpacity onPress={() => setDrawerOpen(true)} style={{ padding: 4 }}>
               <View>
-                <Text style={{ fontSize: 22 }}>👤</Text>
+                {avatarUrl ? (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={{
+                      width: 32, height: 32, borderRadius: 16,
+                      borderWidth: 1.5, borderColor: darkColors.green,
+                    }}
+                  />
+                ) : (
+                  <Text style={{ fontSize: 22 }}>👤</Text>
+                )}
                 {badge > 0 && (
                   <View style={{
                     position: 'absolute', top: -4, right: -4,

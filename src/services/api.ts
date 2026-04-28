@@ -268,6 +268,7 @@ export interface UserListItem {
   userTypeId: number;
   isActive: boolean;
   isBlocked: boolean;
+  avatarUrl: string | null;
   createdAt: string;
 }
 

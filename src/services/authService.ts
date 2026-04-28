@@ -4,10 +4,24 @@ import { decodeToken, isTokenExpired, tokenExpiresAt, JwtPayload } from '../util
 
 const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:7228';
 
+const AVATAR_KEY = '@cf_avatar';
+
+// Instância axios autenticada apontando para a API de login
+const loginApi = axios.create({
+  baseURL: LOGIN_API_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+loginApi.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem('@cf_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 export interface UserInfo {
   id: string;
   name: string;
   email: string;
+  avatarUrl: string | null;
   expiresAt: Date | null;
 }
 
@@ -21,13 +35,14 @@ export const authService = {
     });
     const token: string = data.accessToken;
     await AsyncStorage.setItem('@cf_token', token);
+    // Persiste o avatar retornado no login
+    await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
     return token;
   },
 
   async getToken(): Promise<string | null> {
     const token = await AsyncStorage.getItem('@cf_token');
     if (!token) return null;
-    // Se expirou localmente, já limpa antes de qualquer chamada
     if (isTokenExpired(token)) {
       await AsyncStorage.removeItem('@cf_token');
       return null;
@@ -37,6 +52,7 @@ export const authService = {
 
   async logout(): Promise<void> {
     await AsyncStorage.removeItem('@cf_token');
+    await AsyncStorage.removeItem(AVATAR_KEY);
   },
 
   async getUserInfo(): Promise<UserInfo | null> {
@@ -44,10 +60,12 @@ export const authService = {
     if (!token) return null;
     const payload: JwtPayload | null = decodeToken(token);
     if (!payload) return null;
+    const avatarUrl = (await AsyncStorage.getItem(AVATAR_KEY)) || null;
     return {
       id: payload.nameid ?? '',
       name: payload.unique_name ?? '',
       email: payload.email ?? '',
+      avatarUrl,
       expiresAt: tokenExpiresAt(token),
     };
   },
@@ -56,7 +74,6 @@ export const authService = {
     const token = await AsyncStorage.getItem('@cf_token');
     if (!token) return false;
     const payload = decodeToken(token);
-    // UserType.Internal = 1 → token emite "1" como string
     return payload?.userType === '1';
   },
 
@@ -76,6 +93,13 @@ export const authService = {
     });
     const token: string = data.accessToken;
     await AsyncStorage.setItem('@cf_token', token);
+    await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
     return token;
+  },
+
+  /** Atualiza o avatar no backend e na cache local. */
+  async updateAvatar(dataUrl: string | null): Promise<void> {
+    await loginApi.patch('/user/me/avatar', { avatarUrl: dataUrl });
+    await AsyncStorage.setItem(AVATAR_KEY, dataUrl ?? '');
   },
 };
