@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, Modal, ActivityIndicator, RefreshControl, Alert,
+  TextInput, Modal, ActivityIndicator, RefreshControl, Alert, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { saldosService } from '../services/api';
@@ -81,20 +81,22 @@ export default function SaldosScreen({ navigation }: any) {
   }
 
   async function handleExcluir(conta: SaldoConta) {
-    Alert.alert(
-      'Excluir Conta',
-      `Deseja excluir "${conta.banco}"?\nOs lançamentos vinculados não serão excluídos.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir', style: 'destructive',
-          onPress: async () => {
-            try { await saldosService.delete(conta.id); await load(); }
-            catch { Alert.alert('Erro', 'Não foi possível excluir.'); }
-          },
-        },
-      ]
-    );
+    const confirmado = Platform.OS === 'web'
+      ? (window as any).confirm(`Excluir "${conta.banco}"?\nOs lançamentos vinculados não serão excluídos.`)
+      : await new Promise<boolean>(resolve =>
+          Alert.alert(
+            'Excluir Conta',
+            `Deseja excluir "${conta.banco}"?\nOs lançamentos vinculados não serão excluídos.`,
+            [
+              { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Excluir',  style: 'destructive', onPress: () => resolve(true) },
+            ]
+          )
+        );
+
+    if (!confirmado) return;
+    try { await saldosService.delete(conta.id); await load(); }
+    catch { Alert.alert('Erro', 'Não foi possível excluir.'); }
   }
 
   const totalGeral = contas.reduce((s, c) => s + c.saldo, 0);
