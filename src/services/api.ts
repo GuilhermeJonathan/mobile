@@ -64,6 +64,30 @@ export interface ResumoAnual {
   topCategorias: ResumoCatAnual[];
 }
 
+export interface BuscaLancamentoItem {
+  id: string;
+  descricao: string;
+  data: string;
+  valor: number;
+  tipo: number;
+  situacao: number;
+  mes: number;
+  ano: number;
+  categoriaId: string | null;
+  categoriaNome: string | null;
+  cartaoId: string | null;
+  cartaoNome: string | null;
+  parcelaAtual: number | null;
+  totalParcelas: number | null;
+  isRecorrente: boolean;
+  grupoParcelas: string | null;
+}
+
+export interface BuscaResult {
+  totalCount: number;
+  itens: BuscaLancamentoItem[];
+}
+
 export interface ProjecaoMes {
   mes: number;
   ano: number;
@@ -96,6 +120,8 @@ export const lancamentosService = {
     api.delete(`/lancamentos/parcelas-futuras/${grupoParcelas}/${parcelaAtualFrom}`),
   deleteGrupoParcelas: (grupoParcelas: string) =>
     api.delete(`/lancamentos/grupo/${grupoParcelas}`),
+  busca: (q: string, page = 1, pageSize = 20): Promise<BuscaResult> =>
+    api.get(`/lancamentos/busca?q=${encodeURIComponent(q)}&page=${page}&pageSize=${pageSize}`).then(r => r.data),
 };
 
 export const categoriasService = {

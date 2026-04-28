@@ -22,6 +22,7 @@ import ExtratoContaScreen from '../screens/ExtratoContaScreen';
 import ImportarFaturaScreen from '../screens/ImportarFaturaScreen';
 import DividasScreen from '../screens/DividasScreen';
 import AnualScreen from '../screens/AnualScreen';
+import BuscaLancamentosScreen from '../screens/BuscaLancamentosScreen';
 import UserDrawer from '../components/UserDrawer';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
@@ -86,27 +87,35 @@ function MainTabs() {
         headerTintColor: darkColors.text,
         headerTitleStyle: { fontWeight: 'bold' },
         headerRight: () => (
-          <TouchableOpacity
-            onPress={() => setDrawerOpen(true)}
-            style={{ marginRight: 14, padding: 4 }}
-          >
-            <View>
-              <Text style={{ fontSize: 22 }}>👤</Text>
-              {badge > 0 && (
-                <View style={{
-                  position: 'absolute', top: -4, right: -4,
-                  backgroundColor: darkColors.red, borderRadius: 8,
-                  minWidth: 16, height: 16,
-                  justifyContent: 'center', alignItems: 'center',
-                  paddingHorizontal: 3,
-                }}>
-                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>
-                    {badge > 99 ? '99+' : badge}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginRight: 8 }}>
+            <TouchableOpacity
+              onPress={() => navigationRef.current?.navigate('BuscaLancamentos' as never)}
+              style={{ padding: 6 }}
+            >
+              <Text style={{ fontSize: 20 }}>🔍</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setDrawerOpen(true)}
+              style={{ padding: 4 }}
+            >
+              <View>
+                <Text style={{ fontSize: 22 }}>👤</Text>
+                {badge > 0 && (
+                  <View style={{
+                    position: 'absolute', top: -4, right: -4,
+                    backgroundColor: darkColors.red, borderRadius: 8,
+                    minWidth: 16, height: 16,
+                    justifyContent: 'center', alignItems: 'center',
+                    paddingHorizontal: 3,
+                  }}>
+                    <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>
+                      {badge > 99 ? '99+' : badge}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
         ),
       })}
     >
@@ -175,6 +184,16 @@ export default function AppNavigator() {
             title: 'Importar Fatura',
             headerStyle: { backgroundColor: '#1a1a2e' },
             headerTintColor: '#fff',
+          }}
+        />
+        <Stack.Screen
+          name="BuscaLancamentos"
+          component={BuscaLancamentosScreen}
+          options={{
+            headerShown: true,
+            title: 'Buscar Lançamentos',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
           }}
         />
         <Stack.Screen

@@ -79,6 +79,8 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const [filtroSit, setFiltroSit] = useState<FiltroSit>('todos');
   const [busca, setBusca] = useState('');
   const [toggling, setToggling] = useState<Set<string>>(new Set());
+  const [prevCredito, setPrevCredito] = useState<number | null>(null);
+  const [prevDebito,  setPrevDebito]  = useState<number | null>(null);
 
   // Modal de seleção de conta (lançamentos normais)
   const [contas, setContas] = useState<SaldoConta[]>([]);
@@ -92,8 +94,20 @@ export default function LancamentosScreen({ navigation, route }: any) {
 
   const load = useCallback(async () => {
     try {
-      const data = await lancamentosService.getByMes(mes, ano);
+      const mesAnt = mes === 1 ? 12 : mes - 1;
+      const anoAnt = mes === 1 ? ano - 1 : ano;
+
+      const [data, anterior] = await Promise.all([
+        lancamentosService.getByMes(mes, ano),
+        lancamentosService.getByMes(mesAnt, anoAnt).catch(() => []),
+      ]);
+
       setLancamentos(data);
+
+      const antCredito = (anterior as any[]).filter(l => l.tipo === TipoLancamento.Credito).reduce((s: number, l: any) => s + l.valor, 0);
+      const antDebito  = (anterior as any[]).filter(l => l.tipo !== TipoLancamento.Credito).reduce((s: number, l: any) => s + l.valor, 0);
+      setPrevCredito(antCredito);
+      setPrevDebito(antDebito);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -604,21 +618,45 @@ export default function LancamentosScreen({ navigation, route }: any) {
     }
   }
 
+  function calcVariacao(atual: number, anterior: number | null): number | null {
+    if (anterior === null || anterior === 0) return null;
+    return Math.round((atual - anterior) / Math.abs(anterior) * 1000) / 10;
+  }
+
+  function VariacaoBadge({ v, positiveIsGood }: { v: number | null; positiveIsGood: boolean }) {
+    if (v === null) return null;
+    const isPositive = v > 0;
+    const isGood = positiveIsGood ? isPositive : !isPositive;
+    const cor = isGood ? '#3fb950' : '#f85149';
+    return (
+      <Text style={{ color: cor, fontSize: 10, fontWeight: '700', marginTop: 2 }}>
+        {isPositive ? '▲' : '▼'} {Math.abs(v).toFixed(1)}%
+      </Text>
+    );
+  }
+
+  const varCredito = calcVariacao(totalMesCredito, prevCredito);
+  const varDebito  = calcVariacao(totalMesDebito,  prevDebito);
+  const varSaldo   = calcVariacao(saldoMes, prevCredito !== null && prevDebito !== null ? prevCredito - prevDebito : null);
+
   const renderResumo = () => (
     <View style={styles.resumoCard}>
       <View style={styles.resumoItem}>
         <Text style={styles.resumoLabel}>Receitas</Text>
         <Text style={styles.resumoCredito}>+{fmtBRL(totalMesCredito)}</Text>
+        <VariacaoBadge v={varCredito} positiveIsGood />
       </View>
       <View style={styles.resumoDivider} />
       <View style={styles.resumoItem}>
         <Text style={styles.resumoLabel}>Despesas</Text>
         <Text style={styles.resumoDebito}>-{fmtBRL(Math.abs(totalMesDebito))}</Text>
+        <VariacaoBadge v={varDebito} positiveIsGood={false} />
       </View>
       <View style={styles.resumoDivider} />
       <View style={styles.resumoItem}>
         <Text style={styles.resumoLabel}>Saldo</Text>
         <Text style={[styles.resumoSaldo, { color: saldoCor }]}>{fmtBRL(saldoMes)}</Text>
+        <VariacaoBadge v={varSaldo} positiveIsGood />
       </View>
     </View>
   );

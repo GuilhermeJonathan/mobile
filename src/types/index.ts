@@ -65,6 +65,9 @@ export interface Dashboard {
   totalDebitos: number;
   saldo: number;
   resumoDebitos: { categoria: string; total: number }[];
+  variacaoCreditos: number | null;
+  variacaoDebitos: number | null;
+  variacaoSaldo: number | null;
 }
 
 export interface Categoria {

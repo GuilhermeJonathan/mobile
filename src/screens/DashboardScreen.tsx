@@ -20,6 +20,22 @@ const CATEGORY_COLORS = [
   '#F44336','#795548','#607D8B','#E91E63','#CDDC39',
 ];
 
+// ─── Badge de variação vs mês anterior ───────────────────────────────────────
+function VariacaoBadge({ valor, positiveIsGood }: { valor: number | null; positiveIsGood: boolean }) {
+  if (valor === null) return null;
+  const isPositive = valor > 0;
+  const isGood = positiveIsGood ? isPositive : !isPositive;
+  const cor = isGood ? '#3fb950' : '#f85149';
+  const seta = isPositive ? '▲' : '▼';
+  return (
+    <View style={{ backgroundColor: cor + '22', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, marginRight: 8 }}>
+      <Text style={{ color: cor, fontSize: 11, fontWeight: '700' }}>
+        {seta} {Math.abs(valor).toFixed(1)}%
+      </Text>
+    </View>
+  );
+}
+
 // ─── Gráfico de barras horizontal para categorias ────────────────────────────
 function CategoryBarChart({ data, width, onPress }: {
   data: { categoria: string; total: number }[];
@@ -501,25 +517,34 @@ export default function DashboardScreen() {
         <View style={[styles.card, { borderLeftColor: '#4CAF50' }]}>
           <View style={styles.cardRow}>
             <Text style={styles.cardLabel}>↑ Receitas</Text>
-            <Text style={[styles.cardValue, { color: '#4CAF50' }]}>
-              {hideValues ? '• • • • • •' : fmtBRL(dashboard?.totalCreditos ?? 0)}
-            </Text>
+            <View style={styles.cardValueRow}>
+              {!hideValues && <VariacaoBadge valor={dashboard?.variacaoCreditos ?? null} positiveIsGood />}
+              <Text style={[styles.cardValue, { color: '#4CAF50' }]}>
+                {hideValues ? '• • • • • •' : fmtBRL(dashboard?.totalCreditos ?? 0)}
+              </Text>
+            </View>
           </View>
         </View>
         <View style={[styles.card, { borderLeftColor: '#e53935' }]}>
           <View style={styles.cardRow}>
             <Text style={styles.cardLabel}>↓ Despesas</Text>
-            <Text style={[styles.cardValue, { color: '#e53935' }]}>
-              {hideValues ? '• • • • • •' : fmtBRL(dashboard?.totalDebitos ?? 0)}
-            </Text>
+            <View style={styles.cardValueRow}>
+              {!hideValues && <VariacaoBadge valor={dashboard?.variacaoDebitos ?? null} positiveIsGood={false} />}
+              <Text style={[styles.cardValue, { color: '#e53935' }]}>
+                {hideValues ? '• • • • • •' : fmtBRL(dashboard?.totalDebitos ?? 0)}
+              </Text>
+            </View>
           </View>
         </View>
         <View style={[styles.card, { borderLeftColor: saldoColor, borderBottomWidth: 0 }]}>
           <View style={styles.cardRow}>
             <Text style={styles.cardLabel}>= Saldo</Text>
-            <Text style={[styles.cardValue, { color: saldoColor, fontSize: 26 }]}>
-              {hideValues ? '• • • • • •' : fmtBRL(dashboard?.saldo ?? 0)}
-            </Text>
+            <View style={styles.cardValueRow}>
+              {!hideValues && <VariacaoBadge valor={dashboard?.variacaoSaldo ?? null} positiveIsGood />}
+              <Text style={[styles.cardValue, { color: saldoColor, fontSize: 26 }]}>
+                {hideValues ? '• • • • • •' : fmtBRL(dashboard?.saldo ?? 0)}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -790,6 +815,7 @@ function makeStyles(c: ColorScheme) {
     card: { backgroundColor: c.surface, padding: 16, borderLeftWidth: 4, borderBottomWidth: 1, borderBottomColor: c.border },
     cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     cardLabel: { fontSize: 14, color: c.textSecondary, fontWeight: '500' },
+    cardValueRow: { flexDirection: 'row', alignItems: 'center' },
     cardValue: { fontSize: 22, fontWeight: 'bold' },
     section: { margin: 16, marginTop: 12, backgroundColor: c.surface, borderRadius: 12, padding: 18, overflow: 'hidden' },
     sectionTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 4, color: c.text },
