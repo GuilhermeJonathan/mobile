@@ -156,7 +156,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
         ano: anoInicio,
         categoriaId: categoriaId ?? null,
         cartaoId: cartaoId ?? null,
-        totalParcelas: modo === 'avista' ? 1 : modo === 'recorrente' ? 120 : parcelasNum,
+        totalParcelas: modo === 'avista' ? 1 : modo === 'recorrente' ? 24 : parcelasNum,
         isRecorrente: modo === 'recorrente',
       });
       navigation.goBack();

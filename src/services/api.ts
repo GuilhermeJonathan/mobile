@@ -85,6 +85,8 @@ export const lancamentosService = {
     api.get(`/lancamentos/dashboard/${mes}/${ano}`).then(r => r.data),
   create: (data: object) => api.post('/lancamentos', data).then(r => r.data),
   update: (id: string, data: object) => api.put(`/lancamentos/${id}`, data),
+  updateRecorrenteFuturas: (id: string, data: object) =>
+    api.put(`/lancamentos/${id}/recorrente-futuras`, data),
   atualizarSituacao: (id: string, situacao: number) =>
     api.patch(`/lancamentos/${id}/situacao`, { situacao }),
   atualizarSituacaoComConta: (id: string, situacao: number, contaBancariaId: string | null) =>

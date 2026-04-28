@@ -78,6 +78,8 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
   const [error, setError] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [saveRecorrenteModalVisible, setSaveRecorrenteModalVisible] = useState(false);
+  const [pendingSavePayload, setPendingSavePayload] = useState<object | null>(null);
   const [novaCategoria, setNovaCategoria] = useState('');
   const [savingCategoria, setSavingCategoria] = useState(false);
 
@@ -144,23 +146,50 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
     const isoDate = toISODate(data);
     if (!isoDate) { setError('Data inválida. Use DD/MM/AAAA.'); return; }
 
+    const payload = {
+      descricao: descricao.trim(),
+      data: isoDate,
+      valor: valorNum,
+      tipo,
+      situacao,
+      categoriaId: categoriaId ?? null,
+      cartaoId: cartaoId ?? null,
+    };
+
+    // Recorrente com parcelas futuras → pergunta ao usuário
+    if (lancamento.isRecorrente && lancamento.grupoParcelas) {
+      setPendingSavePayload(payload);
+      setSaveRecorrenteModalVisible(true);
+      return;
+    }
+
+    await executarSave(payload, false);
+  }
+
+  async function executarSave(payload: object, futuras: boolean) {
     setLoading(true);
     try {
-      await lancamentosService.update(lancamento.id, {
-        descricao: descricao.trim(),
-        data: isoDate,
-        valor: valorNum,
-        tipo,
-        situacao,
-        categoriaId: categoriaId ?? null,
-        cartaoId: cartaoId ?? null,
-      });
+      if (futuras) {
+        await lancamentosService.updateRecorrenteFuturas(lancamento.id, payload);
+      } else {
+        await lancamentosService.update(lancamento.id, payload);
+      }
       navigation.goBack();
     } catch {
       setError('Erro ao salvar lançamento.');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSalvarSoEste() {
+    setSaveRecorrenteModalVisible(false);
+    if (pendingSavePayload) await executarSave(pendingSavePayload, false);
+  }
+
+  async function handleSalvarEFuturas() {
+    setSaveRecorrenteModalVisible(false);
+    if (pendingSavePayload) await executarSave(pendingSavePayload, true);
   }
 
   const temParcelasFuturas =
@@ -450,6 +479,28 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
           {deleting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Excluir Lançamento</Text>}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal salvar recorrente — escolha de escopo */}
+      <Modal visible={saveRecorrenteModalVisible} transparent animationType="fade" onRequestClose={() => setSaveRecorrenteModalVisible(false)}>
+        <View style={styles.overlay}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Salvar Recorrente</Text>
+            <Text style={styles.modalSub}>
+              Este é um lançamento recorrente.{'\n'}
+              Deseja aplicar as alterações apenas neste mês ou neste e em todos os meses seguintes?
+            </Text>
+            <TouchableOpacity style={[styles.btnSave, { marginBottom: 10 }]} onPress={handleSalvarSoEste}>
+              <Text style={styles.buttonText}>Só este mês</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.btnSave, { backgroundColor: '#1565C0', marginBottom: 10 }]} onPress={handleSalvarEFuturas}>
+              <Text style={styles.buttonText}>Este e os próximos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnCancel} onPress={() => setSaveRecorrenteModalVisible(false)}>
+              <Text style={styles.btnCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Modal exclusão de parcelas / cancelamento de recorrente */}
       <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
