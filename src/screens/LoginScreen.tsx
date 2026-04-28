@@ -75,7 +75,7 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Controle Financeiro</Text>
+        <Text style={styles.title}>Meu Financeiro</Text>
 
         <TextInput
           style={styles.input}

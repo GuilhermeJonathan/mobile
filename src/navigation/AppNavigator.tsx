@@ -27,6 +27,7 @@ import OrcamentoScreen from '../screens/OrcamentoScreen';
 import FamiliaScreen from '../screens/FamiliaScreen';
 import MetasScreen from '../screens/MetasScreen';
 import UserDrawer from '../components/UserDrawer';
+import OnboardingTour from '../components/OnboardingTour';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
 const Stack = createNativeStackNavigator();
@@ -67,6 +68,7 @@ function MainTabs() {
 
   return (
     <>
+      <OnboardingTour active />
       <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <Tab.Navigator
       screenOptions={({ route }) => ({

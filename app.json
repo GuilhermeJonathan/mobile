@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Controle Financeiro",
-    "slug": "controle-financeiro",
+    "name": "Meu Financeiro",
+    "slug": "meu-financeiro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,16 +10,18 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#0d1117"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.meufinanceiro.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a1a2e"
+        "backgroundColor": "#0d1117"
       },
+      "package": "com.meufinanceiro.app",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -27,11 +29,11 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "output": "single",
-      "name": "Controle Financeiro",
-      "shortName": "Financeiro",
-      "description": "Controle financeiro pessoal",
-      "backgroundColor": "#1a1a2e",
-      "themeColor": "#1a1a2e",
+      "name": "Meu Financeiro",
+      "shortName": "Meu Financeiro",
+      "description": "Seu controle financeiro pessoal",
+      "backgroundColor": "#0d1117",
+      "themeColor": "#3fb950",
       "lang": "pt-BR"
     },
     "plugins": [

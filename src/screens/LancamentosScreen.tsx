@@ -590,7 +590,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
 </head>
 <body>
   <button class="btn no-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
-  <h1>Controle Financeiro</h1>
+  <h1>Meu Financeiro</h1>
   <div class="subtitle">Lançamentos de ${nomeMes} · gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
 
   <div class="summary">
