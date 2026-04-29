@@ -685,23 +685,17 @@ export default function DashboardScreen() {
               {dicas.length > 0 && (comp !== null || dias !== null) && (
                 <View style={styles.saudeDivider} />
               )}
-              {dicas.length > 0 && (() => {
-                const d0 = dicas[0];
-                const cor   = d0.tipo === 'critico' ? '#e53935' : d0.tipo === 'atencao' ? '#FF9800' : '#4CAF50';
-                const emoji = d0.tipo === 'critico' ? '🚨' : d0.tipo === 'atencao' ? '⚠️' : '✅';
-                return (
-                  <TouchableOpacity
-                    style={[styles.saudeItem, { flex: 1.4 }]}
-                    onPress={() => setDicasModal(true)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.saudeInsightEmoji}>{emoji}</Text>
-                    <Text style={[styles.saudeLabel, { textAlign: 'center', marginTop: 4 }]}>Análise</Text>
-                    <Text style={[styles.saudeInsightText, { color: cor, marginTop: 4 }]}>{d0.titulo}</Text>
-                    <Text style={{ fontSize: 9, color: colors.textTertiary, marginTop: 3 }}>toque para dicas</Text>
-                  </TouchableOpacity>
-                );
-              })()}
+              {dicas.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.saudeItem, { flex: 1.4 }]}
+                  onPress={() => setDicasModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.saudeInsightEmoji}>🤖</Text>
+                  <Text style={[styles.saudeLabel, { textAlign: 'center', marginTop: 4 }]}>Análise IA</Text>
+                  <Text style={{ fontSize: 9, color: colors.textTertiary, marginTop: 6, textAlign: 'center' }}>toque para ver</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         );
@@ -1005,6 +999,11 @@ export default function DashboardScreen() {
             <View style={styles.dicasHandle} />
             <Text style={styles.dicasTitle}>💡 Dicas Financeiras</Text>
             <Text style={styles.dicasSub}>{MESES[mes - 1]}/{ano}</Text>
+            <View style={styles.dicasAvisoIA}>
+              <Text style={styles.dicasAvisoIAText}>
+                🤖 Análise gerada por inteligência artificial com base na sua saúde financeira
+              </Text>
+            </View>
             {dicas.map((dica, i) => {
               const cor   = dica.tipo === 'critico' ? '#e53935' : dica.tipo === 'atencao' ? '#FF9800' : '#4CAF50';
               const emoji = dica.tipo === 'critico' ? '🚨' : dica.tipo === 'atencao' ? '⚠️' : '✅';
@@ -1278,7 +1277,13 @@ function makeStyles(c: ColorScheme) {
       backgroundColor: c.border, alignSelf: 'center', marginBottom: 20,
     },
     dicasTitle: { fontSize: 18, fontWeight: '800', color: c.text, marginBottom: 2 },
-    dicasSub:   { fontSize: 13, color: c.textSecondary, marginBottom: 20 },
+    dicasSub:   { fontSize: 13, color: c.textSecondary, marginBottom: 10 },
+    dicasAvisoIA: {
+      backgroundColor: 'rgba(63,185,80,0.08)',
+      borderRadius: 8, borderWidth: 1, borderColor: 'rgba(63,185,80,0.2)',
+      paddingVertical: 8, paddingHorizontal: 12, marginBottom: 16,
+    },
+    dicasAvisoIAText: { fontSize: 11, color: c.textSecondary, textAlign: 'center', lineHeight: 16 },
     dicaItem: {
       flexDirection: 'row', gap: 12,
       borderLeftWidth: 3, paddingLeft: 12,
