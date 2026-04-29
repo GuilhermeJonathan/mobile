@@ -131,6 +131,11 @@ export default function AdminUsersScreen({ navigation }: any) {
                 {USER_TYPE_LABEL[item.userTypeId] ?? 'Desconhecido'} · Desde {formatDate(item.createdAt)}
                 {vinculos.some(v => v.userId === item.id) ? '  📱' : ''}
               </Text>
+              {item.ultimoLogin && (
+                <Text style={styles.metaLogin}>
+                  Último login: {formatDate(item.ultimoLogin)}
+                </Text>
+              )}
             </View>
 
             <Text style={styles.chevron}>›</Text>
@@ -275,6 +280,7 @@ function makeStyles(c: ColorScheme) {
     blockedBadgeText: { color: c.red, fontSize: 10, fontWeight: '700' },
     email: { color: c.textSecondary, fontSize: 13, marginBottom: 2 },
     meta: { color: c.textTertiary, fontSize: 12 },
+    metaLogin: { color: c.textTertiary, fontSize: 11, marginTop: 1, fontStyle: 'italic' },
     chevron: { color: c.textTertiary, fontSize: 20 },
     // Modal
     modalOverlay: {
