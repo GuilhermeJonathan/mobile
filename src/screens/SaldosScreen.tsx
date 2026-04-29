@@ -9,6 +9,7 @@ import { SaldoConta, TipoConta } from '../types';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
+import EmptyState from '../components/EmptyState';
 
 const TIPOS: { label: string; emoji: string; value: TipoConta }[] = [
   { value: TipoConta.ContaCorrente, label: 'Conta Corrente', emoji: '🏦' },
@@ -123,10 +124,11 @@ export default function SaldosScreen({ navigation }: any) {
           </View>
         )}
         ListEmptyComponent={(
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>Nenhuma conta cadastrada.</Text>
-            <Text style={styles.emptyHint}>Toque em + para adicionar.</Text>
-          </View>
+          <EmptyState
+            title="Nenhuma conta ainda! 🏦"
+            subtitle={'Adicione suas contas bancárias, carteira\nou investimentos para acompanhar seu patrimônio.'}
+            action={{ label: '+ Adicionar primeira conta', onPress: openCreate }}
+          />
         )}
         renderItem={({ item }) => {
           const t = tipoInfo(item.tipo);
@@ -164,7 +166,7 @@ export default function SaldosScreen({ navigation }: any) {
             </TouchableOpacity>
           );
         }}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, contas.length === 0 && { flexGrow: 1 }]}
       />
 
       <TouchableOpacity style={styles.fab} onPress={openCreate}>
@@ -269,10 +271,6 @@ function makeStyles(c: ColorScheme) {
     editBtnText:  { fontSize: 12 },
     deleteBtn:    { backgroundColor: c.redDim, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
     deleteBtnText: { color: c.red, fontSize: 12, fontWeight: '700' },
-
-    empty: { alignItems: 'center', marginTop: 60 },
-    emptyText: { fontSize: 16, color: c.textSecondary, marginBottom: 6 },
-    emptyHint: { fontSize: 13, color: c.textSecondary },
 
     fab: {
       position: 'absolute', bottom: 24, right: 24,

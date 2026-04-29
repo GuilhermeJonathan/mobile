@@ -23,6 +23,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { categoriasService, OrcamentoItem } from '../services/api';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
+import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -179,11 +180,10 @@ export default function OrcamentoScreen() {
           )}
 
           {itens.length === 0 && (
-            <View style={styles.centered}>
-              <Text style={styles.emptyIcon}>📋</Text>
-              <Text style={styles.emptyTitle}>Nenhum gasto este mês</Text>
-              <Text style={styles.emptyText}>Quando houver lançamentos, as categorias aparecem aqui</Text>
-            </View>
+            <EmptyState
+              title="Nenhum gasto este mês! 📋"
+              subtitle={"Quando você registrar lançamentos,\nas categorias com orçamento aparecem aqui."}
+            />
           )}
         </ScrollView>
       )}

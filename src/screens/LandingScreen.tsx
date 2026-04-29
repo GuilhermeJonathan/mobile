@@ -6,6 +6,8 @@ import {
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { authService } from '../services/authService';
 import DogMascot from '../components/DogMascot';
+import RegisterSuccessModal, { NextAction } from '../components/RegisterSuccessModal';
+import { navigationRef } from '../navigation/navigationRef';
 
 const W = Dimensions.get('window').width;
 const isWeb = Platform.OS === 'web';
@@ -395,7 +397,7 @@ function Step({ num, title, desc, C }: { num: string; title: string; desc: strin
 // ── Formulário de cadastro ────────────────────────────────────────────────────
 
 function RegisterForm({ onSuccess, onLogin, C }: {
-  onSuccess: () => void; onLogin: () => void; C: typeof DARK;
+  onSuccess: (name: string) => void; onLogin: () => void; C: typeof DARK;
 }) {
   const [name, setName]         = useState('');
   const [email, setEmail]       = useState('');
@@ -414,7 +416,7 @@ function RegisterForm({ onSuccess, onLogin, C }: {
     setLoading(true);
     try {
       await authService.selfRegister(name.trim(), email.trim(), password);
-      onSuccess();
+      onSuccess(name.trim());
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? e?.response?.data;
       setError(typeof msg === 'string' ? msg : 'Erro ao criar conta. Tente novamente.');
@@ -471,8 +473,10 @@ function RegisterForm({ onSuccess, onLogin, C }: {
 
 export default function LandingScreen({ navigation }: any) {
   const scrollRef  = useRef<ScrollView>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [isDark,   setIsDark]   = useState(false);   // claro por padrão
+  const [showForm, setShowForm]           = useState(false);
+  const [isDark,   setIsDark]             = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [registeredName, setRegisteredName] = useState('');
 
   const C = isDark ? DARK : LIGHT;
   const Badge = mkBadge(C);
@@ -488,6 +492,23 @@ export default function LandingScreen({ navigation }: any) {
   function openForm() {
     setShowForm(true);
     setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 80);
+  }
+
+  // ── Handler das ações pós-cadastro ──
+  function handleSuccessAction(action: NextAction) {
+    setSuccessVisible(false);
+    navigation.replace('Main');
+    // Navega para a tela certa após o replace (pequeno delay para o stack estabilizar)
+    setTimeout(() => {
+      if (action === 'lancamento') {
+        (navigationRef.current as any)?.navigate('AddLancamento');
+      } else if (action === 'whatsapp') {
+        (navigationRef.current as any)?.navigate('WhatsApp');
+      } else if (action === 'meta') {
+        (navigationRef.current as any)?.navigate('Metas');
+      }
+      // 'explore' → só vai pro Main/Dashboard
+    }, 400);
   }
 
   // ── helpers de estilo dinâmico ──
@@ -548,6 +569,13 @@ export default function LandingScreen({ navigation }: any) {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
+
+      {/* ── Modal de boas-vindas pós-cadastro ── */}
+      <RegisterSuccessModal
+        visible={successVisible}
+        name={registeredName}
+        onAction={handleSuccessAction}
+      />
 
       {/* ── NAV ── */}
       <View style={{
@@ -628,7 +656,11 @@ export default function LandingScreen({ navigation }: any) {
             </Text>
 
             {showForm ? (
-              <RegisterForm onSuccess={() => navigation.replace('Main')} onLogin={goLogin} C={C} />
+              <RegisterForm
+                onSuccess={(n) => { setRegisteredName(n); setSuccessVisible(true); }}
+                onLogin={goLogin}
+                C={C}
+              />
             ) : (
               <>
                 <View style={{ flexDirection: isMobile ? 'column' : 'row', gap: 12, marginBottom: 16, width: isMobile ? '100%' : undefined }}>

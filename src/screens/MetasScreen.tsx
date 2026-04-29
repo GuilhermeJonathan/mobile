@@ -7,6 +7,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import DatePickerField from '../components/DatePickerField';
 import { useTheme } from '../theme/ThemeContext';
+import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 import { fmtBRL } from '../utils/currency';
 import { api } from '../services/api';
@@ -389,11 +390,11 @@ export default function MetasScreen() {
 
         {/* Cards */}
         {metasFiltradas.length === 0 ? (
-          <View style={s.empty}>
-            <Text style={{ fontSize: 52 }}>🎯</Text>
-            <Text style={s.emptyTitle}>Nenhuma meta ainda</Text>
-            <Text style={s.emptySub}>Defina seus objetivos financeiros e acompanhe o progresso</Text>
-          </View>
+          <EmptyState
+            title="Nenhuma meta ainda! 🎯"
+            subtitle={"Defina seus objetivos financeiros\ne acompanhe o progresso até realizá-los."}
+            action={{ label: '+ Criar meta', onPress: () => setModalMeta(true) }}
+          />
         ) : (
           metasFiltradas.map(meta => (
             <MetaCard

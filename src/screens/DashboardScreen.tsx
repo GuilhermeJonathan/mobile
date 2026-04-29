@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, ScrollView, Modal, FlatList,
@@ -13,6 +13,7 @@ import type { ColorScheme } from '../theme/colors';
 import { useVencimentos } from '../contexts/VencimentosContext';
 import { useNavigation } from '@react-navigation/native';
 import { authService } from '../services/authService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DogMascot from '../components/DogMascot';
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -372,6 +373,9 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
   );
 }
 
+// Flag de módulo: garante que o contador de sessão sobe apenas 1x por runtime do app
+let _sessionCounted = false;
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function DashboardScreen() {
   const { colors } = useTheme();
@@ -405,6 +409,10 @@ export default function DashboardScreen() {
   const [metas, setMetas] = useState<{ valorMeta: number; valorAtual: number; status: number }[]>([]);
   const [metasLoading, setMetasLoading] = useState(false);
 
+  // Modal "sem dados" — exibido a partir do 2º acesso se não houver lançamentos
+  const [showEmptyModal, setShowEmptyModal] = useState(false);
+  const emptyModalChecked = useRef(false);
+
   // Modal de categoria
   const [catModal, setCatModal] = useState<{ nome: string; color: string; total: number } | null>(null);
   const [catLancs, setCatLancs] = useState<any[]>([]);
@@ -431,6 +439,28 @@ export default function DashboardScreen() {
       if (u?.name) setUserName(u.name.split(' ')[0]); // só primeiro nome
     });
   }, []);
+
+  // Incrementa o contador de sessão apenas 1x por runtime (mesmo que a tela monte/desmonte)
+  useEffect(() => {
+    if (_sessionCounted) return;
+    _sessionCounted = true;
+    AsyncStorage.getItem('@meufindog:openCount').then(val => {
+      const next = parseInt(val ?? '0', 10) + 1;
+      AsyncStorage.setItem('@meufindog:openCount', String(next));
+    });
+  }, []);
+
+  // Quando os dados chegarem: se for 2ª sessão+ e não houver dados, abre o modal
+  useEffect(() => {
+    if (loading || !dashboard || emptyModalChecked.current) return;
+    emptyModalChecked.current = true;
+    const isEmpty = (dashboard.totalCreditos ?? 0) === 0 && (dashboard.totalDebitos ?? 0) === 0;
+    if (!isEmpty) return;
+    AsyncStorage.getItem('@meufindog:openCount').then(val => {
+      const count = parseInt(val ?? '0', 10);
+      if (count >= 2) setShowEmptyModal(true);
+    });
+  }, [loading, dashboard]);
 
   // Reseta dados lazy ao focar a tela (cobre troca de usuário sem mudança de mês)
   useFocusEffect(useCallback(() => {
@@ -995,6 +1025,61 @@ export default function DashboardScreen() {
         </View>
       </View>
     </Modal>
+    {/* ── Modal "vamos começar" — aparece a partir do 2º acesso sem dados ── */}
+    <Modal visible={showEmptyModal} transparent animationType="fade" onRequestClose={() => setShowEmptyModal(false)}>
+      <TouchableOpacity style={styles.emptyOverlay} activeOpacity={1} onPress={() => setShowEmptyModal(false)}>
+        <TouchableOpacity activeOpacity={1} style={styles.emptyModal} onPress={() => {}}>
+
+          <DogMascot size={110} mood="happy" wag />
+
+          <Text style={styles.emptyModalTitle}>Vamos começar! 🐾</Text>
+          <Text style={styles.emptyModalSub}>
+            Sua dashboard está esperando seus{'\n'}primeiros dados para ganhar vida.{'\n'}Por onde quer começar?
+          </Text>
+
+          <TouchableOpacity
+            style={styles.emptyAction}
+            onPress={() => { setShowEmptyModal(false); (navigation as any).navigate('AddLancamento', { mes, ano }); }}
+          >
+            <Text style={styles.emptyActionIcon}>💸</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.emptyActionTitle}>Primeiro lançamento</Text>
+              <Text style={styles.emptyActionSub}>Registre uma despesa ou receita</Text>
+            </View>
+            <Text style={styles.emptyActionArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.emptyAction}
+            onPress={() => { setShowEmptyModal(false); (navigation as any).navigate('Saldos'); }}
+          >
+            <Text style={styles.emptyActionIcon}>🏦</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.emptyActionTitle}>Cadastrar conta</Text>
+              <Text style={styles.emptyActionSub}>Banco, carteira ou investimento</Text>
+            </View>
+            <Text style={styles.emptyActionArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.emptyAction}
+            onPress={() => { setShowEmptyModal(false); (navigation as any).navigate('WhatsAppVincular'); }}
+          >
+            <Text style={styles.emptyActionIcon}>💬</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.emptyActionTitle}>Vincular WhatsApp</Text>
+              <Text style={styles.emptyActionSub}>Lance direto pelo celular</Text>
+            </View>
+            <Text style={styles.emptyActionArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.emptyDismiss} onPress={() => setShowEmptyModal(false)}>
+            <Text style={styles.emptyDismissText}>Agora não</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+
     </View>
   );
 }
@@ -1132,5 +1217,36 @@ function makeStyles(c: ColorScheme) {
     pendenciaIcon: { fontSize: 16 },
     pendenciaLabel: { fontSize: 14, color: c.text, fontWeight: '500' },
     pendenciaValor: { fontSize: 15, fontWeight: '700' },
+
+    // Modal "vamos começar"
+    emptyOverlay: {
+      flex: 1, backgroundColor: 'rgba(0,0,0,0.65)',
+      justifyContent: 'center', alignItems: 'center', padding: 24,
+    },
+    emptyModal: {
+      backgroundColor: c.surfaceElevated, borderRadius: 20,
+      padding: 24, width: '100%', maxWidth: 420,
+      alignItems: 'center', borderWidth: 1, borderColor: c.border,
+    },
+    emptyModalTitle: {
+      fontSize: 20, fontWeight: '800', color: c.text,
+      marginTop: 16, marginBottom: 8, textAlign: 'center',
+    },
+    emptyModalSub: {
+      fontSize: 14, color: c.textSecondary, textAlign: 'center',
+      lineHeight: 21, marginBottom: 20,
+    },
+    emptyAction: {
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      width: '100%', backgroundColor: c.surface,
+      borderRadius: 12, padding: 14, marginBottom: 8,
+      borderWidth: 1, borderColor: c.border,
+    },
+    emptyActionIcon:  { fontSize: 22 },
+    emptyActionTitle: { fontSize: 14, fontWeight: '700', color: c.text },
+    emptyActionSub:   { fontSize: 12, color: c.textSecondary, marginTop: 1 },
+    emptyActionArrow: { fontSize: 20, color: c.textSecondary },
+    emptyDismiss: { marginTop: 8, padding: 10 },
+    emptyDismissText: { fontSize: 14, color: c.textSecondary },
   });
 }

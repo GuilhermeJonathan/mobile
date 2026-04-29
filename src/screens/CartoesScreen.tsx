@@ -8,6 +8,7 @@ import { cartoesService } from '../services/api';
 import { CartaoCredito, CartaoLancamento, SituacaoLancamento } from '../types';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
+import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -157,7 +158,11 @@ export default function CartoesScreen({ navigation }: any) {
           </View>
         }
         ListEmptyComponent={
-          <Text style={styles.empty}>Nenhum cartão cadastrado.{'\n'}Toque em + para adicionar.</Text>
+          <EmptyState
+            title="Nenhum cartão ainda! 💳"
+            subtitle={"Cadastre seus cartões de crédito\ne acompanhe todos os gastos em um só lugar."}
+            action={{ label: '+ Adicionar cartão', onPress: () => { setError(''); setCriarVisible(true); } }}
+          />
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -212,7 +217,7 @@ export default function CartoesScreen({ navigation }: any) {
             ))}
           </View>
         )}
-        contentContainerStyle={{ padding: 12, paddingBottom: 80 }}
+        contentContainerStyle={[{ padding: 12, paddingBottom: 80 }, cartoes.length === 0 && { flexGrow: 1 }]}
       />
 
       {/* FAB importar fatura */}

@@ -11,6 +11,7 @@ import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 import { useVencimentos } from '../contexts/VencimentosContext';
+import EmptyState from '../components/EmptyState';
 
 const TIPO_CONTA_EMOJI: Record<number, string> = {
   [TipoConta.ContaCorrente]: '🏦',
@@ -830,8 +831,14 @@ export default function LancamentosScreen({ navigation, route }: any) {
         renderItem={renderItem}
         ListHeaderComponent={renderResumo}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
-        ListEmptyComponent={<Text style={styles.empty}>Nenhum lançamento neste mês.</Text>}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        ListEmptyComponent={
+          <EmptyState
+            title="Nenhum lançamento ainda! 💸"
+            subtitle={"Registre seus gastos e receitas\npara acompanhar suas finanças."}
+            action={{ label: '+ Adicionar lançamento', onPress: () => navigation.navigate('AddLancamento', { mes, ano }) }}
+          />
+        }
+        contentContainerStyle={[{ paddingBottom: 80 }, listItems.length === 0 && { flexGrow: 1 }]}
       />
 
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddLancamento', { mes, ano })}>

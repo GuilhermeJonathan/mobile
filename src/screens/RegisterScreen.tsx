@@ -7,6 +7,8 @@ import { authService } from '../services/authService';
 import { inviteService } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
+import RegisterSuccessModal, { NextAction } from '../components/RegisterSuccessModal';
+import { navigationRef } from '../navigation/navigationRef';
 
 export default function RegisterScreen({ navigation, route }: any) {
   const { colors } = useTheme();
@@ -27,6 +29,7 @@ export default function RegisterScreen({ navigation, route }: any) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successVisible, setSuccessVisible] = useState(false);
 
   useEffect(() => {
     if (!inviteToken) {
@@ -64,7 +67,7 @@ export default function RegisterScreen({ navigation, route }: any) {
         password,
         document.trim() || undefined,
       );
-      navigation.replace('Main');
+      setSuccessVisible(true);
     } catch (e: any) {
       const status = e?.response?.status;
       const msg = e?.response?.data?.message ?? e?.response?.data;
@@ -116,11 +119,26 @@ export default function RegisterScreen({ navigation, route }: any) {
     );
   }
 
+  function handleSuccessAction(action: NextAction) {
+    setSuccessVisible(false);
+    navigation.replace('Main');
+    setTimeout(() => {
+      if (action === 'lancamento') (navigationRef.current as any)?.navigate('AddLancamento');
+      else if (action === 'whatsapp') (navigationRef.current as any)?.navigate('WhatsApp');
+      else if (action === 'meta')    (navigationRef.current as any)?.navigate('Metas');
+    }, 400);
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <RegisterSuccessModal
+        visible={successVisible}
+        name={name}
+        onAction={handleSuccessAction}
+      />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.title}>Criar conta</Text>

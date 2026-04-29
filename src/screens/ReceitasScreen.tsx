@@ -8,6 +8,7 @@ import { receitasRecorrentesService } from '../services/api';
 import { ReceitaRecorrente, TipoReceita } from '../types';
 import { fmtBRL, maskBRL, parseBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
+import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -219,7 +220,11 @@ export default function ReceitasScreen() {
           </View>
         }
         ListEmptyComponent={
-          <Text style={styles.empty}>Nenhuma receita recorrente.{'\n'}Toque em + para adicionar.</Text>
+          <EmptyState
+            title="Nenhuma receita cadastrada! 📈"
+            subtitle={"Adicione suas receitas recorrentes e\nacompanhe seus ganhos mensais."}
+            action={{ label: '+ Adicionar receita', onPress: () => { setError(''); setCriarVisible(true); } }}
+          />
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -247,7 +252,7 @@ export default function ReceitasScreen() {
             </View>
           </View>
         )}
-        contentContainerStyle={{ padding: 12, paddingBottom: 80 }}
+        contentContainerStyle={[{ padding: 12, paddingBottom: 80 }, receitas.length === 0 && { flexGrow: 1 }]}
       />
 
       <TouchableOpacity style={styles.fab} onPress={() => { setError(''); setCriarVisible(true); }}>

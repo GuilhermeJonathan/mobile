@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Animated } from 'react-native';
 
 /**
  * Cachorro mascote escalável.
@@ -11,6 +11,7 @@ export default function DogMascot({
   color = '#22c55e',
   showFloating = false,
   mood = 'happy',
+  wag = false,
 }: {
   size?: number;
   color?: string;
@@ -18,10 +19,35 @@ export default function DogMascot({
   showFloating?: boolean;
   /** 'happy' = sorriso normal | 'sad' = boca para baixo + olhos caídos */
   mood?: 'happy' | 'sad' | 'neutral';
+  /** Anima o rabo balançando */
+  wag?: boolean;
 }) {
   const S    = size / 200;
   const W    = 200 * S;
   const H    = 210 * S;
+
+  // ── Animação do rabo ──────────────────────────────────────────────────────
+  const wagAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!wag) { wagAnim.setValue(0); return; }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(wagAnim, { toValue:  1, duration: 110, useNativeDriver: true }),
+        Animated.timing(wagAnim, { toValue: -1, duration: 110, useNativeDriver: true }),
+        Animated.timing(wagAnim, { toValue:  1, duration: 110, useNativeDriver: true }),
+        Animated.timing(wagAnim, { toValue: -1, duration: 110, useNativeDriver: true }),
+        Animated.timing(wagAnim, { toValue:  0, duration: 90,  useNativeDriver: true }),
+        Animated.delay(320),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [wag]);
+
+  const tailRotate = wagAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-32deg', '0deg', '32deg'],
+  });
 
   const head  = '#f5b84a';
   const ear   = '#c8762a';
@@ -173,6 +199,22 @@ export default function DogMascot({
           <View style={{ position: 'absolute', width: 7*S, height: 7*S, borderRadius: 4*S, backgroundColor: dark,    left: 114*S, top: 76*S }} />
           <View style={{ position: 'absolute', width: 2*S, height: 2*S, borderRadius: 1*S, backgroundColor: 'white', left: 118*S, top: 75*S }} />
         </>
+      )}
+
+      {/* Rabo — só renderiza quando wag={true} */}
+      {full && wag && (
+        <View style={{
+          position: 'absolute',
+          left: 154*S, top: 160*S, // base do rabo, lado direito do corpo
+        }}>
+          <Animated.View style={{
+            width: 13*S, height: 46*S,
+            borderRadius: 7*S,
+            backgroundColor: '#c8762a',
+            marginTop: -46*S, // estende para CIMA a partir do pivô
+            transform: [{ rotate: tailRotate }],
+          }} />
+        </View>
       )}
 
       {/* Coleira */}
