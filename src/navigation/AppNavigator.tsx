@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, ActivityIndicator, View, TouchableOpacity, Image, Platform } from 'react-native';
+import { Text, ActivityIndicator, View, TouchableOpacity, Image, Platform, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { darkColors } from '../theme/colors';
 import { authService } from '../services/authService';
@@ -36,6 +36,9 @@ import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosCont
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// Mobile web = browser em tela estreita; esconde abas extras e move pro drawer
+const isMobileWeb = Platform.OS === 'web' && Dimensions.get('window').width < 768;
 
 // ─── Logo cachorro no header ─────────────────────────────────────────────────
 function AppHeaderTitle() {
@@ -81,6 +84,18 @@ function MainTabs() {
   const [trialExpired, setTrialExpired]   = useState(false);
   const insets = useSafeAreaInsets();
   const { badge, refresh } = useVencimentos();
+
+  // ── Auth guard: se não há token válido, redireciona imediatamente ──────────
+  useEffect(() => {
+    authService.getToken().then(token => {
+      if (!token) {
+        navigationRef.current?.reset({
+          index: 0,
+          routes: [{ name: (Platform.OS === 'web' ? 'Landing' : 'Login') as never }],
+        });
+      }
+    });
+  }, []);
 
   // Garante que os alertas sejam do usuário atual a cada login
   useEffect(() => { refresh(); }, []);
@@ -191,11 +206,19 @@ function MainTabs() {
       />
       <Tab.Screen name="Receitas" component={ReceitasScreen} />
       <Tab.Screen name="Cartões" component={CartoesScreen} />
-      <Tab.Screen name="Saldos" component={SaldosScreen} />
+      <Tab.Screen
+        name="Saldos"
+        component={SaldosScreen}
+        options={isMobileWeb
+          ? { tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }
+          : {}}
+      />
       <Tab.Screen
         name="Orçamento"
         component={OrcamentoScreen}
-        options={{ title: 'Orçamento' }}
+        options={isMobileWeb
+          ? { tabBarButton: () => null, tabBarItemStyle: { display: 'none' }, title: 'Orçamento' }
+          : { title: 'Orçamento' }}
       />
     </Tab.Navigator>
     </>

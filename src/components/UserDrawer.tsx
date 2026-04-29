@@ -4,6 +4,8 @@ import {
   Text, TouchableOpacity, TouchableWithoutFeedback, View,
   ActivityIndicator, ScrollView, Alert, Platform,
 } from 'react-native';
+
+const isMobileWeb = Platform.OS === 'web' && Dimensions.get('window').width < 768;
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { authService, UserInfo } from '../services/authService';
@@ -324,6 +326,33 @@ export default function UserDrawer({ visible, onClose }: Props) {
           </TouchableOpacity>
 
           <View style={s.divider} />
+
+          {/* ── Saldos e Orçamento (apenas mobile web) ────────────────── */}
+          {isMobileWeb && (
+            <>
+              <View style={s.divider} />
+              <TouchableOpacity
+                style={s.row}
+                onPress={() => {
+                  onClose();
+                  (navigationRef.current as any)?.navigate('Main', { screen: 'Saldos' });
+                }}
+              >
+                <Text style={s.rowIcon}>🏦</Text>
+                <Text style={s.rowLabel}>Saldos</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={s.row}
+                onPress={() => {
+                  onClose();
+                  (navigationRef.current as any)?.navigate('Main', { screen: 'Orçamento' });
+                }}
+              >
+                <Text style={s.rowIcon}>📋</Text>
+                <Text style={s.rowLabel}>Orçamento</Text>
+              </TouchableOpacity>
+            </>
+          )}
 
           {/* ── WhatsApp ────────────────────────────────────────────── */}
           <TouchableOpacity

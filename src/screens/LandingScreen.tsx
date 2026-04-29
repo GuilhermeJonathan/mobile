@@ -9,6 +9,7 @@ import DogMascot from '../components/DogMascot';
 
 const W = Dimensions.get('window').width;
 const isWeb = Platform.OS === 'web';
+const isMobile = W < 768; // breakpoint responsivo — cobre phones mesmo no browser
 
 // ── Paletas ──────────────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ const LIGHT = {
 
 function Section({ children, style }: any) {
   return (
-    <View style={[{ alignItems: 'center', paddingVertical: 72, paddingHorizontal: 24 }, style]}>
+    <View style={[{ alignItems: 'center', paddingVertical: isMobile ? 40 : 72, paddingHorizontal: isMobile ? 16 : 24 }, style]}>
       <View style={{ width: '100%', maxWidth: 1100 }}>{children}</View>
     </View>
   );
@@ -344,8 +345,8 @@ function DiffCard({ icon, title, desc, items, highlight, C }: {
 }) {
   return (
     <View style={{
-      flex: isWeb ? 1 : undefined,
-      width: isWeb ? undefined : Math.min(W - 48, 380),
+      flex: isMobile ? undefined : 1,
+      width: isMobile ? '100%' : undefined,
       backgroundColor: C.card, borderRadius: 16, padding: 24,
       borderWidth: highlight ? 2 : 1, borderColor: highlight ? C.green : C.border,
     }}>
@@ -377,8 +378,8 @@ function DiffCard({ icon, title, desc, items, highlight, C }: {
 
 function Step({ num, title, desc, C }: { num: string; title: string; desc: string; C: typeof DARK }) {
   return (
-    <View style={{ flex: isWeb ? 1 : undefined, width: isWeb ? undefined : Math.min(W - 48, 340),
-      alignItems: 'center', paddingHorizontal: isWeb ? 24 : 0 }}>
+    <View style={{ flex: isMobile ? undefined : 1, width: isMobile ? '100%' : undefined,
+      alignItems: 'center', paddingHorizontal: isMobile ? 0 : 24 }}>
       <View style={{
         width: 56, height: 56, borderRadius: 28, backgroundColor: C.green,
         alignItems: 'center', justifyContent: 'center', marginBottom: 16,
@@ -493,7 +494,7 @@ export default function LandingScreen({ navigation }: any) {
   const btnPrimary   = { backgroundColor: C.green, borderRadius: 12, paddingHorizontal: 28, paddingVertical: 16, alignItems: 'center' as const };
   const btnSecondary = { backgroundColor: 'transparent' as const, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingHorizontal: 28, paddingVertical: 16, alignItems: 'center' as const };
   const btnOutline   = { borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingVertical: 14, alignItems: 'center' as const };
-  const sectionTitle = { fontSize: isWeb ? 38 : 26, fontWeight: '900' as const, color: C.text, textAlign: 'center' as const, marginBottom: 12 };
+  const sectionTitle = { fontSize: isMobile ? 24 : 38, fontWeight: '900' as const, color: C.text, textAlign: 'center' as const, marginBottom: 12 };
   const sectionSub   = { fontSize: 16, color: C.textSec, textAlign: 'center' as const, lineHeight: 24 as const, maxWidth: 500 };
   const checkText    = { color: C.textSec, fontSize: 13, flex: 1, lineHeight: 20 as const };
 
@@ -510,8 +511,8 @@ export default function LandingScreen({ navigation }: any) {
   function PriceCard({ badge, name, price, period, sub, items, cta, highlighted }: any) {
     return (
       <View style={{
-        flex: isWeb ? 1 : undefined,
-        width: isWeb ? undefined : Math.min(W - 48, 340),
+        flex: isMobile ? undefined : 1,
+        width: isMobile ? '100%' : undefined,
         backgroundColor: highlighted ? C.bg : C.card,
         borderRadius: 16, padding: 28,
         borderWidth: highlighted ? 2 : 1,
@@ -551,34 +552,47 @@ export default function LandingScreen({ navigation }: any) {
       {/* ── NAV ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 24, paddingVertical: 12,
+        paddingHorizontal: isMobile ? 16 : 24, paddingVertical: isMobile ? 10 : 12,
         backgroundColor: C.navBg, borderBottomWidth: 1, borderBottomColor: C.border, zIndex: 100,
       }}>
         {/* Logo com mascote */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <DogMascot size={56} color={C.green} mood="happy" />
-          <Text style={{ color: C.text, fontWeight: '800', fontSize: 16 }}>Meu Financeiro</Text>
+          <Text style={{ color: C.text, fontWeight: '800', fontSize: isMobile ? 15 : 16 }}>Meu Financeiro</Text>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {/* Toggle dark/light */}
-          <TouchableOpacity
-            onPress={() => setIsDark(d => !d)}
-            style={{
-              width: 36, height: 36, borderRadius: 10,
-              backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
-              alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 16 }}>{isDark ? '☀️' : '🌙'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={goLogin} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ color: C.textSec, fontWeight: '500', fontSize: 14 }}>Entrar</Text>
-          </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: isMobile ? 6 : 8 }}>
+          {/* Toggle dark/light — oculto no mobile para não poluir */}
+          {!isMobile && (
+            <TouchableOpacity
+              onPress={() => setIsDark(d => !d)}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+                alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 16 }}>{isDark ? '☀️' : '🌙'}</Text>
+            </TouchableOpacity>
+          )}
+          {!isMobile && (
+            <TouchableOpacity onPress={goLogin} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+              <Text style={{ color: C.textSec, fontWeight: '500', fontSize: 14 }}>Entrar</Text>
+            </TouchableOpacity>
+          )}
+          {isMobile && (
+            <TouchableOpacity onPress={goLogin} style={{ paddingHorizontal: 10, paddingVertical: 8 }}>
+              <Text style={{ color: C.textSec, fontWeight: '500', fontSize: 13 }}>Entrar</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={openForm} style={{
-            backgroundColor: C.green, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9,
+            backgroundColor: C.green, borderRadius: 10,
+            paddingHorizontal: isMobile ? 12 : 16,
+            paddingVertical: isMobile ? 8 : 9,
           }}>
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Começar grátis</Text>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: isMobile ? 13 : 14 }}>
+              {isMobile ? 'Começar' : 'Começar grátis'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -613,7 +627,7 @@ export default function LandingScreen({ navigation }: any) {
               <RegisterForm onSuccess={() => navigation.replace('Main')} onLogin={goLogin} C={C} />
             ) : (
               <>
-                <View style={{ flexDirection: isWeb ? 'row' : 'column', gap: 12, marginBottom: 16 }}>
+                <View style={{ flexDirection: isMobile ? 'column' : 'row', gap: 12, marginBottom: 16, width: isMobile ? '100%' : undefined }}>
                   <TouchableOpacity onPress={openForm} style={btnPrimary}>
                     <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Começar grátis por 30 dias →</Text>
                   </TouchableOpacity>
@@ -645,8 +659,8 @@ export default function LandingScreen({ navigation }: any) {
           </View>
 
           {/* Mockups hero */}
-          <View style={{ flexDirection: isWeb ? 'row' : 'column', gap: 16, marginTop: 48,
-            justifyContent: 'center', alignItems: isWeb ? 'flex-start' : 'center' }}>
+          <View style={{ flexDirection: isMobile ? 'column' : 'row', gap: 16, marginTop: 48,
+            justifyContent: 'center', alignItems: isMobile ? 'center' : 'flex-start' }}>
             <WhatsMockup C={C} />
             <DashboardMockup C={C} />
             <GraficosMockup C={C} />
@@ -657,8 +671,8 @@ export default function LandingScreen({ navigation }: any) {
         <Section style={{ backgroundColor: C.surface }}>
           <STitle label="App completo" title="Tudo que você precisa"
             sub="Dashboard, lançamentos, metas e muito mais — tudo integrado." />
-          <View style={{ flexDirection: isWeb ? 'row' : 'column', flexWrap: isWeb ? 'wrap' : 'nowrap',
-            gap: 16, justifyContent: 'center', alignItems: isWeb ? 'flex-start' : 'center' }}>
+          <View style={{ flexDirection: isMobile ? 'column' : 'row', flexWrap: isMobile ? 'nowrap' : 'wrap',
+            gap: 16, justifyContent: 'center', alignItems: isMobile ? 'center' : 'flex-start' }}>
             <LancamentosMockup C={C} />
             <MetasMockup C={C} />
             <OrcamentoMockup C={C} />
@@ -669,7 +683,7 @@ export default function LandingScreen({ navigation }: any) {
         <Section style={{ backgroundColor: C.bg }}>
           <STitle label="Por que o Meu Financeiro" title="Feito para a sua realidade"
             sub="Sem planilhas complicadas. Sem apps que você abandona em uma semana." />
-          <View style={{ flexDirection: isWeb ? 'row' : 'column', gap: 16, alignItems: isWeb ? 'stretch' : 'center' }}>
+          <View style={{ flexDirection: isMobile ? 'column' : 'row', gap: 16, alignItems: isMobile ? 'stretch' : 'stretch' }}>
             <DiffCard C={C} icon={<WhatsAppIcon size={32} />}
               title="Registre pelo WhatsApp"
               desc="Sem abrir o app. Mande uma mensagem e o lançamento entra automático com categoria e data."
@@ -705,13 +719,13 @@ export default function LandingScreen({ navigation }: any) {
         {/* COMO FUNCIONA */}
         <Section style={{ backgroundColor: C.surface }}>
           <STitle label="Como funciona" title="Simples assim" />
-          <View style={{ flexDirection: isWeb ? 'row' : 'column', alignItems: isWeb ? 'flex-start' : 'center', gap: isWeb ? 0 : 24 }}>
+          <View style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'flex-start', gap: isMobile ? 24 : 0 }}>
             <Step num="1" title="Crie sua conta" C={C}
               desc="Cadastro em menos de 1 minuto. Sem cartão de crédito para iniciar o período gratuito." />
-            {isWeb && <View style={{ width: 1, height: 80, backgroundColor: C.border, alignSelf: 'center' }} />}
+            {!isMobile && <View style={{ width: 1, height: 80, backgroundColor: C.border, alignSelf: 'center' }} />}
             <Step num="2" title="Vincule seu WhatsApp" C={C}
               desc="Adicione o número do bot e comece a registrar gastos por mensagem, foto ou áudio." />
-            {isWeb && <View style={{ width: 1, height: 80, backgroundColor: C.border, alignSelf: 'center' }} />}
+            {!isMobile && <View style={{ width: 1, height: 80, backgroundColor: C.border, alignSelf: 'center' }} />}
             <Step num="3" title="Acompanhe tudo" C={C}
               desc="Dashboard atualizado em tempo real com saldo, categorias, metas e saúde financeira." />
           </View>
@@ -721,8 +735,8 @@ export default function LandingScreen({ navigation }: any) {
         <Section style={{ backgroundColor: C.bg }}>
           <STitle label="Preços" title="Simples e transparente"
             sub="30 dias grátis para experimentar tudo. Sem cartão de crédito." />
-          <View style={{ flexDirection: isWeb ? 'row' : 'column', gap: 16,
-            justifyContent: 'center', alignItems: isWeb ? 'stretch' : 'center', width: '100%' }}>
+          <View style={{ flexDirection: isMobile ? 'column' : 'row', gap: 16,
+            justifyContent: 'center', alignItems: 'stretch', width: '100%' }}>
             <PriceCard name="Teste grátis" price="R$ 0" period=" / 30 dias" cta="Começar agora"
               items={['Acesso completo por 30 dias', 'WhatsApp e IA inclusos', 'Sem cartão de crédito', 'Cancele quando quiser']} />
             <PriceCard name="Mensal" price="R$ 4,90" period=" / mês" cta="Começar grátis"
@@ -755,7 +769,7 @@ export default function LandingScreen({ navigation }: any) {
         {/* FOOTER */}
         <View style={{ backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border,
           paddingVertical: 24, paddingHorizontal: 24 }}>
-          <View style={{ flexDirection: isWeb ? 'row' : 'column', alignItems: 'center',
+          <View style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: 'center',
             justifyContent: 'space-between', gap: 12, maxWidth: 1100, alignSelf: 'center', width: '100%' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <DogMascot size={56} color={C.green} mood="happy" />

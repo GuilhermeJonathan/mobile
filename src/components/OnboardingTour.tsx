@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated, Dimensions, Modal, StyleSheet,
+  Animated, Dimensions, Modal, Platform, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,8 +10,6 @@ import WhatsAppIcon from './WhatsAppIcon';
 
 const TOUR_VERSION = 'v3';
 const tourKey = (userId: string) => `onboarding_tour_${TOUR_VERSION}_${userId}`;
-
-const TAB_COUNT = 6;
 
 type SpotType = 'none' | 'tab' | 'header';
 
@@ -25,53 +23,66 @@ interface Step {
   openDrawer?: boolean;
 }
 
-const STEPS: Step[] = [
-  {
-    icon: '👋',
-    title: 'Bem-vindo ao Meu Financeiro!',
-    desc: 'Vamos fazer um tour rápido para você conhecer tudo que o app oferece.',
-    spotType: 'none',
-  },
-  {
-    icon: '📊',
-    title: 'Dashboard',
-    desc: 'Visão geral do mês: saldo, total de gastos, alertas de vencimento e resumo das suas metas.',
-    spotType: 'tab', tabIdx: 0,
-  },
-  {
-    icon: '💰',
-    title: 'Lançamentos',
-    desc: 'Registre receitas, despesas e Pix. Toque no botão ⊕ para adicionar. Filtre por mês e situação.',
-    spotType: 'tab', tabIdx: 1,
-  },
-  {
-    icon: '💳',
-    title: 'Cartões de Crédito',
-    desc: 'Acompanhe cada fatura separadamente. Importe PDF de fatura para lançar tudo de uma vez.',
-    spotType: 'tab', tabIdx: 3,
-  },
-  {
-    icon: '📋',
-    title: 'Orçamento',
-    desc: 'Defina limites de gasto por categoria. O app avisa quando você está chegando perto do limite.',
-    spotType: 'tab', tabIdx: 5,
-  },
-  {
-    icon: '📲',
-    iconNode: <WhatsAppIcon size={48} />,
-    title: 'Registre pelo WhatsApp!',
-    desc: 'Mande uma mensagem para o bot e o lançamento entra automático:\n\n"Gasolina 150 reais"\n"Recebi salário 5000"\n"Mercado ontem 230"\n\nConfigure pelo ícone do WhatsApp no menu (👆 visível ao lado).',
-    spotType: 'none',
-    openDrawer: true,
-  },
-  {
-    icon: '🎯',
-    title: 'Metas & Família',
-    desc: 'Toque no ícone 👤 no canto superior direito para acessar Metas, Família, alertas e configurações.',
-    spotType: 'header',
-    openDrawer: true,
-  },
-];
+function buildSteps(isMobileWeb: boolean): Step[] {
+  return [
+    {
+      icon: '👋',
+      title: 'Bem-vindo ao Meu Financeiro!',
+      desc: 'Vamos fazer um tour rápido para você conhecer tudo que o app oferece.',
+      spotType: 'none',
+    },
+    {
+      icon: '📊',
+      title: 'Dashboard',
+      desc: 'Visão geral do mês: saldo, total de gastos, alertas de vencimento e resumo das suas metas.',
+      spotType: 'tab', tabIdx: 0,
+    },
+    {
+      icon: '💰',
+      title: 'Lançamentos',
+      desc: 'Registre receitas, despesas e Pix. Toque no botão ⊕ para adicionar. Filtre por mês e situação.',
+      spotType: 'tab', tabIdx: 1,
+    },
+    {
+      icon: '💳',
+      title: 'Cartões de Crédito',
+      desc: 'Acompanhe cada fatura separadamente. Importe PDF de fatura para lançar tudo de uma vez.',
+      spotType: 'tab', tabIdx: 3,
+    },
+    // No mobile web, Orçamento fica no drawer — aponta pro ícone do usuário
+    ...(isMobileWeb
+      ? [{
+          icon: '📋',
+          title: 'Saldos & Orçamento',
+          desc: 'No celular, acesse Saldos e Orçamento pelo ícone 👤 no canto superior direito.',
+          spotType: 'header' as SpotType,
+          openDrawer: true,
+        }]
+      : [{
+          icon: '📋',
+          title: 'Orçamento',
+          desc: 'Defina limites de gasto por categoria. O app avisa quando você está chegando perto do limite.',
+          spotType: 'tab' as SpotType,
+          tabIdx: 5,
+        }]
+    ),
+    {
+      icon: '📲',
+      iconNode: <WhatsAppIcon size={48} />,
+      title: 'Registre pelo WhatsApp!',
+      desc: 'Mande uma mensagem para o bot e o lançamento entra automático:\n\n"Gasolina 150 reais"\n"Recebi salário 5000"\n"Mercado ontem 230"\n\nConfigure pelo ícone do WhatsApp no menu (👆 visível ao lado).',
+      spotType: 'none',
+      openDrawer: true,
+    },
+    {
+      icon: '🎯',
+      title: 'Metas & Família',
+      desc: 'Toque no ícone 👤 no canto superior direito para acessar Metas, Família, alertas e configurações.',
+      spotType: 'header',
+      // sem openDrawer → o drawer fecha automaticamente ao chegar nesse step
+    },
+  ];
+}
 
 interface Props { active: boolean; onOpenDrawer?: () => void; onCloseDrawer?: () => void; }
 
@@ -82,6 +93,11 @@ export default function OnboardingTour({ active, onOpenDrawer, onCloseDrawer }: 
   const [userId, setUserId]   = useState<string | null>(null);
   // Dimensões podem mudar (resize web) → estado reativo
   const [dims, setDims] = useState(Dimensions.get('window'));
+
+  // Responsivo: recalcula steps e TAB_COUNT quando as dimensões mudam
+  const isMobileWeb = Platform.OS === 'web' && dims.width < 768;
+  const TAB_COUNT   = isMobileWeb ? 4 : 6;
+  const STEPS       = buildSteps(isMobileWeb);
 
   const pulseAnim   = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
