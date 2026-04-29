@@ -12,6 +12,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { navigationRef } from '../navigation/navigationRef';
 import { useVencimentos } from '../contexts/VencimentosContext';
 import { fmtBRL } from '../utils/currency';
+import WhatsAppIcon from './WhatsAppIcon';
 import { vinculosService, MeuVinculoDto } from '../services/api';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
@@ -329,7 +330,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
             style={s.row}
             onPress={() => { onClose(); navigationRef.current?.navigate('WhatsApp' as never); }}
           >
-            <Text style={s.rowIcon}>💬</Text>
+            <WhatsAppIcon size={22} />
             <Text style={s.rowLabel}>Vincular WhatsApp</Text>
           </TouchableOpacity>
 

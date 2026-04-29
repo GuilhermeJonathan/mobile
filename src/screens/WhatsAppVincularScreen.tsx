@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { whatsappService, WhatsAppVinculoDto } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
+import WhatsAppIcon from '../components/WhatsAppIcon';
 
 export default function WhatsAppVincularScreen({ navigation }: any) {
   const { colors } = useTheme();
@@ -120,7 +121,7 @@ export default function WhatsAppVincularScreen({ navigation }: any) {
         {/* ── Ícone + descrição ─────────────────────────────────────────── */}
         <View style={s.hero}>
           <View style={s.heroIcon}>
-            <Text style={{ fontSize: 44 }}>💬</Text>
+            <WhatsAppIcon size={56} />
           </View>
           <Text style={s.heroTitle}>Registre pelo WhatsApp</Text>
           <Text style={s.heroSub}>

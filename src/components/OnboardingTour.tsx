@@ -57,8 +57,8 @@ const STEPS: Step[] = [
   {
     icon: '📲',
     title: 'Registre pelo WhatsApp!',
-    desc: 'Mande uma mensagem para o bot e o lançamento entra automático:\n\n"Gasolina 150 reais"\n"Recebi salário 5000"\n"Mercado ontem 230"\n\nConfigure em Perfil → Vincular WhatsApp.',
-    spotType: 'header',
+    desc: 'Mande uma mensagem para o bot e o lançamento entra automático:\n\n"Gasolina 150 reais"\n"Recebi salário 5000"\n"Mercado ontem 230"\n\nConfigure em Perfil → Vincular WhatsApp (👆 visível ao lado).',
+    spotType: 'none',
     openDrawer: true,
   },
   {
@@ -69,9 +69,9 @@ const STEPS: Step[] = [
   },
 ];
 
-interface Props { active: boolean; onOpenDrawer?: () => void; }
+interface Props { active: boolean; onOpenDrawer?: () => void; onCloseDrawer?: () => void; }
 
-export default function OnboardingTour({ active, onOpenDrawer }: Props) {
+export default function OnboardingTour({ active, onOpenDrawer, onCloseDrawer }: Props) {
   const insets       = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const [step, setStep]       = useState(0);
@@ -125,19 +125,25 @@ export default function OnboardingTour({ active, onOpenDrawer }: Props) {
   }, [visible, step]);
 
   const finish = useCallback(async () => {
+    onCloseDrawer?.();
     if (userId) await AsyncStorage.setItem(tourKey(userId), '1');
     setVisible(false);
-  }, [userId]);
+  }, [userId, onCloseDrawer]);
 
   const next = useCallback(() => {
     if (step < STEPS.length - 1) {
-      const nextStep = STEPS[step + 1];
+      const currentStep = STEPS[step];
+      const nextStep    = STEPS[step + 1];
+      // Fecha drawer ao sair de step que o abriu
+      if (currentStep.openDrawer) onCloseDrawer?.();
+      // Abre drawer ao entrar no próximo step que pede
       if (nextStep.openDrawer) onOpenDrawer?.();
       setStep(s => s + 1);
     } else {
+      onCloseDrawer?.();
       finish();
     }
-  }, [step, finish, onOpenDrawer]);
+  }, [step, finish, onOpenDrawer, onCloseDrawer]);
 
   if (!visible) return null;
 

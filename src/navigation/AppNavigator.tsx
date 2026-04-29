@@ -129,7 +129,7 @@ function MainTabs() {
 
   return (
     <>
-      <OnboardingTour active onOpenDrawer={() => setDrawerOpen(true)} />
+      <OnboardingTour active onOpenDrawer={() => setDrawerOpen(true)} onCloseDrawer={() => setDrawerOpen(false)} />
       <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <Tab.Navigator
       screenOptions={({ route }) => ({
