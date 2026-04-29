@@ -116,7 +116,7 @@ function WhatsMockup({ C }: { C: typeof DARK }) {
           <WhatsAppIcon size={20} />
         </View>
         <View>
-          <Text style={{ color: C.text, fontWeight: '700', fontSize: 13 }}>Meu Financeiro</Text>
+          <Text style={{ color: C.text, fontWeight: '700', fontSize: 13 }}>Meu FinDog</Text>
           <Text style={{ color: '#25D366', fontSize: 11 }}>online</Text>
         </View>
       </View>
@@ -558,7 +558,7 @@ export default function LandingScreen({ navigation }: any) {
         {/* Logo com mascote */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <DogMascot size={56} color={C.green} mood="happy" />
-          <Text style={{ color: C.text, fontWeight: '800', fontSize: isMobile ? 15 : 16 }}>Meu Financeiro</Text>
+          <Text style={{ color: C.text, fontWeight: '800', fontSize: isMobile ? 15 : 16 }}>Meu FinDog</Text>
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: isMobile ? 6 : 8 }}>
@@ -607,6 +607,10 @@ export default function LandingScreen({ navigation }: any) {
             <DogMascot size={isWeb ? 120 : 90} color={C.green} mood="happy" showFloating={isWeb} />
             <View style={{ height: 16 }} />
             <Badge>✦ 30 dias grátis · sem cartão</Badge>
+            <Text style={{ fontSize: isMobile ? 13 : 15, color: C.green, fontWeight: '600',
+              textAlign: 'center', letterSpacing: 0.5, marginBottom: 8 }}>
+              Meu FinDog · seu assistente financeiro
+            </Text>
             <Text style={{ fontSize: isWeb ? 52 : 32, fontWeight: '900', color: C.text,
               textAlign: 'center', lineHeight: isWeb ? 64 : 42, marginBottom: 20 }}>
               Controle financeiro{'\n'}
@@ -681,7 +685,7 @@ export default function LandingScreen({ navigation }: any) {
 
         {/* DIFERENCIAIS */}
         <Section style={{ backgroundColor: C.bg }}>
-          <STitle label="Por que o Meu Financeiro" title="Feito para a sua realidade"
+          <STitle label="Por que o Meu FinDog?" title="Feito para a sua realidade"
             sub="Sem planilhas complicadas. Sem apps que você abandona em uma semana." />
           <View style={{ flexDirection: isMobile ? 'column' : 'row', gap: 16, alignItems: isMobile ? 'stretch' : 'stretch' }}>
             <DiffCard C={C} icon={<WhatsAppIcon size={32} />}
@@ -773,9 +777,9 @@ export default function LandingScreen({ navigation }: any) {
             justifyContent: 'space-between', gap: 12, maxWidth: 1100, alignSelf: 'center', width: '100%' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <DogMascot size={56} color={C.green} mood="happy" />
-              <Text style={{ color: C.textSec, fontWeight: '600', fontSize: 14 }}>Meu Financeiro</Text>
+              <Text style={{ color: C.textSec, fontWeight: '600', fontSize: 14 }}>Meu FinDog</Text>
             </View>
-            <Text style={{ color: C.textTer, fontSize: 13 }}>© 2025 Meu Financeiro</Text>
+            <Text style={{ color: C.textTer, fontSize: 13 }}>© 2025 Meu FinDog · seu assistente financeiro</Text>
             <View style={{ flexDirection: 'row', gap: 20 }}>
               <Text style={{ color: C.textSec, fontSize: 13 }}>Privacidade</Text>
               <Text style={{ color: C.textSec, fontSize: 13 }}>Termos</Text>

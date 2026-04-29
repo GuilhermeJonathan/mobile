@@ -89,8 +89,8 @@ export default function LoginScreen({ navigation }: any) {
         {/* ── Hero ─────────────────────────────────────────────────── */}
         <View style={styles.hero}>
           <DogMascot size={200} color={colors.green} showFloating mood="happy" />
-          <Text style={styles.heroTitle}>Meu Financeiro</Text>
-          <Text style={styles.heroSub}>Seu controle financeiro pessoal</Text>
+          <Text style={styles.heroTitle}>Meu FinDog</Text>
+          <Text style={styles.heroSub}>Seu assistente financeiro</Text>
         </View>
 
         {/* ── Formulário ───────────────────────────────────────────── */}

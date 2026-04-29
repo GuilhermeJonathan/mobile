@@ -27,7 +27,7 @@ function buildSteps(isMobileWeb: boolean): Step[] {
   return [
     {
       icon: '👋',
-      title: 'Bem-vindo ao Meu Financeiro!',
+      title: 'Bem-vindo ao Meu FinDog!',
       desc: 'Vamos fazer um tour rápido para você conhecer tudo que o app oferece.',
       spotType: 'none',
     },

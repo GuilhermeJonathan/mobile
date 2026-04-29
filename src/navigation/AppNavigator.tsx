@@ -46,7 +46,7 @@ function AppHeaderTitle() {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <DogMascot size={56} color={darkColors.green} mood="happy" />
       <Text style={{ color: darkColors.text, fontWeight: '800', fontSize: 17 }}>
-        Meu Financeiro
+        Meu FinDog
       </Text>
     </View>
   );
@@ -275,7 +275,7 @@ export default function AppNavigator() {
     <NavigationContainer
       ref={navigationRef}
       linking={linking}
-      documentTitle={{ formatter: () => 'Meu Financeiro' }}
+      documentTitle={{ formatter: () => 'Meu FinDog · seu assistente financeiro' }}
     >
       <Stack.Navigator
         screenOptions={{ headerShown: false }}

@@ -132,7 +132,7 @@ export default function WhatsAppVincularScreen({ navigation }: any) {
 
         {/* ── Número do bot ─────────────────────────────────────────────── */}
         <View style={s.botCard}>
-          <Text style={s.botLabel}>Número do Meu Financeiro</Text>
+          <Text style={s.botLabel}>Número do Meu FinDog</Text>
           <Text style={s.botNumber}>+1 (555) 643-6585</Text>
           <Text style={s.botHint}>Salve este número e mande uma mensagem para começar</Text>
         </View>
