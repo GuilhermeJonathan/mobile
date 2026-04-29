@@ -681,21 +681,27 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
               )}
-              {/* Dica principal da API — terceiro item */}
+              {/* Análise IA — terceira coluna */}
               {dicas.length > 0 && (comp !== null || dias !== null) && (
                 <View style={styles.saudeDivider} />
               )}
-              {dicas.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.saudeItem, { flex: 1.4 }]}
-                  onPress={() => setDicasModal(true)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.saudeInsightEmoji}>🤖</Text>
-                  <Text style={[styles.saudeLabel, { textAlign: 'center', marginTop: 4 }]}>Análise IA</Text>
-                  <Text style={{ fontSize: 9, color: colors.textTertiary, marginTop: 6, textAlign: 'center' }}>toque para ver</Text>
-                </TouchableOpacity>
-              )}
+              {dicas.length > 0 && (() => {
+                const d0    = dicas[0];
+                const cor   = d0.tipo === 'critico' ? '#e53935' : d0.tipo === 'atencao' ? '#FF9800' : '#4CAF50';
+                const emoji = d0.tipo === 'critico' ? '🚨' : d0.tipo === 'atencao' ? '⚠️' : '✅';
+                return (
+                  <TouchableOpacity
+                    style={[styles.saudeItem, { flex: 1.4 }]}
+                    onPress={() => setDicasModal(true)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.saudeInsightEmoji}>{emoji}</Text>
+                    <Text style={[styles.saudeLabel, { textAlign: 'center', marginTop: 4 }]}>Análise</Text>
+                    <Text style={[styles.saudeInsightText, { color: cor, marginTop: 4 }]}>{d0.titulo}</Text>
+                    <Text style={{ fontSize: 9, color: colors.textTertiary, marginTop: 3, textAlign: 'center' }}>ver detalhes →</Text>
+                  </TouchableOpacity>
+                );
+              })()}
             </View>
           </View>
         );
