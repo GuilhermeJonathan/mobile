@@ -1019,6 +1019,11 @@ export default function DashboardScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.dicaTitulo, { color: cor }]}>{dica.titulo}</Text>
                     <Text style={styles.dicaDescricao}>{dica.descricao}</Text>
+                    {dica.dicaEducativa && (
+                      <View style={styles.dicaEducativaBox}>
+                        <Text style={styles.dicaEducativaText}>💡 {dica.dicaEducativa}</Text>
+                      </View>
+                    )}
                     {dica.acaoLabel && dica.acaoRota && (
                       <TouchableOpacity
                         style={[styles.dicaAcaoBtn, { borderColor: cor }]}
@@ -1298,6 +1303,14 @@ function makeStyles(c: ColorScheme) {
     dicaEmoji:    { fontSize: 22, lineHeight: 26 },
     dicaTitulo:   { fontSize: 14, fontWeight: '700', marginBottom: 4 },
     dicaDescricao:{ fontSize: 13, color: c.textSecondary, lineHeight: 19 },
+    dicaEducativaBox: {
+      marginTop: 8,
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      borderRadius: 8,
+      borderLeftWidth: 2, borderLeftColor: 'rgba(255,255,255,0.15)',
+      paddingVertical: 7, paddingHorizontal: 10,
+    },
+    dicaEducativaText: { fontSize: 12, color: c.textSecondary, lineHeight: 18, fontStyle: 'italic' },
     dicaAcaoBtn: {
       marginTop: 8, paddingVertical: 6, paddingHorizontal: 12,
       borderRadius: 8, borderWidth: 1, alignSelf: 'flex-start',

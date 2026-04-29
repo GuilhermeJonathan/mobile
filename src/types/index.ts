@@ -79,6 +79,7 @@ export interface DicaFinanceira {
   tipo: 'critico' | 'atencao' | 'positivo';
   titulo: string;
   descricao: string;
+  dicaEducativa?: string | null;
   acaoLabel?: string | null;
   acaoRota?: string | null;
 }
