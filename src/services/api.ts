@@ -270,6 +270,13 @@ export interface UserListItem {
   isBlocked: boolean;
   avatarUrl: string | null;
   createdAt: string;
+  ultimoLogin: string | null;
+}
+
+export interface WhatsAppAdminVinculo {
+  userId: string;
+  phoneNumber: string;
+  createdAt: string;
 }
 
 export const adminService = {
@@ -280,6 +287,9 @@ export const adminService = {
 
   setBlock: (id: string, block: boolean) =>
     loginApi.patch(`/user/${id}/block`, { block }),
+
+  listWhatsAppVinculos: () =>
+    api.get<WhatsAppAdminVinculo[]>('/whatsapp/vinculos/admin').then(r => r.data),
 };
 
 export interface WhatsAppVinculoDto {

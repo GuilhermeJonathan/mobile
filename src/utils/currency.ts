@@ -1,4 +1,24 @@
 /**
+ * Máscara de entrada para valor monetário (BRL).
+ * Trata dígitos como centavos: "41500" → "415,00"
+ * Permite apagar normalmente.
+ */
+export function maskBRL(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  const cents = parseInt(digits, 10);
+  return (cents / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/** Converte string mascarada de volta para number. "415.000,00" → 415000 */
+export function parseBRL(value: string): number {
+  return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+/**
  * Formata um número como moeda brasileira.
  * Ex: 11736.38  → "R$ 11.736,38"
  *     -1500     → "R$ -1.500,00"

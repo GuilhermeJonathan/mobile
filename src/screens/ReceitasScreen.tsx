@@ -6,18 +6,18 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { receitasRecorrentesService } from '../services/api';
 import { ReceitaRecorrente, TipoReceita } from '../types';
-import { fmtBRL } from '../utils/currency';
+import { fmtBRL, maskBRL, parseBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function calcValor(tipo: TipoReceita, valor: string, vh: string, qh: string): number {
   if (tipo === TipoReceita.Horista) {
-    const v = parseFloat(vh.replace(',', '.'));
+    const v = parseBRL(vh);
     const q = parseFloat(qh.replace(',', '.'));
-    return isNaN(v) || isNaN(q) ? 0 : v * q;
+    return isNaN(q) ? 0 : v * q;
   }
-  return parseFloat(valor.replace(',', '.')) || 0;
+  return parseBRL(valor);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -116,8 +116,8 @@ export default function ReceitasScreen() {
     setEditando(r);
     setENome(r.nome);
     setETipo(r.tipo);
-    setEValor(r.tipo === TipoReceita.Fixo ? String(r.valor).replace('.', ',') : '');
-    setEValorHora(r.valorHora ? String(r.valorHora).replace('.', ',') : '');
+    setEValor(r.tipo === TipoReceita.Fixo ? maskBRL(String(Math.round(r.valor * 100))) : '');
+    setEValorHora(r.valorHora ? maskBRL(String(Math.round(r.valorHora * 100))) : '');
     setEQtdHoras(r.quantidadeHoras ? String(r.quantidadeHoras).replace('.', ',') : '');
     setEDia(String(r.dia));
     setError('');
@@ -289,7 +289,7 @@ export default function ReceitasScreen() {
                   placeholderTextColor={colors.inputPlaceholder}
                   keyboardType="decimal-pad"
                   value={cValor}
-                  onChangeText={setCValor}
+                  onChangeText={t => setCValor(maskBRL(t))}
                 />
               </>
             ) : (
@@ -303,7 +303,7 @@ export default function ReceitasScreen() {
                       placeholderTextColor={colors.inputPlaceholder}
                       keyboardType="decimal-pad"
                       value={cValorHora}
-                      onChangeText={setCValorHora}
+                      onChangeText={t => setCValorHora(maskBRL(t))}
                     />
                   </View>
                   <View style={{ flex: 1 }}>
@@ -335,7 +335,8 @@ export default function ReceitasScreen() {
                   placeholderTextColor={colors.inputPlaceholder}
                   keyboardType="number-pad"
                   value={cDia}
-                  onChangeText={t => setCDia(t.replace(/\D/g, '') || '1')}
+                  onChangeText={t => setCDia(t.replace(/\D/g, ''))}
+                  onBlur={() => setCDia(v => v || '1')}
                   maxLength={2}
                 />
               </View>
@@ -403,7 +404,7 @@ export default function ReceitasScreen() {
                       placeholderTextColor={colors.inputPlaceholder}
                       keyboardType="decimal-pad"
                       value={eValor}
-                      onChangeText={setEValor}
+                      onChangeText={t => setEValor(maskBRL(t))}
                     />
                   </>
                 ) : (
@@ -417,7 +418,7 @@ export default function ReceitasScreen() {
                           placeholderTextColor={colors.inputPlaceholder}
                           keyboardType="decimal-pad"
                           value={eValorHora}
-                          onChangeText={setEValorHora}
+                          onChangeText={t => setEValorHora(maskBRL(t))}
                         />
                       </View>
                       <View style={{ flex: 1 }}>
@@ -445,7 +446,8 @@ export default function ReceitasScreen() {
                   style={styles.input}
                   keyboardType="number-pad"
                   value={eDia}
-                  onChangeText={t => setEDia(t.replace(/\D/g, '') || '1')}
+                  onChangeText={t => setEDia(t.replace(/\D/g, ''))}
+                  onBlur={() => setEDia(v => v || '1')}
                   maxLength={2}
                 />
 

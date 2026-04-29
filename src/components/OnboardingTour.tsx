@@ -20,6 +20,7 @@ interface Step {
   icon: string;
   spotType: SpotType;
   tabIdx?: number;
+  openDrawer?: boolean;
 }
 
 const STEPS: Step[] = [
@@ -54,10 +55,11 @@ const STEPS: Step[] = [
     spotType: 'tab', tabIdx: 5,
   },
   {
-    icon: '💬',
+    icon: '📲',
     title: 'Registre pelo WhatsApp!',
     desc: 'Mande uma mensagem para o bot e o lançamento entra automático:\n\n"Gasolina 150 reais"\n"Recebi salário 5000"\n"Mercado ontem 230"\n\nConfigure em Perfil → Vincular WhatsApp.',
     spotType: 'header',
+    openDrawer: true,
   },
   {
     icon: '🎯',
@@ -67,9 +69,9 @@ const STEPS: Step[] = [
   },
 ];
 
-interface Props { active: boolean; }
+interface Props { active: boolean; onOpenDrawer?: () => void; }
 
-export default function OnboardingTour({ active }: Props) {
+export default function OnboardingTour({ active, onOpenDrawer }: Props) {
   const insets       = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const [step, setStep]       = useState(0);
@@ -128,9 +130,14 @@ export default function OnboardingTour({ active }: Props) {
   }, [userId]);
 
   const next = useCallback(() => {
-    if (step < STEPS.length - 1) setStep(s => s + 1);
-    else finish();
-  }, [step, finish]);
+    if (step < STEPS.length - 1) {
+      const nextStep = STEPS[step + 1];
+      if (nextStep.openDrawer) onOpenDrawer?.();
+      setStep(s => s + 1);
+    } else {
+      finish();
+    }
+  }, [step, finish, onOpenDrawer]);
 
   if (!visible) return null;
 

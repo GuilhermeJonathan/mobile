@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Modal, Platform, RefreshControl, Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { adminService, UserListItem } from '../services/api';
+import { adminService, UserListItem, WhatsAppAdminVinculo } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 
@@ -26,13 +26,18 @@ export default function AdminUsersScreen({ navigation }: any) {
 
   const [selected, setSelected] = useState<UserListItem | null>(null);
   const [blocking, setBlocking] = useState(false);
+  const [vinculos, setVinculos] = useState<WhatsAppAdminVinculo[]>([]);
 
   async function load(isRefresh = false) {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     setError('');
     try {
-      const data = await adminService.listUsers();
+      const [data, wppVinculos] = await Promise.all([
+        adminService.listUsers(),
+        adminService.listWhatsAppVinculos().catch(() => [] as WhatsAppAdminVinculo[]),
+      ]);
       setUsers(data.items);
+      setVinculos(wppVinculos);
     } catch {
       setError('Não foi possível carregar os usuários.');
     } finally {
@@ -124,6 +129,7 @@ export default function AdminUsersScreen({ navigation }: any) {
               <Text style={styles.email} numberOfLines={1}>{item.email}</Text>
               <Text style={styles.meta}>
                 {USER_TYPE_LABEL[item.userTypeId] ?? 'Desconhecido'} · Desde {formatDate(item.createdAt)}
+                {vinculos.some(v => v.userId === item.id) ? '  📱' : ''}
               </Text>
             </View>
 
@@ -181,6 +187,23 @@ export default function AdminUsersScreen({ navigation }: any) {
                   <Text style={styles.detailLabel}>Cadastro</Text>
                   <Text style={styles.detailValue}>{formatDate(selected.createdAt)}</Text>
                 </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Último login</Text>
+                  <Text style={styles.detailValue}>
+                    {selected.ultimoLogin ? formatDate(selected.ultimoLogin) : '—'}
+                  </Text>
+                </View>
+                {(() => {
+                  const vinculo = vinculos.find(v => v.userId === selected.id);
+                  return (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>WhatsApp</Text>
+                      <Text style={[styles.detailValue, vinculo ? styles.textGreen : { color: colors.textTertiary }]}>
+                        {vinculo ? `📱 ${vinculo.phoneNumber}` : '— não vinculado'}
+                      </Text>
+                    </View>
+                  );
+                })()}
 
                 <View style={styles.modalActions}>
                   <TouchableOpacity
