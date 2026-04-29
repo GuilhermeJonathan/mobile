@@ -5,6 +5,16 @@ import { decodeToken, isTokenExpired, tokenExpiresAt, JwtPayload } from '../util
 const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:7228';
 
 const AVATAR_KEY = '@cf_avatar';
+const PLAN_KEY  = '@cf_plan';
+
+export interface PlanInfo {
+  hasPaidPlan: boolean;
+  isTrialActive: boolean;
+  isTrialExpired: boolean;
+  trialDaysRemaining: number | null;
+  trialEndsAt: string | null;
+  planExpiresAt: string | null;
+}
 
 // Instância axios autenticada apontando para a API de login
 const loginApi = axios.create({
@@ -35,8 +45,10 @@ export const authService = {
     });
     const token: string = data.accessToken;
     await AsyncStorage.setItem('@cf_token', token);
-    // Persiste o avatar retornado no login
     await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
+    if (data.planInfo) {
+      await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo));
+    }
     return token;
   },
 
@@ -53,6 +65,13 @@ export const authService = {
   async logout(): Promise<void> {
     await AsyncStorage.removeItem('@cf_token');
     await AsyncStorage.removeItem(AVATAR_KEY);
+    await AsyncStorage.removeItem(PLAN_KEY);
+  },
+
+  async getPlanInfo(): Promise<PlanInfo | null> {
+    const raw = await AsyncStorage.getItem(PLAN_KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw) as PlanInfo; } catch { return null; }
   },
 
   async getUserInfo(): Promise<UserInfo | null> {
@@ -94,6 +113,27 @@ export const authService = {
     const token: string = data.accessToken;
     await AsyncStorage.setItem('@cf_token', token);
     await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
+    return token;
+  },
+
+  /** Cadastro público sem convite (landing page). Inicia trial de 30 dias. */
+  async selfRegister(
+    name: string,
+    email: string,
+    password: string,
+  ): Promise<string> {
+    const { data } = await axios.post(`${LOGIN_API_URL}/user/selfregister`, {
+      name,
+      email,
+      password,
+      document: null,
+    });
+    const token: string = data.accessToken;
+    await AsyncStorage.setItem('@cf_token', token);
+    await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
+    if (data.planInfo) {
+      await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo));
+    }
     return token;
   },
 

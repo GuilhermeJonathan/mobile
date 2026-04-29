@@ -6,156 +6,8 @@ import {
 import { authService } from '../services/authService';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
+import DogMascot from '../components/DogMascot';
 
-// ─── Mascote cachorro ─────────────────────────────────────────────────────────
-function LoginMascot({ color }: { color: string }) {
-  const head  = '#f5b84a';
-  const ear   = '#c8762a';
-  const snout = '#f8d898';
-  const dark  = '#0d1117';
-  const badge = '#e8a840';
-
-  return (
-    <View style={{ alignItems: 'center' }}>
-      {/* Container 200 × 210 */}
-      <View style={{ width: 200, height: 210 }}>
-
-        {/* Orbit ring */}
-        <View style={{
-          position: 'absolute', width: 178, height: 178, borderRadius: 89,
-          borderWidth: 1, borderColor: color + '35',
-          left: 11, top: 6,
-        }} />
-
-        {/* Floating emojis */}
-        <Text style={{ position: 'absolute', top: 4,  right: 10, fontSize: 20 }}>💰</Text>
-        <Text style={{ position: 'absolute', top: 22, left: 8,  fontSize: 13, opacity: 0.7 }}>✨</Text>
-        <Text style={{ position: 'absolute', bottom: 26, left: 10, fontSize: 17 }}>📈</Text>
-        <Text style={{ position: 'absolute', bottom: 24, right: 10, fontSize: 12, opacity: 0.65 }}>✨</Text>
-
-        {/* ── Orelha esquerda ─── */}
-        <View style={{
-          position: 'absolute',
-          width: 30, height: 54, borderRadius: 15,
-          backgroundColor: ear,
-          left: 52, top: 34,
-          transform: [{ rotate: '-18deg' }],
-        }} />
-
-        {/* ── Orelha direita ─── */}
-        <View style={{
-          position: 'absolute',
-          width: 30, height: 54, borderRadius: 15,
-          backgroundColor: ear,
-          left: 118, top: 34,
-          transform: [{ rotate: '18deg' }],
-        }} />
-
-        {/* ── Cabeça ─── */}
-        <View style={{
-          position: 'absolute',
-          width: 106, height: 106, borderRadius: 53,
-          backgroundColor: head,
-          left: 47, top: 42,
-          shadowColor: '#000', shadowOpacity: 0.32,
-          shadowRadius: 14, shadowOffset: { width: 0, height: 5 },
-          elevation: 10,
-        }} />
-
-        {/* ── Focinho ─── */}
-        <View style={{
-          position: 'absolute',
-          width: 58, height: 44, borderRadius: 22,
-          backgroundColor: snout,
-          left: 71, top: 104,
-        }} />
-
-        {/* Olho esquerdo – branco */}
-        <View style={{
-          position: 'absolute', width: 24, height: 24, borderRadius: 12,
-          backgroundColor: 'white', left: 67, top: 70,
-        }} />
-        {/* Olho esquerdo – íris */}
-        <View style={{
-          position: 'absolute', width: 15, height: 15, borderRadius: 8,
-          backgroundColor: dark, left: 72, top: 76,
-        }} />
-        {/* Olho esquerdo – brilho */}
-        <View style={{
-          position: 'absolute', width: 5, height: 5, borderRadius: 3,
-          backgroundColor: 'white', left: 80, top: 74,
-        }} />
-
-        {/* Olho direito – branco */}
-        <View style={{
-          position: 'absolute', width: 24, height: 24, borderRadius: 12,
-          backgroundColor: 'white', left: 109, top: 70,
-        }} />
-        {/* Olho direito – íris */}
-        <View style={{
-          position: 'absolute', width: 15, height: 15, borderRadius: 8,
-          backgroundColor: dark, left: 113, top: 76,
-        }} />
-        {/* Olho direito – brilho */}
-        <View style={{
-          position: 'absolute', width: 5, height: 5, borderRadius: 3,
-          backgroundColor: 'white', left: 120, top: 74,
-        }} />
-
-        {/* Nariz */}
-        <View style={{
-          position: 'absolute', width: 20, height: 14, borderRadius: 8,
-          backgroundColor: dark, left: 90, top: 106,
-        }} />
-
-        {/* Sorriso – clip do semicírculo inferior */}
-        <View style={{
-          position: 'absolute', left: 82, top: 120,
-          width: 36, height: 15, overflow: 'hidden',
-        }}>
-          <View style={{
-            width: 34, height: 34, borderRadius: 17,
-            borderWidth: 3, borderColor: dark,
-            marginTop: -19, alignSelf: 'center',
-          }} />
-        </View>
-
-        {/* Blush esquerdo */}
-        <View style={{
-          position: 'absolute', width: 26, height: 15, borderRadius: 13,
-          backgroundColor: 'rgba(255,110,80,0.22)', left: 55, top: 112,
-        }} />
-        {/* Blush direito */}
-        <View style={{
-          position: 'absolute', width: 26, height: 15, borderRadius: 13,
-          backgroundColor: 'rgba(255,110,80,0.22)', left: 119, top: 112,
-        }} />
-
-        {/* Coleira */}
-        <View style={{
-          position: 'absolute', width: 92, height: 22, borderRadius: 11,
-          backgroundColor: color,
-          left: 54, top: 148,
-          shadowColor: color, shadowOpacity: 0.55,
-          shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
-          elevation: 8,
-        }} />
-
-        {/* Tag R$ */}
-        <View style={{
-          position: 'absolute', width: 30, height: 30, borderRadius: 15,
-          backgroundColor: badge,
-          borderWidth: 2.5, borderColor: color,
-          left: 85, top: 158,
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Text style={{ color: dark, fontSize: 9, fontWeight: '900' }}>R$</Text>
-        </View>
-
-      </View>
-    </View>
-  );
-}
 
 // ─── Tela ─────────────────────────────────────────────────────────────────────
 export default function LoginScreen({ navigation }: any) {
@@ -219,6 +71,16 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <View style={styles.root}>
+      {/* ── Voltar para home (web only) ───────────────────────────── */}
+      {Platform.OS === 'web' && (
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.navigate('Landing')}
+        >
+          <Text style={styles.backBtnText}>← Voltar</Text>
+        </TouchableOpacity>
+      )}
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -226,7 +88,7 @@ export default function LoginScreen({ navigation }: any) {
       >
         {/* ── Hero ─────────────────────────────────────────────────── */}
         <View style={styles.hero}>
-          <LoginMascot color={colors.green} />
+          <DogMascot size={200} color={colors.green} showFloating mood="happy" />
           <Text style={styles.heroTitle}>Meu Financeiro</Text>
           <Text style={styles.heroSub}>Seu controle financeiro pessoal</Text>
         </View>
@@ -347,6 +209,13 @@ function makeStyles(c: ColorScheme) {
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
     inviteBtn:     { marginTop: 18, alignItems: 'center', padding: 8 },
     inviteBtnText: { color: c.textSecondary, fontSize: 14 },
+    backBtn: {
+      position: 'absolute' as any, top: 16, left: 16, zIndex: 10,
+      paddingVertical: 8, paddingHorizontal: 12,
+      backgroundColor: c.surface, borderRadius: 8,
+      borderWidth: 1, borderColor: c.border,
+    },
+    backBtnText: { color: c.textSecondary, fontSize: 14 },
 
     // Modal
     modalOverlay: {

@@ -12,6 +12,8 @@ import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 import { useVencimentos } from '../contexts/VencimentosContext';
 import { useNavigation } from '@react-navigation/native';
+import { authService } from '../services/authService';
+import DogMascot from '../components/DogMascot';
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
@@ -382,6 +384,7 @@ export default function DashboardScreen() {
   const [ano, setAno] = useState(now.getFullYear());
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [hideValues, setHideValues] = useState(false);
 
@@ -423,6 +426,11 @@ export default function DashboardScreen() {
   }, [mes, ano]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    authService.getUserInfo().then(u => {
+      if (u?.name) setUserName(u.name.split(' ')[0]); // só primeiro nome
+    });
+  }, []);
 
   // Reseta dados lazy ao focar a tela (cobre troca de usuário sem mudança de mês)
   useFocusEffect(useCallback(() => {
@@ -521,6 +529,25 @@ export default function DashboardScreen() {
     <ScrollView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
     >
+      {/* ── Greeting ─────────────────────────────────────────────── */}
+      <View style={styles.greeting}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.greetingHello}>
+            {(() => {
+              const h = new Date().getHours();
+              if (h < 12) return '☀️ Bom dia';
+              if (h < 18) return '🌤️ Boa tarde';
+              return '🌙 Boa noite';
+            })()}{userName ? `, ${userName}!` : '!'}
+          </Text>
+          <Text style={styles.greetingSub}>
+            {(dashboard?.saldo ?? 0) >= 0
+              ? 'Suas finanças estão no azul 💚'
+              : 'Fique de olho nos gastos este mês 👀'}
+          </Text>
+        </View>
+      </View>
+
       {/* Navegação de mês */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navMes(-1)}><Text style={styles.navBtn}>◀</Text></TouchableOpacity>
@@ -975,6 +1002,12 @@ export default function DashboardScreen() {
 function makeStyles(c: ColorScheme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.background },
+    greeting: {
+      flexDirection: 'row', alignItems: 'center', gap: 14,
+      paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8,
+    },
+    greetingHello: { fontSize: 17, fontWeight: '700', color: c.text, marginBottom: 2 },
+    greetingSub: { fontSize: 13, color: c.textSecondary },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
     navBtn: { fontSize: 22, color: c.green, paddingHorizontal: 12 },
     mesTitle: { fontSize: 20, fontWeight: 'bold', color: c.text },

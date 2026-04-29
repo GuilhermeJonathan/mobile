@@ -94,6 +94,14 @@ export default function RegisterScreen({ navigation, route }: any) {
   if (!inviteToken || !inviteValid) {
     return (
       <View style={styles.centered}>
+        {Platform.OS === 'web' && (
+          <TouchableOpacity
+            style={[styles.backBtn, { position: 'absolute' as any, top: 16, left: 16 }]}
+            onPress={() => navigation.navigate('Landing')}
+          >
+            <Text style={styles.backBtnText}>← Voltar</Text>
+          </TouchableOpacity>
+        )}
         <Text style={styles.invalidIcon}>🚫</Text>
         <Text style={styles.invalidTitle}>Convite inválido</Text>
         <Text style={styles.invalidSub}>

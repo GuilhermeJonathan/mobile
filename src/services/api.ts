@@ -271,6 +271,12 @@ export interface UserListItem {
   avatarUrl: string | null;
   createdAt: string;
   ultimoLogin: string | null;
+  // plano
+  planType: number;           // 0=None 1=Trial 2=Monthly 3=Annual
+  trialStartedAt: string | null;
+  trialEndsAt: string | null;
+  isTrialExpired: boolean;
+  trialDaysRemaining: number | null;
 }
 
 export interface WhatsAppAdminVinculo {

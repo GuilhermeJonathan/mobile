@@ -15,6 +15,52 @@ const USER_TYPE_LABEL: Record<number, string> = {
   4: 'Cargo Agent',
 };
 
+const PLAN_LABEL: Record<number, string> = {
+  0: 'Sem plano',
+  1: 'Trial',
+  2: 'Mensal',
+  3: 'Anual',
+};
+
+function PlanBadge({ item, colors }: { item: UserListItem; colors: any }) {
+  if (item.planType === 2 || item.planType === 3) {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+        <View style={{ backgroundColor: colors.greenDim, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 }}>
+          <Text style={{ color: colors.green, fontSize: 10, fontWeight: '700' }}>
+            💳 {PLAN_LABEL[item.planType]}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+  if (item.planType === 1) {
+    const expired = item.isTrialExpired;
+    const days = item.trialDaysRemaining;
+    const endsAt = item.trialEndsAt ? new Date(item.trialEndsAt).toLocaleDateString('pt-BR') : null;
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+        <View style={{
+          backgroundColor: expired ? '#f8514918' : (days !== null && days <= 5 ? '#f59e0b18' : '#22c55e18'),
+          borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1,
+        }}>
+          <Text style={{
+            color: expired ? colors.red : (days !== null && days <= 5 ? '#f59e0b' : colors.green),
+            fontSize: 10, fontWeight: '700',
+          }}>
+            {expired
+              ? '⚠️ Trial expirado'
+              : days !== null && days <= 5
+                ? `⏳ Trial · ${days}d restantes`
+                : `🎯 Trial · vence ${endsAt}`}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+  return null;
+}
+
 export default function AdminUsersScreen({ navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -145,6 +191,7 @@ export default function AdminUsersScreen({ navigation }: any) {
                   Último login: {formatDateTime(item.ultimoLogin)}
                 </Text>
               )}
+              <PlanBadge item={item} colors={colors} />
             </View>
 
             <Text style={styles.chevron}>›</Text>
@@ -207,6 +254,29 @@ export default function AdminUsersScreen({ navigation }: any) {
                     {selected.ultimoLogin ? formatDateTime(selected.ultimoLogin) : '—'}
                   </Text>
                 </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Plano</Text>
+                  <Text style={[styles.detailValue,
+                    selected.planType >= 2 ? styles.textGreen :
+                    selected.isTrialExpired ? styles.textRed : { color: colors.text }
+                  ]}>
+                    {PLAN_LABEL[selected.planType] ?? '—'}
+                    {selected.planType === 1 && selected.isTrialExpired ? ' (expirado)' : ''}
+                  </Text>
+                </View>
+                {selected.planType === 1 && selected.trialEndsAt && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>
+                      {selected.isTrialExpired ? 'Trial expirou em' : 'Trial vence em'}
+                    </Text>
+                    <Text style={[styles.detailValue, selected.isTrialExpired ? styles.textRed : styles.textGreen]}>
+                      {formatDate(selected.trialEndsAt)}
+                      {!selected.isTrialExpired && selected.trialDaysRemaining !== null
+                        ? ` · ${selected.trialDaysRemaining}d`
+                        : ''}
+                    </Text>
+                  </View>
+                )}
                 {(() => {
                   const vinculo = vinculos.find(v => v.userId === selected.id);
                   return (

@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, ActivityIndicator, View, TouchableOpacity, Image } from 'react-native';
+import { Text, ActivityIndicator, View, TouchableOpacity, Image, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { darkColors } from '../theme/colors';
 import { authService } from '../services/authService';
 import { navigationRef } from './navigationRef';
+import DogMascot from '../components/DogMascot';
 import LoginScreen from '../screens/LoginScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import LancamentosScreen from '../screens/LancamentosScreen';
@@ -27,8 +28,10 @@ import OrcamentoScreen from '../screens/OrcamentoScreen';
 import FamiliaScreen from '../screens/FamiliaScreen';
 import MetasScreen from '../screens/MetasScreen';
 import WhatsAppVincularScreen from '../screens/WhatsAppVincularScreen';
+import LandingScreen from '../screens/LandingScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
+import TrialExpiredModal from '../components/TrialExpiredModal';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 
 const Stack = createNativeStackNavigator();
@@ -36,51 +39,9 @@ const Tab = createBottomTabNavigator();
 
 // ─── Logo cachorro no header ─────────────────────────────────────────────────
 function AppHeaderTitle() {
-  const head  = '#f5b84a';
-  const ear   = '#c8762a';
-  const dark  = '#0d1117';
-  const green = darkColors.green;
-
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      {/* Mini cachorro 36 × 36 */}
-      <View style={{ width: 36, height: 36 }}>
-        {/* Orelha esquerda */}
-        <View style={{
-          position: 'absolute', width: 10, height: 18, borderRadius: 5,
-          backgroundColor: ear, left: 2, top: 1,
-          transform: [{ rotate: '-18deg' }],
-        }} />
-        {/* Orelha direita */}
-        <View style={{
-          position: 'absolute', width: 10, height: 18, borderRadius: 5,
-          backgroundColor: ear, left: 24, top: 1,
-          transform: [{ rotate: '18deg' }],
-        }} />
-        {/* Cabeça */}
-        <View style={{
-          position: 'absolute', width: 28, height: 28, borderRadius: 14,
-          backgroundColor: head, left: 4, top: 5,
-          shadowColor: '#000', shadowOpacity: 0.25,
-          shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
-          elevation: 4,
-        }} />
-        {/* Olho esquerdo */}
-        <View style={{
-          position: 'absolute', width: 4, height: 4, borderRadius: 2,
-          backgroundColor: dark, left: 11, top: 14,
-        }} />
-        {/* Olho direito */}
-        <View style={{
-          position: 'absolute', width: 4, height: 4, borderRadius: 2,
-          backgroundColor: dark, left: 21, top: 14,
-        }} />
-        {/* Coleira */}
-        <View style={{
-          position: 'absolute', width: 24, height: 5, borderRadius: 3,
-          backgroundColor: green, left: 6, top: 29,
-        }} />
-      </View>
+      <DogMascot size={56} color={darkColors.green} mood="happy" />
       <Text style={{ color: darkColors.text, fontWeight: '800', fontSize: 17 }}>
         Meu Financeiro
       </Text>
@@ -88,39 +49,56 @@ function AppHeaderTitle() {
   );
 }
 
-const linking = {
-  prefixes: [],
-  config: {
-    screens: {
-      Login: 'login',
-      Register: {
-        path: 'register',
-        parse: {
-          inviteToken: (v: string) => v,  // ?inviteToken=
-          invite:      (v: string) => v,  // ?invite= (formato do backend)
-        },
+const LINKING_CONFIG = {
+  initialRouteName: 'Landing',
+  screens: {
+    Landing: { path: '' },
+    Login: 'login',
+    Register: {
+      path: 'register',
+      parse: {
+        inviteToken: (v: string) => v,
+        invite:      (v: string) => v,
       },
-      Main: {
-        screens: {
-          Dashboard: 'dashboard',
-          Lançamentos: 'lancamentos',
-          Receitas: 'receitas',
-          Cartões: 'cartoes',
-          Saldos: 'saldos',
-        },
+    },
+    Main: {
+      screens: {
+        Dashboard: 'dashboard',
+        Lançamentos: 'lancamentos',
+        Receitas: 'receitas',
+        Cartões: 'cartoes',
+        Saldos: 'saldos',
       },
     },
   },
 };
 
 function MainTabs() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl]   = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen]       = useState(false);
+  const [avatarUrl, setAvatarUrl]         = useState<string | null>(null);
+  const [trialModal, setTrialModal]       = useState(false);
+  const [trialDays, setTrialDays]         = useState<number | null>(null);
+  const [trialExpired, setTrialExpired]   = useState(false);
   const insets = useSafeAreaInsets();
   const { badge, refresh } = useVencimentos();
 
   // Garante que os alertas sejam do usuário atual a cada login
   useEffect(() => { refresh(); }, []);
+
+  // Verifica status do plano ao entrar no app
+  useEffect(() => {
+    authService.getPlanInfo().then(plan => {
+      if (!plan) return;
+      if (plan.isTrialExpired) {
+        setTrialExpired(true);
+        setTrialModal(true);
+      } else if (plan.isTrialActive && plan.trialDaysRemaining !== null && plan.trialDaysRemaining <= 3) {
+        // Aviso nos últimos 3 dias
+        setTrialDays(plan.trialDaysRemaining);
+        setTrialModal(true);
+      }
+    });
+  }, []);
 
   // Carrega avatar ao montar e quando o drawer fecha (pode ter sido atualizado)
   useEffect(() => {
@@ -129,6 +107,11 @@ function MainTabs() {
 
   return (
     <>
+      <TrialExpiredModal
+        visible={trialModal}
+        isExpired={trialExpired}
+        trialDaysRemaining={trialDays}
+      />
       <OnboardingTour active onOpenDrawer={() => setDrawerOpen(true)} onCloseDrawer={() => setDrawerOpen(false)} />
       <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <Tab.Navigator
@@ -239,6 +222,27 @@ export default function AppNavigator() {
     );
   }
 
+  const initialRoute = isLoggedIn
+    ? 'Main'
+    : Platform.OS === 'web' ? 'Landing' : 'Login';
+
+  // linking dinâmico: getInitialURL garante que não-logados sem convite
+  // sempre iniciam na Landing, independente da URL no F5 ou reload.
+  const linking = {
+    prefixes: [],
+    getInitialURL: async () => {
+      if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+      const hasInvite =
+        window.location.search.includes('invite') ||
+        window.location.search.includes('inviteToken');
+      // Usuário logado ou fluxo de convite → usa URL real do browser
+      if (isLoggedIn || hasInvite) return window.location.href;
+      // Não-logado sem convite → força Landing (path '')
+      return '';
+    },
+    config: LINKING_CONFIG,
+  };
+
   return (
     <VencimentosProvider>
     <NavigationContainer
@@ -246,7 +250,11 @@ export default function AppNavigator() {
       linking={linking}
       documentTitle={{ formatter: () => 'Meu Financeiro' }}
     >
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={isLoggedIn ? 'Main' : 'Login'}>
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName={initialRoute}
+      >
+        <Stack.Screen name="Landing" component={LandingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
