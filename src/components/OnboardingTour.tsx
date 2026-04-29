@@ -6,6 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authService } from '../services/authService';
+import WhatsAppIcon from './WhatsAppIcon';
 
 const TOUR_VERSION = 'v3';
 const tourKey = (userId: string) => `onboarding_tour_${TOUR_VERSION}_${userId}`;
@@ -18,6 +19,7 @@ interface Step {
   title: string;
   desc: string;
   icon: string;
+  iconNode?: React.ReactNode;
   spotType: SpotType;
   tabIdx?: number;
   openDrawer?: boolean;
@@ -56,8 +58,9 @@ const STEPS: Step[] = [
   },
   {
     icon: '📲',
+    iconNode: <WhatsAppIcon size={48} />,
     title: 'Registre pelo WhatsApp!',
-    desc: 'Mande uma mensagem para o bot e o lançamento entra automático:\n\n"Gasolina 150 reais"\n"Recebi salário 5000"\n"Mercado ontem 230"\n\nConfigure em Perfil → Vincular WhatsApp (👆 visível ao lado).',
+    desc: 'Mande uma mensagem para o bot e o lançamento entra automático:\n\n"Gasolina 150 reais"\n"Recebi salário 5000"\n"Mercado ontem 230"\n\nConfigure pelo ícone do WhatsApp no menu (👆 visível ao lado).',
     spotType: 'none',
     openDrawer: true,
   },
@@ -66,6 +69,7 @@ const STEPS: Step[] = [
     title: 'Metas & Família',
     desc: 'Toque no ícone 👤 no canto superior direito para acessar Metas, Família, alertas e configurações.',
     spotType: 'header',
+    openDrawer: true,
   },
 ];
 
@@ -134,8 +138,8 @@ export default function OnboardingTour({ active, onOpenDrawer, onCloseDrawer }: 
     if (step < STEPS.length - 1) {
       const currentStep = STEPS[step];
       const nextStep    = STEPS[step + 1];
-      // Fecha drawer ao sair de step que o abriu
-      if (currentStep.openDrawer) onCloseDrawer?.();
+      // Fecha drawer apenas se o próximo step NÃO precisar dele aberto
+      if (currentStep.openDrawer && !nextStep.openDrawer) onCloseDrawer?.();
       // Abre drawer ao entrar no próximo step que pede
       if (nextStep.openDrawer) onOpenDrawer?.();
       setStep(s => s + 1);
@@ -224,7 +228,10 @@ export default function OnboardingTour({ active, onOpenDrawer, onCloseDrawer }: 
             transform: [{ translateY: slideAnim }],
           },
         ]}>
-          <Text style={s.icon}>{current.icon}</Text>
+          {current.iconNode
+            ? <View style={s.iconNode}>{current.iconNode}</View>
+            : <Text style={s.icon}>{current.icon}</Text>
+          }
           <Text style={s.title}>{current.title}</Text>
           <Text style={s.desc}>{current.desc}</Text>
 
@@ -281,6 +288,7 @@ const s = StyleSheet.create({
     elevation: 20,
   },
   icon:      { fontSize: 44, textAlign: 'center', marginBottom: 12 },
+  iconNode:  { alignItems: 'center', marginBottom: 12 },
   title:     { fontSize: 20, fontWeight: '800', color: '#fff', textAlign: 'center', marginBottom: 8 },
   desc:      { fontSize: 14, color: 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 21 },
   dots:      { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 20, marginBottom: 20 },

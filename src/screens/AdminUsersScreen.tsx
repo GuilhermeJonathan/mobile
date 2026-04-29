@@ -70,6 +70,15 @@ export default function AdminUsersScreen({ navigation }: any) {
     } catch { return iso; }
   }
 
+  function formatDateTime(iso: string) {
+    try {
+      return new Date(iso).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch { return iso; }
+  }
+
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -133,7 +142,7 @@ export default function AdminUsersScreen({ navigation }: any) {
               </Text>
               {item.ultimoLogin && (
                 <Text style={styles.metaLogin}>
-                  Último login: {formatDate(item.ultimoLogin)}
+                  Último login: {formatDateTime(item.ultimoLogin)}
                 </Text>
               )}
             </View>
@@ -195,7 +204,7 @@ export default function AdminUsersScreen({ navigation }: any) {
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Último login</Text>
                   <Text style={styles.detailValue}>
-                    {selected.ultimoLogin ? formatDate(selected.ultimoLogin) : '—'}
+                    {selected.ultimoLogin ? formatDateTime(selected.ultimoLogin) : '—'}
                   </Text>
                 </View>
                 {(() => {
