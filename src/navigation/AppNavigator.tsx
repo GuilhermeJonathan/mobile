@@ -85,13 +85,13 @@ function MainTabs() {
   const insets = useSafeAreaInsets();
   const { badge, refresh } = useVencimentos();
 
-  // ── Auth guard: se não há token válido, redireciona imediatamente ──────────
+  // ── Auth guard: sem token válido → Login (usuário precisa se autenticar) ────
   useEffect(() => {
     authService.getToken().then(token => {
       if (!token) {
         navigationRef.current?.reset({
           index: 0,
-          routes: [{ name: (Platform.OS === 'web' ? 'Landing' : 'Login') as never }],
+          routes: [{ name: 'Login' as never }],
         });
       }
     });
@@ -245,47 +245,56 @@ export default function AppNavigator() {
     );
   }
 
-  const initialRoute = isLoggedIn
-    ? 'Main'
-    : Platform.OS === 'web' ? 'Landing' : 'Login';
+  const initialRoute = isLoggedIn ? 'Main' : Platform.OS === 'web' ? 'Landing' : 'Login';
 
-  // linking dinâmico: prefixes usa a origin real para o React Navigation
-  // conseguir extrair o pathname da URL completa e fazer o match correto.
   const origin = Platform.OS === 'web' && typeof window !== 'undefined'
-    ? window.location.origin
-    : '';
+    ? window.location.origin : '';
 
-  const linking = {
+  // Link de convite: único caso em que usuário não-logado precisa de deep-link
+  const isInviteLink = Platform.OS === 'web' && typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/register') ||
+    window.location.search.includes('invite') ||
+    window.location.search.includes('inviteToken')
+  );
+
+  // Usuário logado → linking completo (deep-links funcionam)
+  // Usuário não-logado + convite → linking apenas para Register
+  // Usuário não-logado sem convite → SEM linking (initialRouteName = Landing, sem interferência da URL)
+  const linking = (isLoggedIn || isInviteLink) ? {
     prefixes: origin ? [origin] : [],
-    getInitialURL: async () => {
-      if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
-      const hasInvite =
-        window.location.search.includes('invite') ||
-        window.location.search.includes('inviteToken');
-      // Usuário logado ou fluxo de convite → usa URL real do browser
-      if (isLoggedIn || hasInvite) return window.location.href;
-      // Não-logado sem convite → força Landing (root /)
-      return origin + '/';
-    },
+    getInitialURL: async () => typeof window !== 'undefined' ? window.location.href : null,
     config: LINKING_CONFIG,
-  };
+  } : undefined;
+
+  function handleNavReady() {
+    if (Platform.OS !== 'web' || isLoggedIn) return;
+    const current = navigationRef.current?.getCurrentRoute()?.name;
+    const isPublic = current === 'Landing' || current === 'Login' || current === 'Register';
+    if (current && !isPublic) {
+      navigationRef.current?.reset({ index: 0, routes: [{ name: 'Landing' as never }] });
+    }
+  }
 
   return (
     <VencimentosProvider>
     <NavigationContainer
       ref={navigationRef}
       linking={linking}
+      onReady={handleNavReady}
       documentTitle={{ formatter: () => 'Meu FinDog · seu assistente financeiro' }}
     >
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
         initialRouteName={initialRoute}
       >
-        <Stack.Screen name="Landing" component={LandingScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
+        {/* ── Rotas PÚBLICAS — sem autenticação ── */}
+        <Stack.Screen name="Landing"  component={LandingScreen} />
+        <Stack.Screen name="Login"    component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Main" component={MainTabs} />
-        <Stack.Screen name="Invites" component={InvitesScreen} />
+
+        {/* ── Rotas PROTEGIDAS — exigem login ── */}
+        <Stack.Screen name="Main"       component={MainTabs} />
+        <Stack.Screen name="Invites"    component={InvitesScreen} />
         <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
         <Stack.Screen
           name="AddLancamento"

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lancamentosService } from '../services/api';
 import { Lancamento, SituacaoLancamento } from '../types';
 
@@ -29,6 +30,9 @@ export function VencimentosProvider({ children }: { children: React.ReactNode })
   const [alertas, setAlertas] = useState<VencimentoAlerta[]>([]);
 
   const refresh = useCallback(async () => {
+    // Não faz chamada se não houver token — evita 401 na Landing/Login
+    const token = await AsyncStorage.getItem('@cf_token');
+    if (!token) return;
     try {
       const now = new Date();
       const mes = now.getMonth() + 1;

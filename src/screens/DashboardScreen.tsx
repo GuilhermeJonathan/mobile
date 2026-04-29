@@ -373,8 +373,9 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
   );
 }
 
-// Flag de módulo: garante que o contador de sessão sobe apenas 1x por runtime do app
-let _sessionCounted = false;
+// Flags de módulo — persistem durante toda a sessão do app (reset só ao fechar)
+let _sessionCounted  = false;  // sobe o contador 1x por sessão
+let _modalDismissed  = false;  // "agora não" foi clicado — não reexibir
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function DashboardScreen() {
@@ -412,6 +413,7 @@ export default function DashboardScreen() {
   // Modal "sem dados" — exibido a partir do 2º acesso se não houver lançamentos
   const [showEmptyModal, setShowEmptyModal] = useState(false);
   const emptyModalChecked = useRef(false);
+  function dismissEmptyModal() { _modalDismissed = true; setShowEmptyModal(false); }
 
   // Modal de categoria
   const [catModal, setCatModal] = useState<{ nome: string; color: string; total: number } | null>(null);
@@ -458,7 +460,7 @@ export default function DashboardScreen() {
     if (!isEmpty) return;
     AsyncStorage.getItem('@meufindog:openCount').then(val => {
       const count = parseInt(val ?? '0', 10);
-      if (count >= 2) setShowEmptyModal(true);
+      if (count >= 2 && !_modalDismissed) setShowEmptyModal(true);
     });
   }, [loading, dashboard]);
 
@@ -1026,8 +1028,8 @@ export default function DashboardScreen() {
       </View>
     </Modal>
     {/* ── Modal "vamos começar" — aparece a partir do 2º acesso sem dados ── */}
-    <Modal visible={showEmptyModal} transparent animationType="fade" onRequestClose={() => setShowEmptyModal(false)}>
-      <TouchableOpacity style={styles.emptyOverlay} activeOpacity={1} onPress={() => setShowEmptyModal(false)}>
+    <Modal visible={showEmptyModal} transparent animationType="fade" onRequestClose={() => dismissEmptyModal()}>
+      <TouchableOpacity style={styles.emptyOverlay} activeOpacity={1} onPress={() => dismissEmptyModal()}>
         <TouchableOpacity activeOpacity={1} style={styles.emptyModal} onPress={() => {}}>
 
           <DogMascot size={110} mood="happy" wag />
@@ -1039,7 +1041,7 @@ export default function DashboardScreen() {
 
           <TouchableOpacity
             style={styles.emptyAction}
-            onPress={() => { setShowEmptyModal(false); (navigation as any).navigate('AddLancamento', { mes, ano }); }}
+            onPress={() => { dismissEmptyModal(); (navigation as any).navigate('AddLancamento', { mes, ano }); }}
           >
             <Text style={styles.emptyActionIcon}>💸</Text>
             <View style={{ flex: 1 }}>
@@ -1051,7 +1053,7 @@ export default function DashboardScreen() {
 
           <TouchableOpacity
             style={styles.emptyAction}
-            onPress={() => { setShowEmptyModal(false); (navigation as any).navigate('Saldos'); }}
+            onPress={() => { dismissEmptyModal(); (navigation as any).navigate('Saldos'); }}
           >
             <Text style={styles.emptyActionIcon}>🏦</Text>
             <View style={{ flex: 1 }}>
@@ -1063,7 +1065,7 @@ export default function DashboardScreen() {
 
           <TouchableOpacity
             style={styles.emptyAction}
-            onPress={() => { setShowEmptyModal(false); (navigation as any).navigate('WhatsAppVincular'); }}
+            onPress={() => { dismissEmptyModal(); (navigation as any).navigate('WhatsAppVincular'); }}
           >
             <Text style={styles.emptyActionIcon}>💬</Text>
             <View style={{ flex: 1 }}>
@@ -1073,7 +1075,7 @@ export default function DashboardScreen() {
             <Text style={styles.emptyActionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.emptyDismiss} onPress={() => setShowEmptyModal(false)}>
+          <TouchableOpacity style={styles.emptyDismiss} onPress={() => dismissEmptyModal()}>
             <Text style={styles.emptyDismissText}>Agora não</Text>
           </TouchableOpacity>
         </TouchableOpacity>

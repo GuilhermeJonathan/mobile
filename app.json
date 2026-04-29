@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Meu Financeiro",
-    "slug": "meu-financeiro",
+    "name": "Meu FinDog",
+    "slug": "meu-findog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -29,9 +29,9 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "output": "single",
-      "name": "Meu Financeiro",
-      "shortName": "Meu Financeiro",
-      "description": "Seu controle financeiro pessoal",
+      "name": "Meu FinDog",
+      "shortName": "Meu FinDog",
+      "description": "Seu assistente financeiro pessoal",
       "backgroundColor": "#0d1117",
       "themeColor": "#3fb950",
       "lang": "pt-BR"

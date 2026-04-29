@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Fundo -->
+  <rect width="1200" height="630" fill="#0d1117"/>
+
+  <!-- Gradiente sutil no fundo -->
+  <defs>
+    <radialGradient id="bg" cx="30%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#1a2332"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3fb950" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#3fb950" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="300" cy="315" r="260" fill="url(#glow)"/>
+
+  <!-- Cachorro — orelhas -->
+  <ellipse cx="200" cy="220" rx="52" ry="90" fill="#c8762a" transform="rotate(-15 200 220)"/>
+  <ellipse cx="380" cy="220" rx="52" ry="90" fill="#c8762a" transform="rotate(15 380 220)"/>
+  <!-- Orelhas internas -->
+  <ellipse cx="200" cy="228" rx="34" ry="64" fill="#e8973a" transform="rotate(-15 200 228)"/>
+  <ellipse cx="380" cy="228" rx="34" ry="64" fill="#e8973a" transform="rotate(15 380 228)"/>
+
+  <!-- Cabeça principal -->
+  <circle cx="290" cy="330" r="148" fill="#f5b84a"/>
+
+  <!-- Olhos -->
+  <circle cx="240" cy="295" r="26" fill="#fff"/>
+  <circle cx="340" cy="295" r="26" fill="#fff"/>
+  <circle cx="246" cy="299" r="15" fill="#1a1a2e"/>
+  <circle cx="346" cy="299" r="15" fill="#1a1a2e"/>
+  <!-- Brilho dos olhos -->
+  <circle cx="252" cy="293" r="5" fill="#fff"/>
+  <circle cx="352" cy="293" r="5" fill="#fff"/>
+
+  <!-- Focinho -->
+  <ellipse cx="290" cy="355" rx="46" ry="34" fill="#e8973a"/>
+  <!-- Nariz -->
+  <ellipse cx="290" cy="338" rx="18" ry="12" fill="#1a1a2e"/>
+  <ellipse cx="287" cy="335" rx="6" ry="4" fill="#444" opacity="0.5"/>
+  <!-- Boca -->
+  <path d="M 268 358 Q 290 378 312 358" stroke="#c8762a" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- Lingua -->
+  <ellipse cx="290" cy="375" rx="14" ry="10" fill="#e05a5a"/>
+
+  <!-- Rabo (canto inferior esquerdo do cachorro) -->
+  <path d="M 160 430 Q 100 390 120 340 Q 130 310 155 330" stroke="#c8762a" stroke-width="20" fill="none" stroke-linecap="round"/>
+
+  <!-- Coleira verde -->
+  <rect x="205" y="455" width="170" height="28" rx="14" fill="#3fb950"/>
+  <circle cx="290" cy="469" r="12" fill="#2ea043" stroke="#3fb950" stroke-width="2"/>
+  <circle cx="290" cy="469" r="6" fill="#f5b84a"/>
+
+  <!-- Divisor vertical -->
+  <line x1="560" y1="80" x2="560" y2="550" stroke="#3fb950" stroke-width="1.5" opacity="0.3"/>
+
+  <!-- Texto direito -->
+  <!-- Tagline pequena -->
+  <text x="640" y="200" font-family="Arial, sans-serif" font-size="32" fill="#3fb950" font-weight="600" letter-spacing="3">SEU ASSISTENTE FINANCEIRO</text>
+
+  <!-- Nome principal -->
+  <text x="634" y="310" font-family="Arial, sans-serif" font-size="120" fill="#ffffff" font-weight="800" letter-spacing="-2">Meu</text>
+  <text x="634" y="430" font-family="Arial, sans-serif" font-size="120" fill="#3fb950" font-weight="800" letter-spacing="-2">FinDog</text>
+
+  <!-- URL -->
+  <text x="640" y="510" font-family="Arial, sans-serif" font-size="26" fill="#8b949e">financeiro-web-two.vercel.app</text>
+
+  <!-- Bolinha decorativa -->
+  <circle cx="640" cy="165" r="8" fill="#3fb950"/>
+</svg>

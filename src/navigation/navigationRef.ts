@@ -10,6 +10,7 @@ export function navigateTo(name: string, params?: object) {
 
 export function resetToLogin() {
   if (navigationRef.isReady()) {
+    // Sempre vai para Login — o usuário estava autenticado e perdeu a sessão
     navigationRef.dispatch(
       CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] })
     );
