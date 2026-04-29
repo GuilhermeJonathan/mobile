@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authService } from '../services/authService';
 
-const TOUR_VERSION = 'v2';
+const TOUR_VERSION = 'v3';
 const tourKey = (userId: string) => `onboarding_tour_${TOUR_VERSION}_${userId}`;
 
 const TAB_COUNT = 6;
@@ -52,6 +52,12 @@ const STEPS: Step[] = [
     title: 'Orçamento',
     desc: 'Defina limites de gasto por categoria. O app avisa quando você está chegando perto do limite.',
     spotType: 'tab', tabIdx: 5,
+  },
+  {
+    icon: '💬',
+    title: 'Registre pelo WhatsApp!',
+    desc: 'Mande uma mensagem para o bot e o lançamento entra automático:\n\n"Gasolina 150 reais"\n"Recebi salário 5000"\n"Mercado ontem 230"\n\nConfigure em Perfil → Vincular WhatsApp.',
+    spotType: 'header',
   },
   {
     icon: '🎯',
