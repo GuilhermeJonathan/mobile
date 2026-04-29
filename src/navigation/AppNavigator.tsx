@@ -226,10 +226,14 @@ export default function AppNavigator() {
     ? 'Main'
     : Platform.OS === 'web' ? 'Landing' : 'Login';
 
-  // linking dinâmico: getInitialURL garante que não-logados sem convite
-  // sempre iniciam na Landing, independente da URL no F5 ou reload.
+  // linking dinâmico: prefixes usa a origin real para o React Navigation
+  // conseguir extrair o pathname da URL completa e fazer o match correto.
+  const origin = Platform.OS === 'web' && typeof window !== 'undefined'
+    ? window.location.origin
+    : '';
+
   const linking = {
-    prefixes: [],
+    prefixes: origin ? [origin] : [],
     getInitialURL: async () => {
       if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
       const hasInvite =
@@ -237,8 +241,8 @@ export default function AppNavigator() {
         window.location.search.includes('inviteToken');
       // Usuário logado ou fluxo de convite → usa URL real do browser
       if (isLoggedIn || hasInvite) return window.location.href;
-      // Não-logado sem convite → força Landing (path '')
-      return '';
+      // Não-logado sem convite → força Landing (root /)
+      return origin + '/';
     },
     config: LINKING_CONFIG,
   };
