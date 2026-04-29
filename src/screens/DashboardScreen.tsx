@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import Svg, { Rect, Text as SvgText, Line, Circle, Path, G } from 'react-native-svg';
 import { lancamentosService, categoriasService, OrcamentoItem, api } from '../services/api';
-import { Dashboard } from '../types';
+import { Dashboard, DicaFinanceira } from '../types';
 import { fmtBRL, fmtBRLCompact } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
@@ -415,6 +415,10 @@ export default function DashboardScreen() {
   const emptyModalChecked = useRef(false);
   function dismissEmptyModal() { _modalDismissed = true; setShowEmptyModal(false); }
 
+  // Dicas financeiras
+  const [dicas, setDicas] = useState<DicaFinanceira[]>([]);
+  const [dicasModal, setDicasModal] = useState(false);
+
   // Modal de categoria
   const [catModal, setCatModal] = useState<{ nome: string; color: string; total: number } | null>(null);
   const [catLancs, setCatLancs] = useState<any[]>([]);
@@ -423,8 +427,12 @@ export default function DashboardScreen() {
   // Carga inicial: apenas o dashboard do mês (1 chamada)
   const load = useCallback(async () => {
     try {
-      const data = await lancamentosService.getDashboard(mes, ano);
+      const [data, dicasData] = await Promise.all([
+        lancamentosService.getDashboard(mes, ano),
+        lancamentosService.getDicas(mes, ano).catch(() => [] as DicaFinanceira[]),
+      ]);
       setDashboard(data);
+      setDicas(dicasData);
       // Reseta lazy data ao trocar de mês
       setProjection([]);
       setProjectionVisible(false);
@@ -572,11 +580,6 @@ export default function DashboardScreen() {
               return '🌙 Boa noite';
             })()}{userName ? `, ${userName}!` : '!'}
           </Text>
-          <Text style={styles.greetingSub}>
-            {(dashboard?.saldo ?? 0) >= 0
-              ? 'Suas finanças estão no azul 💚'
-              : 'Fique de olho nos gastos este mês 👀'}
-          </Text>
         </View>
       </View>
 
@@ -678,6 +681,27 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
               )}
+              {/* Dica principal da API — terceiro item */}
+              {dicas.length > 0 && (comp !== null || dias !== null) && (
+                <View style={styles.saudeDivider} />
+              )}
+              {dicas.length > 0 && (() => {
+                const d0 = dicas[0];
+                const cor   = d0.tipo === 'critico' ? '#e53935' : d0.tipo === 'atencao' ? '#FF9800' : '#4CAF50';
+                const emoji = d0.tipo === 'critico' ? '🚨' : d0.tipo === 'atencao' ? '⚠️' : '✅';
+                return (
+                  <TouchableOpacity
+                    style={[styles.saudeItem, { flex: 1.4 }]}
+                    onPress={() => setDicasModal(true)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.saudeInsightEmoji}>{emoji}</Text>
+                    <Text style={[styles.saudeLabel, { textAlign: 'center', marginTop: 4 }]}>Análise</Text>
+                    <Text style={[styles.saudeInsightText, { color: cor, marginTop: 4 }]}>{d0.titulo}</Text>
+                    <Text style={{ fontSize: 9, color: colors.textTertiary, marginTop: 3 }}>toque para dicas</Text>
+                  </TouchableOpacity>
+                );
+              })()}
             </View>
           </View>
         );
@@ -969,6 +993,47 @@ export default function DashboardScreen() {
       <View style={{ height: 24 }} />
     </ScrollView>
 
+    {/* ── Modal Dicas Financeiras ── */}
+    <Modal visible={dicasModal} transparent animationType="slide" onRequestClose={() => setDicasModal(false)}>
+      <TouchableOpacity
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' }}
+        activeOpacity={1}
+        onPress={() => setDicasModal(false)}
+      >
+        <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+          <View style={styles.dicasSheet}>
+            <View style={styles.dicasHandle} />
+            <Text style={styles.dicasTitle}>💡 Dicas Financeiras</Text>
+            <Text style={styles.dicasSub}>{MESES[mes - 1]}/{ano}</Text>
+            {dicas.map((dica, i) => {
+              const cor   = dica.tipo === 'critico' ? '#e53935' : dica.tipo === 'atencao' ? '#FF9800' : '#4CAF50';
+              const emoji = dica.tipo === 'critico' ? '🚨' : dica.tipo === 'atencao' ? '⚠️' : '✅';
+              return (
+                <View key={i} style={[styles.dicaItem, { borderLeftColor: cor }]}>
+                  <Text style={styles.dicaEmoji}>{emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.dicaTitulo, { color: cor }]}>{dica.titulo}</Text>
+                    <Text style={styles.dicaDescricao}>{dica.descricao}</Text>
+                    {dica.acaoLabel && dica.acaoRota && (
+                      <TouchableOpacity
+                        style={[styles.dicaAcaoBtn, { borderColor: cor }]}
+                        onPress={() => { setDicasModal(false); navigation.navigate(dica.acaoRota as never); }}
+                      >
+                        <Text style={[styles.dicaAcaoText, { color: cor }]}>{dica.acaoLabel} →</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+            <TouchableOpacity style={styles.dicasFechar} onPress={() => setDicasModal(false)}>
+              <Text style={styles.dicasFecharText}>Fechar</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+
     {/* ── Modal detalhes da categoria ── */}
     <Modal
       visible={!!catModal}
@@ -1053,7 +1118,7 @@ export default function DashboardScreen() {
 
           <TouchableOpacity
             style={styles.emptyAction}
-            onPress={() => { dismissEmptyModal(); (navigation as any).navigate('Saldos'); }}
+            onPress={() => { dismissEmptyModal(); (navigation as any).navigate('Contas'); }}
           >
             <Text style={styles.emptyActionIcon}>🏦</Text>
             <View style={{ flex: 1 }}>
@@ -1198,6 +1263,40 @@ function makeStyles(c: ColorScheme) {
     saudeValor: { fontSize: 28, fontWeight: '800', lineHeight: 34 },
     saudeLabel: { fontSize: 12, color: c.textSecondary, marginTop: 2, fontWeight: '600' },
     saudeSub: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
+    saudeInsightEmoji: { fontSize: 26, lineHeight: 30 },
+    saudeInsightText: { fontSize: 11, fontWeight: '600', textAlign: 'center', lineHeight: 16, color: c.textTertiary },
+
+    // ── Modal dicas ──────────────────────────────────────────────────────────
+    dicasSheet: {
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 24, borderTopRightRadius: 24,
+      padding: 24, paddingBottom: 40,
+      borderWidth: 1, borderColor: c.border,
+    },
+    dicasHandle: {
+      width: 40, height: 4, borderRadius: 2,
+      backgroundColor: c.border, alignSelf: 'center', marginBottom: 20,
+    },
+    dicasTitle: { fontSize: 18, fontWeight: '800', color: c.text, marginBottom: 2 },
+    dicasSub:   { fontSize: 13, color: c.textSecondary, marginBottom: 20 },
+    dicaItem: {
+      flexDirection: 'row', gap: 12,
+      borderLeftWidth: 3, paddingLeft: 12,
+      paddingVertical: 12, marginBottom: 10,
+    },
+    dicaEmoji:    { fontSize: 22, lineHeight: 26 },
+    dicaTitulo:   { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+    dicaDescricao:{ fontSize: 13, color: c.textSecondary, lineHeight: 19 },
+    dicaAcaoBtn: {
+      marginTop: 8, paddingVertical: 6, paddingHorizontal: 12,
+      borderRadius: 8, borderWidth: 1, alignSelf: 'flex-start',
+    },
+    dicaAcaoText: { fontSize: 13, fontWeight: '600' },
+    dicasFechar: {
+      marginTop: 12, paddingVertical: 14,
+      backgroundColor: c.border, borderRadius: 12, alignItems: 'center',
+    },
+    dicasFecharText: { fontSize: 15, color: c.text, fontWeight: '600' },
 
     pendenciasCard: {
       marginHorizontal: 16, marginTop: 12,

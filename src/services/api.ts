@@ -109,6 +109,8 @@ export const lancamentosService = {
     api.get(`/lancamentos/projecao/${mes}/${ano}`).then(r => r.data),
   getDashboard: (mes: number, ano: number) =>
     api.get(`/lancamentos/dashboard/${mes}/${ano}`).then(r => r.data),
+  getDicas: (mes: number, ano: number) =>
+    api.get(`/lancamentos/dicas/${mes}/${ano}`).then(r => r.data),
   create: (data: object) => api.post('/lancamentos', data).then(r => r.data),
   update: (id: string, data: object) => api.put(`/lancamentos/${id}`, data),
   updateRecorrenteFuturas: (id: string, data: object) =>

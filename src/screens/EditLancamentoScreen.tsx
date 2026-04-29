@@ -9,21 +9,20 @@ import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 
-const TIPOS = [
-  { label: 'Crédito', value: TipoLancamento.Credito },
-  { label: 'Débito', value: TipoLancamento.Debito },
-  { label: 'Pix', value: TipoLancamento.Pix },
-];
+const TIPO_CONFIG = {
+  [TipoLancamento.Debito]:  { emoji: '💸', label: 'Despesa',  sub: 'Gasto, conta, pagamento', color: '#ef4444' },
+  [TipoLancamento.Credito]: { emoji: '💰', label: 'Receita',  sub: 'Salário, renda, entrada',  color: '#3fb950' },
+};
 
 const SITUACOES: Record<TipoLancamento, { label: string; value: SituacaoLancamento }[]> = {
-  [TipoLancamento.Credito]: [],   // não exibe seletor
+  [TipoLancamento.Credito]: [],
   [TipoLancamento.Debito]: [
-    { label: 'Pago', value: SituacaoLancamento.Pago },
+    { label: 'Pago',     value: SituacaoLancamento.Pago    },
     { label: 'A Vencer', value: SituacaoLancamento.AVencer },
-    { label: 'Vencido', value: SituacaoLancamento.Vencido },
+    { label: 'Vencido',  value: SituacaoLancamento.Vencido },
   ],
   [TipoLancamento.Pix]: [
-    { label: 'Pago', value: SituacaoLancamento.Pago },
+    { label: 'Pago',     value: SituacaoLancamento.Pago    },
     { label: 'A Vencer', value: SituacaoLancamento.AVencer },
   ],
 };
@@ -306,6 +305,33 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
           </View>
         )}
 
+        {/* ── Seletor de tipo — Despesa / Receita ────────────────────────── */}
+        <View style={styles.tipoRow}>
+          {([TipoLancamento.Debito, TipoLancamento.Credito] as TipoLancamento[]).map(t => {
+            const cfg = TIPO_CONFIG[t as keyof typeof TIPO_CONFIG];
+            const active = tipo === t;
+            return (
+              <TouchableOpacity
+                key={t}
+                style={[styles.tipoCard, { borderColor: active ? cfg.color : colors.inputBorder }, active && { backgroundColor: cfg.color + '18' }]}
+                onPress={() => {
+                  setTipo(t);
+                  setSituacao(t === TipoLancamento.Credito ? SituacaoLancamento.AReceber : SituacaoLancamento.AVencer);
+                  setCategoriaId(undefined);
+                  if (t !== TipoLancamento.Debito) setCartaoId(undefined);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.tipoEmoji}>{cfg.emoji}</Text>
+                <View>
+                  <Text style={[styles.tipoLabel, { color: active ? cfg.color : colors.textSecondary }]}>{cfg.label}</Text>
+                  <Text style={styles.tipoSub}>{cfg.sub}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         <Text style={styles.label}>Descrição</Text>
         <TextInput
           style={styles.input}
@@ -389,28 +415,6 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
             </View>
           </View>
         )}
-
-        <Text style={styles.label}>Tipo</Text>
-        <View style={styles.chips}>
-          {TIPOS.map(t => (
-            <TouchableOpacity
-              key={t.value}
-              style={[styles.chip, tipo === t.value && styles.chipActive]}
-              onPress={() => {
-                setTipo(t.value);
-                setSituacao(t.value === TipoLancamento.Credito
-                  ? SituacaoLancamento.AVencer
-                  : t.value === TipoLancamento.Pix
-                    ? SituacaoLancamento.Pago
-                    : SituacaoLancamento.AVencer);
-                setCategoriaId(undefined);
-                if (t.value !== TipoLancamento.Debito) setCartaoId(undefined);
-              }}
-            >
-              <Text style={[styles.chipText, tipo === t.value && styles.chipTextActive]}>{t.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
 
         {tipo !== TipoLancamento.Credito && (
           <>
@@ -608,6 +612,13 @@ function makeStyles(c: ColorScheme) {
     },
     horaPreviewLabel: { fontSize: 13, color: c.green, fontWeight: '600' },
     horaPreviewValor: { fontSize: 18, color: c.green, fontWeight: 'bold' },
+    // ── Seletor tipo inline
+    tipoRow:   { flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 4 },
+    tipoCard:  { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, borderWidth: 1.5, backgroundColor: c.inputBg, padding: 14 },
+    tipoEmoji: { fontSize: 24 },
+    tipoLabel: { fontSize: 15, fontWeight: '700' },
+    tipoSub:   { fontSize: 11, color: c.textTertiary, marginTop: 1 },
+
     label: { fontSize: 13, fontWeight: '600', color: c.textSecondary, marginBottom: 6, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.4 },
     input: { backgroundColor: c.inputBg, borderRadius: 8, padding: 14, fontSize: 16, borderWidth: 1, borderColor: c.inputBorder, color: c.text },
     row: { flexDirection: 'row' },

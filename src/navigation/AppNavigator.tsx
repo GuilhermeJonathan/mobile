@@ -70,7 +70,7 @@ const LINKING_CONFIG = {
         Lançamentos: 'lancamentos',
         Receitas: 'receitas',
         Cartões: 'cartoes',
-        Saldos: 'saldos',
+        Contas: 'contas',
       },
     },
   },
@@ -137,7 +137,7 @@ function MainTabs() {
             Lançamentos: '💰',
             Receitas: '📈',
             Cartões: '💳',
-            Saldos: '🏦',
+            Contas: '🏦',
             Orçamento: '📋',
           };
           return <Text style={{ fontSize: size - 4 }}>{icons[route.name]}</Text>;
@@ -207,11 +207,11 @@ function MainTabs() {
       <Tab.Screen name="Receitas" component={ReceitasScreen} />
       <Tab.Screen name="Cartões" component={CartoesScreen} />
       <Tab.Screen
-        name="Saldos"
+        name="Contas"
         component={SaldosScreen}
         options={isMobileWeb
-          ? { tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }
-          : {}}
+          ? { tabBarButton: () => null, tabBarItemStyle: { display: 'none' }, title: 'Contas' }
+          : { title: 'Contas' }}
       />
       <Tab.Screen
         name="Orçamento"

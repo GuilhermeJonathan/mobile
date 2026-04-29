@@ -869,7 +869,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
               {contas.length === 0 && (
                 <View style={styles.contaSemContas}>
                   <Text style={styles.contaSemContasText}>Nenhuma conta cadastrada.</Text>
-                  <Text style={styles.contaSemContasHint}>Cadastre em Saldos → +</Text>
+                  <Text style={styles.contaSemContasHint}>Cadastre em Contas → +</Text>
                 </View>
               )}
               {contas.map(c => (
@@ -927,7 +927,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
               {contas.length === 0 && (
                 <View style={styles.contaSemContas}>
                   <Text style={styles.contaSemContasText}>Nenhuma conta cadastrada.</Text>
-                  <Text style={styles.contaSemContasHint}>Cadastre em Saldos → +</Text>
+                  <Text style={styles.contaSemContasHint}>Cadastre em Contas → +</Text>
                 </View>
               )}
               {contas.map(c => (

@@ -53,8 +53,8 @@ function buildSteps(isMobileWeb: boolean): Step[] {
     ...(isMobileWeb
       ? [{
           icon: '📋',
-          title: 'Saldos & Orçamento',
-          desc: 'No celular, acesse Saldos e Orçamento pelo ícone 👤 no canto superior direito.',
+          title: 'Contas & Orçamento',
+          desc: 'No celular, acesse Contas e Orçamento pelo ícone 👤 no canto superior direito.',
           spotType: 'header' as SpotType,
           openDrawer: true,
         }]

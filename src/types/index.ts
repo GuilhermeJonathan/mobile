@@ -75,6 +75,14 @@ export interface Dashboard {
   comprometimentoRenda: number | null;
 }
 
+export interface DicaFinanceira {
+  tipo: 'critico' | 'atencao' | 'positivo';
+  titulo: string;
+  descricao: string;
+  acaoLabel?: string | null;
+  acaoRota?: string | null;
+}
+
 export interface Categoria {
   id: string;
   nome: string;

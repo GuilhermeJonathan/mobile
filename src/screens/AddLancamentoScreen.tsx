@@ -11,12 +11,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 
 type Modo = 'avista' | 'parcelado' | 'recorrente';
-
-const TIPOS = [
-  { label: 'Crédito',  value: TipoLancamento.Credito },
-  { label: 'Débito',   value: TipoLancamento.Debito  },
-  { label: 'Pix',      value: TipoLancamento.Pix     },
-];
+type Step = 'choose' | 'form';
 
 const MODOS: { label: string; sub: string; value: Modo }[] = [
   { value: 'avista',     label: '💵 À vista',    sub: 'Pagamento único'            },
@@ -44,6 +39,11 @@ const SITUACAO_PADRAO: Record<TipoLancamento, SituacaoLancamento> = {
   [TipoLancamento.Credito]: SituacaoLancamento.AReceber,
   [TipoLancamento.Debito]:  SituacaoLancamento.AVencer,
   [TipoLancamento.Pix]:     SituacaoLancamento.Pago,
+};
+
+const TIPO_CONFIG = {
+  [TipoLancamento.Debito]:  { emoji: '💸', label: 'Despesa',  sub: 'Gasto, conta, pagamento', color: '#ef4444' },
+  [TipoLancamento.Credito]: { emoji: '💰', label: 'Receita',  sub: 'Salário, renda, entrada',  color: '#3fb950' },
 };
 
 function applyValorMask(raw: string): string {
@@ -77,6 +77,8 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState('');
 
+  const [step,         setStep]        = useState<Step>('choose');
+
   const [modalCatVisible,    setModalCatVisible]    = useState(false);
   const [novaCategoria,      setNovaCategoria]      = useState('');
   const [savingCat,          setSavingCat]          = useState(false);
@@ -98,6 +100,11 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
     setSituacao(SITUACAO_PADRAO[t]);
     setCategoriaId(undefined);
     if (t !== TipoLancamento.Debito) setCartaoId(undefined);
+  }
+
+  function handleChooseTipo(t: TipoLancamento) {
+    changeTipo(t);
+    setStep('form');
   }
 
   async function handleSalvarCategoria() {
@@ -173,12 +180,46 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
         {/* Handle + cabeçalho */}
         <View style={styles.handle} />
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Novo Lançamento</Text>
+          {step === 'form' && (
+            <TouchableOpacity onPress={() => setStep('choose')} style={[styles.closeBtn, { marginRight: 10 }]}>
+              <Text style={styles.closeBtnText}>←</Text>
+            </TouchableOpacity>
+          )}
+          <Text style={styles.headerTitle}>
+            {step === 'choose' ? 'Novo Lançamento' : `${TIPO_CONFIG[tipo as keyof typeof TIPO_CONFIG]?.emoji ?? ''} ${TIPO_CONFIG[tipo as keyof typeof TIPO_CONFIG]?.label ?? 'Lançamento'}`}
+          </Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
             <Text style={styles.closeBtnText}>✕</Text>
           </TouchableOpacity>
         </View>
 
+        {/* ── PASSO 1: escolha o tipo ────────────────────────────────────── */}
+        {step === 'choose' && (
+          <View style={styles.chooseWrap}>
+            <Text style={styles.chooseHint}>O que você quer registrar?</Text>
+            {([TipoLancamento.Debito, TipoLancamento.Credito] as TipoLancamento[]).map(t => {
+              const cfg = TIPO_CONFIG[t as keyof typeof TIPO_CONFIG];
+              return (
+                <TouchableOpacity
+                  key={t}
+                  style={[styles.chooseCard, { borderColor: cfg.color }]}
+                  onPress={() => handleChooseTipo(t)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.chooseEmoji}>{cfg.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.chooseLabel, { color: cfg.color }]}>{cfg.label}</Text>
+                    <Text style={styles.chooseSub}>{cfg.sub}</Text>
+                  </View>
+                  <Text style={[styles.chooseArrow, { color: cfg.color }]}>→</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {/* ── PASSO 2: formulário ───────────────────────────────────────── */}
+        {step === 'form' && (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.content}
@@ -206,22 +247,6 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
             <View style={{ flex: 1 }}>
               <DatePickerField label="Data" value={data} onChange={setData} dark />
             </View>
-          </View>
-
-          {/* Tipo */}
-          <Text style={styles.label}>Tipo</Text>
-          <View style={styles.chips}>
-            {TIPOS.map(t => (
-              <TouchableOpacity
-                key={t.value}
-                style={[styles.chip, tipo === t.value && styles.chipActive]}
-                onPress={() => changeTipo(t.value)}
-              >
-                <Text style={[styles.chipText, tipo === t.value && styles.chipTextActive]}>
-                  {t.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
           </View>
 
           {/* Situação */}
@@ -366,6 +391,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
             }
           </TouchableOpacity>
         </ScrollView>
+        )}
       </SafeAreaView>
 
       {/* Modal — Nova Categoria */}
@@ -534,6 +560,31 @@ function makeStyles(c: ColorScheme) {
 
     button: { backgroundColor: c.green, borderRadius: 10, padding: 16, alignItems: 'center', marginTop: 24 },
     buttonText: { color: c.text, fontSize: 16, fontWeight: 'bold' },
+
+    // ── Passo 1: escolha de tipo
+    chooseWrap: {
+      padding: 24,
+      gap: 14,
+    },
+    chooseHint: {
+      fontSize: 14,
+      color: c.textSecondary,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    chooseCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.inputBg,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      padding: 20,
+      gap: 16,
+    },
+    chooseEmoji: { fontSize: 36 },
+    chooseLabel: { fontSize: 20, fontWeight: '800' },
+    chooseSub:   { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+    chooseArrow: { fontSize: 22, fontWeight: 'bold' },
 
     // ── Sub-modals (categoria / cartão)
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 24 },

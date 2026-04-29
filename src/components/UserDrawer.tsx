@@ -327,7 +327,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
           <View style={s.divider} />
 
-          {/* ── Saldos e Orçamento (apenas mobile web) ────────────────── */}
+          {/* ── Contas e Orçamento (apenas mobile web) ───────────────────── */}
           {isMobileWeb && (
             <>
               <View style={s.divider} />
@@ -335,11 +335,11 @@ export default function UserDrawer({ visible, onClose }: Props) {
                 style={s.row}
                 onPress={() => {
                   onClose();
-                  (navigationRef.current as any)?.navigate('Main', { screen: 'Saldos' });
+                  (navigationRef.current as any)?.navigate('Main', { screen: 'Contas' });
                 }}
               >
                 <Text style={s.rowIcon}>🏦</Text>
-                <Text style={s.rowLabel}>Saldos</Text>
+                <Text style={s.rowLabel}>Contas</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={s.row}
