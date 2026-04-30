@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { lancamentosService, categoriasService, cartoesService } from '../services/api';
 import { Categoria, CartaoCredito, Lancamento, SituacaoLancamento, TipoLancamento, TipoReceita } from '../types';
-import { fmtBRL } from '../utils/currency';
+import { fmtBRL, parseBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 
@@ -93,16 +93,16 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
   // Recalcula o valor exibido quando os campos Horista mudam
   function handleValorHoraChange(v: string) {
     setValorHora(v);
-    const vh = parseFloat(v.replace(',', '.'));
-    const qh = parseFloat(quantidadeHoras.replace(',', '.'));
+    const vh = parseBRL(v);
+    const qh = parseBRL(quantidadeHoras);
     if (!isNaN(vh) && !isNaN(qh) && qh > 0) {
       setValor((vh * qh).toFixed(2).replace('.', ','));
     }
   }
   function handleQuantidadeHorasChange(v: string) {
     setQuantidadeHoras(v);
-    const vh = parseFloat(valorHora.replace(',', '.'));
-    const qh = parseFloat(v.replace(',', '.'));
+    const vh = parseBRL(valorHora);
+    const qh = parseBRL(v);
     if (!isNaN(vh) && !isNaN(qh) && qh > 0) {
       setValor((vh * qh).toFixed(2).replace('.', ','));
     }
@@ -140,7 +140,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
   async function handleSalvar() {
     setError('');
     if (!descricao.trim()) { setError('Informe a descrição.'); return; }
-    const valorNum = parseFloat(valor.replace(',', '.'));
+    const valorNum = parseBRL(valor);
     if (isNaN(valorNum) || valorNum <= 0) { setError('Informe um valor válido.'); return; }
     const isoDate = toISODate(data);
     if (!isoDate) { setError('Data inválida. Use DD/MM/AAAA.'); return; }
@@ -368,11 +368,11 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
               </View>
             </View>
             {/* Preview do total calculado */}
-            {valor !== '' && !isNaN(parseFloat(valor.replace(',', '.'))) && (
+            {valor !== '' && parseBRL(valor) > 0 && (
               <View style={styles.horaPreview}>
                 <Text style={styles.horaPreviewLabel}>Total calculado</Text>
                 <Text style={styles.horaPreviewValor}>
-                  R$ {parseFloat(valor.replace(',', '.')).toFixed(2)}
+                  R$ {parseBRL(valor).toFixed(2)}
                 </Text>
               </View>
             )}

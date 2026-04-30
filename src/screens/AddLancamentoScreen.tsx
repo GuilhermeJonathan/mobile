@@ -9,13 +9,19 @@ import { Categoria, CartaoCredito, SituacaoLancamento, TipoLancamento } from '..
 import DatePickerField from '../components/DatePickerField';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
+import { parseBRL } from '../utils/currency';
 
 type Modo = 'avista' | 'parcelado' | 'recorrente';
 type Step = 'choose' | 'form';
 
-const MODOS: { label: string; sub: string; value: Modo }[] = [
+const MODOS_DEBITO: { label: string; sub: string; value: Modo }[] = [
   { value: 'avista',     label: '💵 À vista',    sub: 'Pagamento único'            },
   { value: 'parcelado',  label: '💳 Parcelado',  sub: 'Divide o total em N meses' },
+  { value: 'recorrente', label: '🔄 Recorrente', sub: 'Mesmo valor todo mês'       },
+];
+
+const MODOS_CREDITO: { label: string; sub: string; value: Modo }[] = [
+  { value: 'avista',     label: '💰 À vista',    sub: 'Recebimento único'          },
   { value: 'recorrente', label: '🔄 Recorrente', sub: 'Mesmo valor todo mês'       },
 ];
 
@@ -99,7 +105,11 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
     setTipo(t);
     setSituacao(SITUACAO_PADRAO[t]);
     setCategoriaId(undefined);
-    if (t !== TipoLancamento.Debito) setCartaoId(undefined);
+    if (t !== TipoLancamento.Debito) {
+      setCartaoId(undefined);
+      // "parcelado" não existe para Receita — reset para à vista
+      setModo(m => m === 'parcelado' ? 'avista' : m);
+    }
   }
 
   function handleChooseTipo(t: TipoLancamento) {
@@ -134,7 +144,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   }
 
   const parcelasNum = Math.max(1, parseInt(parcelas) || 1);
-  const valorNum    = parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0;
+  const valorNum    = parseBRL(valor);
   const categoriasFiltradas = categorias.filter(
     c => c.tipo === tipo || c.tipo === TipoLancamento.Debito
   );
@@ -291,7 +301,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
           {/* Modo */}
           <Text style={styles.label}>Modo</Text>
           <View style={styles.modoGrid}>
-            {MODOS.map(m => (
+            {(tipo === TipoLancamento.Credito ? MODOS_CREDITO : MODOS_DEBITO).map(m => (
               <TouchableOpacity
                 key={m.value}
                 style={[styles.modoCard, modo === m.value && styles.modoCardActive]}
@@ -354,7 +364,9 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
             <View style={styles.recorrenteInfo}>
               <Text style={styles.recorrenteInfoTitle}>🔄 Lançamento recorrente</Text>
               <Text style={styles.recorrenteInfoText}>
-                Gerado todo mês automaticamente. Cancele quando quiser ao editar qualquer mês futuro.
+                {tipo === TipoLancamento.Credito
+                  ? 'Receita gerada todo mês automaticamente (ex: salário). Cancele quando quiser ao editar qualquer mês futuro.'
+                  : 'Gerado todo mês automaticamente. Cancele quando quiser ao editar qualquer mês futuro.'}
               </Text>
             </View>
           )}

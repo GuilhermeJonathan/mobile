@@ -13,9 +13,33 @@ export function maskBRL(value: string): string {
   });
 }
 
-/** Converte string mascarada de volta para number. "415.000,00" → 415000 */
+/**
+ * Converte uma string de valor monetário para number, assumindo pt-BR.
+ * Regras:
+ *   - Vírgula é SEMPRE separador decimal: "12,50" → 12.50, "1.250,00" → 1250
+ *   - Ponto com 1–2 dígitos depois é separador decimal: "12.50" → 12.50
+ *   - Ponto com 3 dígitos depois é separador de milhar: "1.250" → 1250
+ */
 export function parseBRL(value: string): number {
-  return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+  const s = value.trim();
+  if (!s) return 0;
+
+  // Tem vírgula → pt-BR: remove pontos de milhar, troca vírgula por ponto
+  if (s.includes(',')) {
+    return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  // Sem vírgula, mas tem ponto
+  if (s.includes('.')) {
+    const parts = s.split('.');
+    const lastPart = parts[parts.length - 1];
+    // "12.50" → decimal (≤ 2 dígitos após o ponto)
+    if (lastPart.length <= 2) return parseFloat(s) || 0;
+    // "1.250" → milhar (3 dígitos após o ponto) → remove o ponto
+    return parseFloat(s.replace(/\./g, '')) || 0;
+  }
+
+  return parseFloat(s) || 0;
 }
 
 /**
