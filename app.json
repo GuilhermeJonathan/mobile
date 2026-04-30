@@ -33,8 +33,9 @@
       "shortName": "Meu FinDog",
       "description": "Seu assistente financeiro pessoal",
       "backgroundColor": "#0d1117",
-      "themeColor": "#3fb950",
-      "lang": "pt-BR"
+      "themeColor": "#0d1117",
+      "lang": "pt-BR",
+      "display": "standalone"
     },
     "plugins": [
       "@react-native-community/datetimepicker"
