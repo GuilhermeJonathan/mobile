@@ -120,6 +120,13 @@ export default function LoginScreen({ navigation }: any) {
             </View>
           )}
 
+          <TouchableOpacity
+            style={styles.forgotBtn}
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
+            <Text style={styles.forgotBtnText}>Esqueci minha senha</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
             {loading
               ? <ActivityIndicator color="#fff" />
@@ -207,6 +214,8 @@ function makeStyles(c: ColorScheme) {
       alignItems: 'center', marginTop: 4,
     },
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+    forgotBtn:     { alignSelf: 'flex-end', paddingVertical: 4, paddingBottom: 10 },
+    forgotBtnText: { color: c.green, fontSize: 13, fontWeight: '600' },
     inviteBtn:     { marginTop: 18, alignItems: 'center', padding: 8 },
     inviteBtnText: { color: c.textSecondary, fontSize: 14 },
     backBtn: {

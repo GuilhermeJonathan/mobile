@@ -147,4 +147,14 @@ export const authService = {
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     await loginApi.patch('/user/me/password', { currentPassword, newPassword });
   },
+
+  /** Solicita e-mail de recuperação de senha. Nunca lança erro visível ao usuário (evita enumeração). */
+  async forgotPassword(email: string): Promise<void> {
+    await axios.post(`${LOGIN_API_URL}/user/forgotPassword`, { identificador: email });
+  },
+
+  /** Redefine a senha usando o token recebido por e-mail. */
+  async resetPassword(email: string, token: string, password: string): Promise<void> {
+    await axios.put(`${LOGIN_API_URL}/user/password`, { email, password, token, termName: null });
+  },
 };

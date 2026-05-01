@@ -30,6 +30,8 @@ import FamiliaScreen from '../screens/FamiliaScreen';
 import MetasScreen from '../screens/MetasScreen';
 import WhatsAppVincularScreen from '../screens/WhatsAppVincularScreen';
 import LandingScreen from '../screens/LandingScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
@@ -67,6 +69,14 @@ const LINKING_CONFIG = {
       parse: {
         inviteToken: (v: string) => v,
         invite:      (v: string) => v,
+      },
+    },
+    ForgotPassword: 'forgot-password',
+    ResetPassword: {
+      path: 'reset-password',
+      parse: {
+        token: (v: string) => v,
+        email: (v: string) => decodeURIComponent(v),
       },
     },
     Main: {
@@ -362,17 +372,19 @@ export default function AppNavigator() {
   const origin = Platform.OS === 'web' && typeof window !== 'undefined'
     ? window.location.origin : '';
 
-  // Link de convite: único caso em que usuário não-logado precisa de deep-link
+  // Links públicos que requerem deep-link mesmo sem login
   const isInviteLink = Platform.OS === 'web' && typeof window !== 'undefined' && (
     window.location.pathname.startsWith('/register') ||
     window.location.search.includes('invite') ||
     window.location.search.includes('inviteToken')
   );
+  const isResetLink = Platform.OS === 'web' && typeof window !== 'undefined' &&
+    window.location.pathname.startsWith('/reset-password');
 
   // Usuário logado → linking completo (deep-links funcionam)
   // Usuário não-logado + convite → linking apenas para Register
   // Usuário não-logado sem convite → SEM linking (initialRouteName = Landing, sem interferência da URL)
-  const linking = (isLoggedIn || isInviteLink) ? {
+  const linking = (isLoggedIn || isInviteLink || isResetLink) ? {
     prefixes: origin ? [origin] : [],
     getInitialURL: async () => typeof window !== 'undefined' ? window.location.href : null,
     config: LINKING_CONFIG,
@@ -384,7 +396,7 @@ export default function AppNavigator() {
     if (!isLoggedIn) {
       // Não logado: garante que rotas protegidas não fiquem acessíveis
       const current = navigationRef.current?.getCurrentRoute()?.name;
-      const isPublic = ['Landing', 'Login', 'Register', 'NotFound'].includes(current ?? '');
+      const isPublic = ['Landing', 'Login', 'Register', 'ForgotPassword', 'ResetPassword', 'NotFound'].includes(current ?? '');
       if (current && !isPublic) {
         navigationRef.current?.reset({ index: 0, routes: [{ name: 'Landing' as never }] });
       }
@@ -424,10 +436,12 @@ export default function AppNavigator() {
         initialRouteName={initialRoute}
       >
         {/* ── Rotas PÚBLICAS — sem autenticação ── */}
-        <Stack.Screen name="Landing"   component={LandingScreen} />
-        <Stack.Screen name="Login"     component={LoginScreen} />
-        <Stack.Screen name="Register"  component={RegisterScreen} />
-        <Stack.Screen name="NotFound"  component={NotFoundScreen} />
+        <Stack.Screen name="Landing"        component={LandingScreen} />
+        <Stack.Screen name="Login"          component={LoginScreen} />
+        <Stack.Screen name="Register"       component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="ResetPassword"  component={ResetPasswordScreen} />
+        <Stack.Screen name="NotFound"       component={NotFoundScreen} />
 
         {/* ── Rotas PROTEGIDAS — exigem login ── */}
         <Stack.Screen name="Main"       component={MainTabs} />
