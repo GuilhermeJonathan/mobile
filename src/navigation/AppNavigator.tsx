@@ -385,7 +385,7 @@ export default function AppNavigator() {
   // Usuário não-logado + convite → linking apenas para Register
   // Usuário não-logado sem convite → SEM linking (initialRouteName = Landing, sem interferência da URL)
   const linking = (isLoggedIn || isInviteLink || isResetLink) ? {
-    prefixes: origin ? [origin] : [],
+    prefixes: origin ? [origin, 'https://app.findog.com.br', 'https://findog.com.br'] : [],
     getInitialURL: async () => typeof window !== 'undefined' ? window.location.href : null,
     config: LINKING_CONFIG,
   } : undefined;

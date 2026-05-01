@@ -9,7 +9,7 @@ import { inviteService } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 
-const APP_URL = process.env.EXPO_PUBLIC_APP_URL ?? 'https://financeiro-web-two.vercel.app';
+const APP_URL = process.env.EXPO_PUBLIC_APP_URL ?? 'https://app.findog.com.br';
 
 const EXPIRATION_OPTIONS = [7, 15, 30] as const;
 

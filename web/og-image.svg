@@ -66,7 +66,7 @@
   <text x="634" y="430" font-family="Arial, sans-serif" font-size="120" fill="#3fb950" font-weight="800" letter-spacing="-2">FinDog</text>
 
   <!-- URL -->
-  <text x="640" y="510" font-family="Arial, sans-serif" font-size="26" fill="#8b949e">financeiro-web-two.vercel.app</text>
+  <text x="640" y="510" font-family="Arial, sans-serif" font-size="26" fill="#8b949e">app.findog.com.br</text>
 
   <!-- Bolinha decorativa -->
   <circle cx="640" cy="165" r="8" fill="#3fb950"/>
