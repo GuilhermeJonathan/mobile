@@ -10,6 +10,7 @@ import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 import DogMascot from '../components/DogMascot';
+import { navStorePut } from '../utils/navStore';
 
 const PAGE_SIZE = 20;
 
@@ -88,26 +89,8 @@ export default function BuscaLancamentosScreen({ navigation }: any) {
   }
 
   function abrirEdicao(item: BuscaLancamentoItem) {
-    navigation.navigate('EditLancamento', {
-      lancamento: {
-        id:            item.id,
-        descricao:     item.descricao,
-        data:          item.data,
-        valor:         item.valor,
-        tipo:          item.tipo,
-        situacao:      item.situacao,
-        mes:           item.mes,
-        ano:           item.ano,
-        categoriaId:   item.categoriaId,
-        categoriaNome: item.categoriaNome,
-        cartaoId:      item.cartaoId,
-        cartaoNome:    item.cartaoNome,
-        parcelaAtual:  item.parcelaAtual,
-        totalParcelas: item.totalParcelas,
-        isRecorrente:  item.isRecorrente,
-        grupoParcelas: item.grupoParcelas,
-      },
-    });
+    navStorePut('editLancamento', item);
+    navigation.navigate('EditLancamento', { lancamentoId: item.id });
   }
 
   function renderItem({ item }: { item: BuscaLancamentoItem }) {

@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
-  ActivityIndicator, Modal, Platform, RefreshControl, Image,
+  ActivityIndicator, Modal, Platform, RefreshControl, Image, TextInput, ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { adminService, UserListItem, WhatsAppAdminVinculo } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
+import WhatsAppIcon from '../components/WhatsAppIcon';
 
 const USER_TYPE_LABEL: Record<number, string> = {
   1: 'Admin',
@@ -70,9 +71,73 @@ export default function AdminUsersScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  const [selected, setSelected] = useState<UserListItem | null>(null);
-  const [blocking, setBlocking] = useState(false);
-  const [vinculos, setVinculos] = useState<WhatsAppAdminVinculo[]>([]);
+  const [q, setQ]                       = useState('');
+  const [planFilter, setPlanFilter]     = useState<number | null>(null);
+  const [wppFilter, setWppFilter]       = useState<boolean | null>(null);
+
+  const [selected,    setSelected]    = useState<UserListItem | null>(null);
+  const [blocking,    setBlocking]    = useState(false);
+  const [vinculos,    setVinculos]    = useState<WhatsAppAdminVinculo[]>([]);
+
+  // — Setar plano —
+  const [planEdit,    setPlanEdit]    = useState<number | null>(null);   // plano selecionado no editor
+  const [trialDays,   setTrialDays]   = useState('30');
+  const [savingPlan,  setSavingPlan]  = useState(false);
+  const [planError,   setPlanError]   = useState<string | null>(null);
+  const [planSuccess, setPlanSuccess] = useState(false);
+
+  function openPlanEditor(item: UserListItem) {
+    setPlanEdit(item.planType);
+    setTrialDays('30');
+    setPlanError(null);
+    setPlanSuccess(false);
+    setSelected(item);
+  }
+
+  async function handleSetPlan() {
+    if (!selected || planEdit === null) return;
+    setSavingPlan(true);
+    setPlanError(null);
+    setPlanSuccess(false);
+    try {
+      const days = planEdit === 1 ? Math.max(1, parseInt(trialDays) || 14) : undefined;
+      await adminService.setPlan(selected.id, planEdit, days);
+      // Atualiza localmente sem recarregar tudo
+      const updated: Partial<UserListItem> = { planType: planEdit };
+      if (planEdit === 1) {
+        const endsAt = new Date();
+        endsAt.setDate(endsAt.getDate() + (days ?? 14));
+        updated.trialEndsAt = endsAt.toISOString();
+        updated.trialDaysRemaining = days ?? 14;
+        updated.isTrialExpired = false;
+      } else {
+        updated.trialEndsAt = null;
+        updated.trialDaysRemaining = null;
+        updated.isTrialExpired = false;
+      }
+      setUsers(prev => prev.map(u => u.id === selected.id ? { ...u, ...updated } : u));
+      setSelected(prev => prev ? { ...prev, ...updated } as UserListItem : null);
+      setPlanSuccess(true);
+    } catch (e: any) {
+      setPlanError(e?.response?.data?.message ?? e?.message ?? 'Erro ao atualizar plano.');
+    } finally {
+      setSavingPlan(false);
+    }
+  }
+
+  const filtered = useMemo(() => {
+    let list = users;
+    if (planFilter !== null) list = list.filter(u => u.planType === planFilter);
+    if (wppFilter !== null)  list = list.filter(u => vinculos.some(v => v.userId === u.id) === wppFilter);
+    if (q.trim()) {
+      const term = q.trim().toLowerCase();
+      list = list.filter(u =>
+        u.name?.toLowerCase().includes(term) ||
+        u.email?.toLowerCase().includes(term)
+      );
+    }
+    return list;
+  }, [users, vinculos, q, planFilter, wppFilter]);
 
   async function load(isRefresh = false) {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -140,8 +205,74 @@ export default function AdminUsersScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Usuários ({users.length})</Text>
+        <Text style={styles.title}>
+          Usuários ({filtered.length}{filtered.length !== users.length ? `/${users.length}` : ''})
+        </Text>
         <View style={{ width: 40 }} />
+      </View>
+
+      {/* ── Filtros ── */}
+      <View style={styles.filterBar}>
+        <View style={styles.searchRow}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por nome ou e-mail..."
+            placeholderTextColor={colors.inputPlaceholder}
+            value={q}
+            onChangeText={setQ}
+            clearButtonMode="while-editing"
+            autoCapitalize="none"
+          />
+          {q.length > 0 && (
+            <TouchableOpacity onPress={() => setQ('')} style={styles.clearBtn}>
+              <Text style={styles.clearBtnText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipRow}>
+          {/* Plano */}
+          {([null, 0, 1, 2, 3] as (number | null)[]).map(p => {
+            const label = p === null ? 'Todos' : PLAN_LABEL[p];
+            const active = planFilter === p;
+            return (
+              <TouchableOpacity
+                key={`plan-${p}`}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => setPlanFilter(p)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {label}{p !== null && ` (${users.filter(u => u.planType === p).length})`}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Divisor */}
+          <View style={styles.chipDivider} />
+
+          {/* WhatsApp */}
+          {([
+            { value: null,  label: '📱 Todos' },
+            { value: true,  label: '✅ Vinculado' },
+            { value: false, label: '— Não vinculado' },
+          ] as { value: boolean | null; label: string }[]).map(opt => {
+            const active = wppFilter === opt.value;
+            return (
+              <TouchableOpacity
+                key={`wpp-${opt.value}`}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => setWppFilter(opt.value)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {opt.label}{opt.value !== null && ` (${users.filter(u => vinculos.some(v => v.userId === u.id) === opt.value).length})`}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {error !== '' && (
@@ -151,12 +282,12 @@ export default function AdminUsersScreen({ navigation }: any) {
       )}
 
       <FlatList
-        data={users}
+        data={filtered}
         keyExtractor={u => u.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.green} />}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => setSelected(item)} activeOpacity={0.75}>
+          <TouchableOpacity style={styles.card} onPress={() => openPlanEditor(item)} activeOpacity={0.75}>
             {/* Avatar */}
             {item.avatarUrl ? (
               <Image
@@ -182,10 +313,14 @@ export default function AdminUsersScreen({ navigation }: any) {
                 )}
               </View>
               <Text style={styles.email} numberOfLines={1}>{item.email}</Text>
-              <Text style={styles.meta}>
-                {USER_TYPE_LABEL[item.userTypeId] ?? 'Desconhecido'} · Desde {formatDate(item.createdAt)}
-                {vinculos.some(v => v.userId === item.id) ? '  📱' : ''}
-              </Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.meta}>
+                  {USER_TYPE_LABEL[item.userTypeId] ?? 'Desconhecido'} · Desde {formatDate(item.createdAt)}
+                </Text>
+                {vinculos.some(v => v.userId === item.id) && (
+                  <WhatsAppIcon size={13} />
+                )}
+              </View>
               {item.ultimoLogin && (
                 <Text style={styles.metaLogin}>
                   Último login: {formatDateTime(item.ultimoLogin)}
@@ -211,6 +346,7 @@ export default function AdminUsersScreen({ navigation }: any) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center', paddingBottom: 8 }}>
             {selected && (
               <>
                 {/* Avatar grande */}
@@ -277,14 +413,70 @@ export default function AdminUsersScreen({ navigation }: any) {
                     </Text>
                   </View>
                 )}
+
+                {/* ── Editor de plano ── */}
+                <View style={styles.planEditorBox}>
+                  <Text style={styles.planEditorTitle}>Alterar plano</Text>
+                  <View style={styles.planChipRow}>
+                    {([0, 1, 2, 3] as number[]).map(p => {
+                      const active = planEdit === p;
+                      return (
+                        <TouchableOpacity
+                          key={p}
+                          style={[styles.planChip, active && styles.planChipActive]}
+                          onPress={() => { setPlanEdit(p); setPlanError(null); setPlanSuccess(false); }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.planChipText, active && styles.planChipTextActive]}>
+                            {PLAN_LABEL[p]}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {planEdit === 1 && (
+                    <View style={styles.trialDaysRow}>
+                      <Text style={styles.trialDaysLabel}>Dias de trial:</Text>
+                      <TextInput
+                        style={styles.trialDaysInput}
+                        value={trialDays}
+                        onChangeText={v => setTrialDays(v.replace(/[^0-9]/g, ''))}
+                        keyboardType="number-pad"
+                        maxLength={3}
+                        selectTextOnFocus
+                      />
+                    </View>
+                  )}
+
+                  {planError   && <Text style={styles.planError}>{planError}</Text>}
+                  {planSuccess && <Text style={styles.planSuccess}>✅ Plano atualizado!</Text>}
+
+                  <TouchableOpacity
+                    style={[styles.planSaveBtn, (savingPlan || planEdit === null) && { opacity: 0.6 }]}
+                    onPress={handleSetPlan}
+                    disabled={savingPlan || planEdit === null}
+                  >
+                    {savingPlan
+                      ? <ActivityIndicator color="#fff" size="small" />
+                      : <Text style={styles.planSaveBtnText}>Aplicar plano</Text>
+                    }
+                  </TouchableOpacity>
+                </View>
+
                 {(() => {
                   const vinculo = vinculos.find(v => v.userId === selected.id);
                   return (
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>WhatsApp</Text>
-                      <Text style={[styles.detailValue, vinculo ? styles.textGreen : { color: colors.textTertiary }]}>
-                        {vinculo ? `📱 ${vinculo.phoneNumber}` : '— não vinculado'}
-                      </Text>
+                      {vinculo ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <WhatsAppIcon size={15} />
+                          <Text style={[styles.detailValue, styles.textGreen]}>{vinculo.phoneNumber}</Text>
+                        </View>
+                      ) : (
+                        <Text style={[styles.detailValue, { color: colors.textTertiary }]}>— não vinculado</Text>
+                      )}
                     </View>
                   );
                 })()}
@@ -312,6 +504,7 @@ export default function AdminUsersScreen({ navigation }: any) {
                 </View>
               </>
             )}
+          </ScrollView>
           </View>
         </View>
       </Modal>
@@ -330,6 +523,35 @@ function makeStyles(c: ColorScheme) {
     backBtn: { padding: 8 },
     backIcon: { fontSize: 22, color: c.text },
     title: { fontSize: 20, fontWeight: 'bold', color: c.text },
+    filterBar: {
+      backgroundColor: c.surface,
+      borderBottomWidth: 1, borderBottomColor: c.border,
+      paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, gap: 10,
+    },
+    searchRow: {
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: c.background,
+      borderRadius: 10, borderWidth: 1, borderColor: c.inputBorder,
+      paddingHorizontal: 12, gap: 8,
+    },
+    searchIcon: { fontSize: 14 },
+    searchInput: { flex: 1, color: c.text, fontSize: 14, paddingVertical: 9 },
+    clearBtn: { padding: 4 },
+    clearBtnText: { color: c.textSecondary, fontSize: 13 },
+    chipScroll: { flexGrow: 0 },
+    chipRow: { flexDirection: 'row', gap: 6, paddingVertical: 2, alignItems: 'center' },
+    chipDivider: { width: 1, height: 20, backgroundColor: c.border, marginHorizontal: 4 },
+    chip: {
+      paddingHorizontal: 12, paddingVertical: 6,
+      borderRadius: 20, borderWidth: 1,
+      borderColor: c.border, backgroundColor: c.background,
+    },
+    chipActive: {
+      backgroundColor: c.green + '22',
+      borderColor: c.green,
+    },
+    chipText: { color: c.textSecondary, fontSize: 12, fontWeight: '600' },
+    chipTextActive: { color: c.green },
     errorBox: {
       margin: 16, padding: 12, borderRadius: 8,
       backgroundColor: c.redDim, borderWidth: 1, borderColor: c.redBorder,
@@ -358,37 +580,71 @@ function makeStyles(c: ColorScheme) {
     },
     blockedBadgeText: { color: c.red, fontSize: 10, fontWeight: '700' },
     email: { color: c.textSecondary, fontSize: 13, marginBottom: 2 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     meta: { color: c.textTertiary, fontSize: 12 },
     metaLogin: { color: c.textTertiary, fontSize: 11, marginTop: 1, fontStyle: 'italic' },
     chevron: { color: c.textTertiary, fontSize: 20 },
     // Modal
     modalOverlay: {
       flex: 1, backgroundColor: '#00000088',
-      justifyContent: 'flex-end',
+      justifyContent: 'flex-end', alignItems: 'center',
     },
     modalCard: {
-      backgroundColor: c.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-      padding: 28, borderWidth: 1, borderColor: c.border,
-      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 20, borderTopRightRadius: 20,
+      padding: 24, paddingBottom: 16,
+      borderWidth: 1, borderColor: c.border,
+      maxHeight: '82%',
+      width: '100%', maxWidth: 520,
     },
     modalAvatar: {
-      width: 72, height: 72, borderRadius: 36,
+      width: 64, height: 64, borderRadius: 32,
       backgroundColor: c.surfaceElevated, borderWidth: 2, borderColor: c.green,
-      justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+      justifyContent: 'center', alignItems: 'center', marginBottom: 10,
     },
-    modalAvatarText: { color: c.green, fontSize: 28, fontWeight: 'bold' },
-    modalName: { fontSize: 20, fontWeight: 'bold', color: c.text, marginBottom: 4 },
-    modalEmail: { fontSize: 14, color: c.textSecondary, marginBottom: 4 },
-    modalMeta: { fontSize: 13, color: c.textTertiary, marginBottom: 16 },
+    modalAvatarText: { color: c.green, fontSize: 26, fontWeight: 'bold' },
+    modalName: { fontSize: 18, fontWeight: 'bold', color: c.text, marginBottom: 3 },
+    modalEmail: { fontSize: 13, color: c.textSecondary, marginBottom: 3 },
+    modalMeta: { fontSize: 12, color: c.textTertiary, marginBottom: 12 },
     detailRow: {
       flexDirection: 'row', justifyContent: 'space-between',
-      width: '100%', paddingVertical: 10,
+      width: '100%', paddingVertical: 9,
       borderBottomWidth: 1, borderBottomColor: c.border,
     },
     detailLabel: { color: c.textSecondary, fontSize: 14 },
     detailValue: { color: c.text, fontSize: 14, fontWeight: '500' },
     textRed: { color: c.red },
     textGreen: { color: c.green },
+    planEditorBox: {
+      width: '100%', marginTop: 16, marginBottom: 4,
+      backgroundColor: c.background, borderRadius: 12,
+      borderWidth: 1, borderColor: c.border, padding: 14, gap: 10,
+    },
+    planEditorTitle: { color: c.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
+    planChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    planChip: {
+      paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+      borderWidth: 1, borderColor: c.border, backgroundColor: c.surface,
+    },
+    planChipActive:     { backgroundColor: c.green + '22', borderColor: c.green },
+    planChipText:       { color: c.textSecondary, fontSize: 13, fontWeight: '600' },
+    planChipTextActive: { color: c.green },
+    trialDaysRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    trialDaysLabel: { color: c.textSecondary, fontSize: 13, flex: 1 },
+    trialDaysInput: {
+      backgroundColor: c.surface, borderRadius: 8,
+      borderWidth: 1, borderColor: c.inputBorder,
+      color: c.text, fontSize: 15, fontWeight: '700',
+      paddingHorizontal: 12, paddingVertical: 6,
+      width: 72, textAlign: 'center',
+    },
+    planError:   { color: c.red,   fontSize: 12, fontWeight: '500' },
+    planSuccess: { color: c.green, fontSize: 12, fontWeight: '500' },
+    planSaveBtn: {
+      backgroundColor: c.green, borderRadius: 10,
+      paddingVertical: 11, alignItems: 'center', marginTop: 2,
+    },
+    planSaveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
     modalActions: { width: '100%', gap: 10, marginTop: 20 },
     blockBtn: {
       backgroundColor: c.red, borderRadius: 10,

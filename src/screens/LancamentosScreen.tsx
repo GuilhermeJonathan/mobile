@@ -12,6 +12,7 @@ import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 import { useVencimentos } from '../contexts/VencimentosContext';
 import EmptyState from '../components/EmptyState';
+import { navStorePut } from '../utils/navStore';
 
 const TIPO_CONTA_EMOJI: Record<number, string> = {
   [TipoConta.ContaCorrente]: '🏦',
@@ -419,7 +420,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
         {/* Conteúdo clicável → editar */}
         <TouchableOpacity
           style={styles.itemBody}
-          onPress={() => navigation.navigate('EditLancamento', { lancamento: item })}
+          onPress={() => { navStorePut('editLancamento', item); navigation.navigate('EditLancamento', { lancamentoId: item.id }); }}
           activeOpacity={0.7}
         >
           <View style={styles.itemLeft}>

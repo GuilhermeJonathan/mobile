@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { darkColors } from '../theme/colors';
 import { AppHeaderTitle } from '../navigation/AppNavigator';
+import DogMascot from './DogMascot';
 import WhatsAppIcon from './WhatsAppIcon';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -16,7 +17,7 @@ import WhatsAppIcon from './WhatsAppIcon';
 const MIN_WIDTH        = 160;
 const MAX_WIDTH        = 400;
 const DEFAULT_WIDTH    = 220;
-const COLLAPSED_WIDTH  = 56;
+const COLLAPSED_WIDTH  = 64;
 
 // ─── Nav items ───────────────────────────────────────────────────────────────
 
@@ -39,7 +40,7 @@ const MAIN_ITEMS: NavItem[] = [
 const EXTRA_ITEMS: NavItem[] = [
   { routeName: 'Dividas',          label: 'Dívidas',     icon: '📅', isRootStack: true },
   { routeName: 'Anual',            label: 'Visão Anual', icon: '📆', isRootStack: true },
-  { routeName: 'Familia',          label: 'Família',     icon: '👥', isRootStack: true },
+  { routeName: 'Familia',          label: 'Família',     icon: '👨‍👩‍👧', isRootStack: true },
   { routeName: 'Metas',            label: 'Metas',       icon: '🎯', isRootStack: true },
   { routeName: 'BuscaLancamentos', label: 'Buscar',      icon: '🔍', isRootStack: true },
   { routeName: 'WhatsApp',         label: 'WhatsApp',    icon: '💬', isRootStack: true },
@@ -47,12 +48,18 @@ const EXTRA_ITEMS: NavItem[] = [
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
+const ADMIN_ITEMS: NavItem[] = [
+  { routeName: 'AdminUsers', label: 'Usuários', icon: '👥' },
+  { routeName: 'Invites',    label: 'Convites',  icon: '🎟️' },
+];
+
 export interface DesktopShellProps {
   activeRoute: string;
   onNavigate: (routeName: string, isRootStack?: boolean) => void;
   onOpenDrawer: () => void;
   avatarUrl: string | null;
   badge: number;
+  isAdmin?: boolean;
 }
 
 // ─── Nav row ─────────────────────────────────────────────────────────────────
@@ -119,11 +126,13 @@ export default function DesktopShell({
   onOpenDrawer,
   avatarUrl,
   badge,
+  isAdmin = false,
 }: DesktopShellProps) {
   const [collapsed,    setCollapsed]    = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
   const [menuOpen,     setMenuOpen]     = useState(true);
   const [maisOpen,     setMaisOpen]     = useState(true);
+  const [adminOpen,    setAdminOpen]    = useState(true);
 
   // ── Drag-to-resize (web only) ────────────────────────────────────────────
   const drag = useRef({ active: false, startX: 0, startW: DEFAULT_WIDTH });
@@ -159,19 +168,33 @@ export default function DesktopShell({
     <View style={[s.sidebar, { width: actualWidth }]}>
 
       {/* ── Logo + collapse button ── */}
-      <View style={[s.logoArea, collapsed && s.logoAreaCollapsed]}>
-        {/* Always the same component — overflow:hidden clips the text when collapsed */}
-        <View style={s.logoClip}>
-          <AppHeaderTitle />
+      {collapsed ? (
+        // Colapsado: dog menor centralizado + botão de expandir
+        <View style={s.logoAreaCollapsed}>
+          <DogMascot size={48} color={darkColors.green} mood="happy" />
+          <TouchableOpacity
+            style={s.collapseBtn}
+            onPress={() => setCollapsed(false)}
+            activeOpacity={0.7}
+          >
+            <Text style={s.collapseBtnText}>›</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={s.collapseBtn}
-          onPress={() => setCollapsed(c => !c)}
-          activeOpacity={0.7}
-        >
-          <Text style={s.collapseBtnText}>{collapsed ? '›' : '‹'}</Text>
-        </TouchableOpacity>
-      </View>
+      ) : (
+        // Expandido: AppHeaderTitle completo (mesmo componente do header mobile)
+        <View style={s.logoArea}>
+          <View style={s.logoClip}>
+            <AppHeaderTitle />
+          </View>
+          <TouchableOpacity
+            style={s.collapseBtn}
+            onPress={() => setCollapsed(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={s.collapseBtnText}>‹</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ── Nav items ── */}
       <ScrollView
@@ -220,6 +243,30 @@ export default function DesktopShell({
             />
           ))}
         </View>
+        {/* ADMIN section — visible only for admins */}
+        {isAdmin && (
+          <>
+            <View style={s.divider} />
+            <View style={[s.section, collapsed && s.sectionCollapsed]}>
+              <SectionHeader
+                label="ADMIN"
+                open={adminOpen}
+                collapsed={collapsed}
+                onToggle={() => setAdminOpen(o => !o)}
+              />
+              {(adminOpen || collapsed) && ADMIN_ITEMS.map(item => (
+                <NavRow
+                  key={item.routeName}
+                  item={item}
+                  active={activeRoute === item.routeName}
+                  collapsed={collapsed}
+                  badge={0}
+                  onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
+                />
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* ── User area (bottom) ── */}
@@ -282,10 +329,14 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: darkColors.border,
     gap: 4,
-    overflow: 'hidden',
-  } as any,
+  },
   logoAreaCollapsed: {
-    // no changes needed — logoClip width drives the clipping
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: darkColors.border,
   },
   logoClip: {
     flex: 1,

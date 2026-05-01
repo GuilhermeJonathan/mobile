@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 
 const isMobileWeb = Platform.OS === 'web' && Dimensions.get('window').width < 768;
+const isDesktop   = Platform.OS === 'web' && Dimensions.get('window').width >= 1024;
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { authService, UserInfo } from '../services/authService';
@@ -320,9 +321,10 @@ export default function UserDrawer({ visible, onClose }: Props) {
             />
           </View>
 
-          {isAdmin && (
+          {isAdmin && !isDesktop && (
             <>
               <View style={s.divider} />
+              <Text style={s.sectionLabel}>ADMIN</Text>
               <TouchableOpacity
                 style={s.row}
                 onPress={() => { onClose(); navigationRef.current?.navigate('AdminUsers' as never); }}
@@ -342,26 +344,30 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
           <View style={s.divider} />
 
-          {/* ── Relatórios ─────────────────────────────────────────── */}
-          <TouchableOpacity
-            style={s.row}
-            onPress={() => { onClose(); navigationRef.current?.navigate('Anual' as never); }}
-          >
-            <Text style={s.rowIcon}>📅</Text>
-            <Text style={s.rowLabel}>Visão Anual</Text>
-          </TouchableOpacity>
+          {/* ── Relatórios — ocultos no desktop (disponíveis no menu lateral) ── */}
+          {!isDesktop && (
+            <>
+              <TouchableOpacity
+                style={s.row}
+                onPress={() => { onClose(); navigationRef.current?.navigate('Anual' as never); }}
+              >
+                <Text style={s.rowIcon}>📅</Text>
+                <Text style={s.rowLabel}>Visão Anual</Text>
+              </TouchableOpacity>
 
-          <View style={s.divider} />
+              <View style={s.divider} />
 
-          <TouchableOpacity
-            style={s.row}
-            onPress={() => { onClose(); navigationRef.current?.navigate('Dividas' as never); }}
-          >
-            <Text style={s.rowIcon}>💳</Text>
-            <Text style={s.rowLabel}>Dívidas Parceladas</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={s.row}
+                onPress={() => { onClose(); navigationRef.current?.navigate('Dividas' as never); }}
+              >
+                <Text style={s.rowIcon}>💳</Text>
+                <Text style={s.rowLabel}>Dívidas Parceladas</Text>
+              </TouchableOpacity>
 
-          <View style={s.divider} />
+              <View style={s.divider} />
+            </>
+          )}
 
           {/* ── Metas ──────────────────────────────────────────────── */}
           <TouchableOpacity
@@ -553,6 +559,10 @@ function styles(
     pwdIconLabel: { fontSize: 11, color: c.textTertiary },
 
     divider: { height: 1, backgroundColor: c.border, marginHorizontal: 16, marginVertical: 8 },
+    sectionLabel: {
+      color: c.textTertiary, fontSize: 10, fontWeight: '700',
+      letterSpacing: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 2,
+    },
     row: {
       flexDirection: 'row', alignItems: 'center',
       paddingHorizontal: 20, paddingVertical: 14, gap: 12,

@@ -30,6 +30,7 @@ import FamiliaScreen from '../screens/FamiliaScreen';
 import MetasScreen from '../screens/MetasScreen';
 import WhatsAppVincularScreen from '../screens/WhatsAppVincularScreen';
 import LandingScreen from '../screens/LandingScreen';
+import NotFoundScreen from '../screens/NotFoundScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
 import TrialExpiredModal from '../components/TrialExpiredModal';
@@ -77,12 +78,15 @@ const LINKING_CONFIG = {
         Contas: 'contas',
       },
     },
+    // Catch-all: qualquer rota não reconhecida → 404
+    NotFound: '*',
   },
 };
 
 function MainTabs() {
   const [drawerOpen, setDrawerOpen]       = useState(false);
   const [avatarUrl, setAvatarUrl]         = useState<string | null>(null);
+  const [isAdmin, setIsAdmin]             = useState(false);
   const [trialModal, setTrialModal]       = useState(false);
   const [trialDays, setTrialDays]         = useState<number | null>(null);
   const [trialExpired, setTrialExpired]   = useState(false);
@@ -124,9 +128,10 @@ function MainTabs() {
     });
   }, []);
 
-  // Carrega avatar ao montar e quando o drawer fecha (pode ter sido atualizado)
+  // Carrega avatar e permissão admin ao montar / quando drawer fecha
   useEffect(() => {
     authService.getUserInfo().then(u => setAvatarUrl(u?.avatarUrl ?? null));
+    authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
   }, [drawerOpen]);
 
   // ── Sidebar navigation handler ──────────────────────────────────────────
@@ -276,6 +281,17 @@ function MainTabs() {
         component={WhatsAppVincularScreen}
         options={{ headerShown: false, tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
       />
+      {/* ── Admin screens — hidden tab, open in content area on desktop ── */}
+      <Tab.Screen
+        name="AdminUsers"
+        component={AdminUsersScreen}
+        options={{ title: 'Usuários', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="Invites"
+        component={InvitesScreen}
+        options={{ title: 'Convites', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
     </Tab.Navigator>
   );
 
@@ -296,6 +312,7 @@ function MainTabs() {
             onOpenDrawer={() => setDrawerOpen(true)}
             avatarUrl={avatarUrl}
             badge={badge}
+            isAdmin={isAdmin}
           />
           <View style={{ flex: 1 }}>
             {tabNavigator}
@@ -362,11 +379,35 @@ export default function AppNavigator() {
   } : undefined;
 
   function handleNavReady() {
-    if (Platform.OS !== 'web' || isLoggedIn) return;
-    const current = navigationRef.current?.getCurrentRoute()?.name;
-    const isPublic = current === 'Landing' || current === 'Login' || current === 'Register';
-    if (current && !isPublic) {
-      navigationRef.current?.reset({ index: 0, routes: [{ name: 'Landing' as never }] });
+    if (Platform.OS !== 'web') return;
+
+    if (!isLoggedIn) {
+      // Não logado: garante que rotas protegidas não fiquem acessíveis
+      const current = navigationRef.current?.getCurrentRoute()?.name;
+      const isPublic = ['Landing', 'Login', 'Register', 'NotFound'].includes(current ?? '');
+      if (current && !isPublic) {
+        navigationRef.current?.reset({ index: 0, routes: [{ name: 'Landing' as never }] });
+      }
+      return;
+    }
+
+    // Logado: garante que a URL /lancamentos, /receitas etc. abra a aba correta.
+    // Corrige race condition onde o Tab inicia em Dashboard e ignora a URL.
+    if (typeof window === 'undefined') return;
+    const path = window.location.pathname.replace(/\/$/, '');
+    const pathToTab: Record<string, string> = {
+      '/lancamentos': 'Lançamentos',
+      '/receitas':    'Receitas',
+      '/cartoes':     'Cartões',
+      '/contas':      'Contas',
+      '/dashboard':   'Dashboard',
+    };
+    const targetTab = pathToTab[path];
+    if (targetTab) {
+      // Timeout mínimo para o Tab navigator terminar de montar
+      setTimeout(() => {
+        navigationRef.current?.navigate('Main' as never, { screen: targetTab } as never);
+      }, 50);
     }
   }
 
@@ -383,9 +424,10 @@ export default function AppNavigator() {
         initialRouteName={initialRoute}
       >
         {/* ── Rotas PÚBLICAS — sem autenticação ── */}
-        <Stack.Screen name="Landing"  component={LandingScreen} />
-        <Stack.Screen name="Login"    component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Landing"   component={LandingScreen} />
+        <Stack.Screen name="Login"     component={LoginScreen} />
+        <Stack.Screen name="Register"  component={RegisterScreen} />
+        <Stack.Screen name="NotFound"  component={NotFoundScreen} />
 
         {/* ── Rotas PROTEGIDAS — exigem login ── */}
         <Stack.Screen name="Main"       component={MainTabs} />

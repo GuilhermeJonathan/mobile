@@ -8,6 +8,7 @@ import { Categoria, CartaoCredito, Lancamento, SituacaoLancamento, TipoLancament
 import { fmtBRL, parseBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
+import { navStoreGet } from '../utils/navStore';
 
 const TIPO_CONFIG = {
   [TipoLancamento.Debito]:  { emoji: '💸', label: 'Despesa',  sub: 'Gasto, conta, pagamento', color: '#ef4444' },
@@ -59,7 +60,8 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const lancamento: Lancamento = route.params.lancamento;
+  // navStore evita serialização como "[object Object]" na URL (web)
+  const lancamento: Lancamento = navStoreGet<Lancamento>('editLancamento') ?? route.params.lancamento;
 
   const isHorista = lancamento.receitaRecorrenteId != null && lancamento.receitaTipo === TipoReceita.Horista;
 

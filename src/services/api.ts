@@ -307,6 +307,9 @@ export const adminService = {
   setBlock: (id: string, block: boolean) =>
     loginApi.patch(`/user/${id}/block`, { block }),
 
+  setPlan: (id: string, planType: number, trialDays?: number) =>
+    loginApi.patch(`/user/${id}/plan`, { planType, trialDays: trialDays ?? null }),
+
   listWhatsAppVinculos: () =>
     api.get<WhatsAppAdminVinculo[]>('/whatsapp/vinculos/admin').then(r => r.data),
 };

@@ -239,7 +239,9 @@ export default function FamiliaScreen() {
       {/* ── Pendentes ──────────────────────────────────────────────────── */}
       {membrosPendentes.length > 0 && (
         <>
-          <Text style={s.secTitle}>Convites pendentes</Text>
+          <Text style={s.secTitle}>
+            Convites pendentes ({membrosPendentes.length})
+          </Text>
           <View style={s.listCard}>
             {membrosPendentes.map((m, i) => (
               <View
@@ -253,6 +255,12 @@ export default function FamiliaScreen() {
                     Gerado em {new Date(m.criadoEm).toLocaleDateString('pt-BR')}
                   </Text>
                 </View>
+                <TouchableOpacity
+                  style={s.removerBtn}
+                  onPress={() => removerMembro(m.id, 'este convite')}
+                >
+                  <Text style={s.removerText}>Cancelar</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </View>
@@ -277,12 +285,24 @@ export default function FamiliaScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity style={s.gerarBtn} onPress={gerarConvite} disabled={gerandoCodigo}>
-            {gerandoCodigo
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={s.gerarText}>🎟️  Gerar código de convite</Text>
-            }
-          </TouchableOpacity>
+          <>
+            {membrosPendentes.length > 0 && (
+              <View style={s.warningBox}>
+                <Text style={s.warningText}>
+                  ⚠️  Já {membrosPendentes.length === 1 ? 'existe 1 convite pendente' : `existem ${membrosPendentes.length} convites pendentes`}.
+                  {' '}Cada convite fica ativo até ser aceito ou cancelado.
+                </Text>
+              </View>
+            )}
+            <TouchableOpacity style={s.gerarBtn} onPress={gerarConvite} disabled={gerandoCodigo}>
+              {gerandoCodigo
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={s.gerarText}>
+                    {membrosPendentes.length > 0 ? '🎟️  Gerar mais um convite' : '🎟️  Gerar código de convite'}
+                  </Text>
+              }
+            </TouchableOpacity>
+          </>
         )}
       </View>
 
@@ -381,6 +401,13 @@ function makeStyles(c: ColorScheme) {
     codigoHint:   { fontSize: 12, color: c.textSecondary },
     novoCodigoBtn: { marginTop: 4, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: c.border },
     novoCodigoText: { fontSize: 13, color: c.textSecondary },
+
+    warningBox: {
+      backgroundColor: c.orange + '18',
+      borderRadius: 8, padding: 12,
+      borderWidth: 1, borderColor: c.orange + '60',
+    },
+    warningText: { fontSize: 13, color: c.orange, lineHeight: 18 },
 
     input: {
       backgroundColor: c.inputBg, borderRadius: 8, padding: 14,
