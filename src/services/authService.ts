@@ -142,4 +142,9 @@ export const authService = {
     await loginApi.patch('/user/me/avatar', { avatarUrl: dataUrl });
     await AsyncStorage.setItem(AVATAR_KEY, dataUrl ?? '');
   },
+
+  /** Altera a senha do usuário autenticado. Lança erro se a senha atual estiver incorreta. */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await loginApi.patch('/user/me/password', { currentPassword, newPassword });
+  },
 };

@@ -1,14 +1,34 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Modal, FlatList,
 } from 'react-native';
 import Svg, { Path, G, Circle } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
-import { lancamentosService, ParceladoVigenteItem } from '../services/api';
+import { lancamentosService, ParceladoVigenteItem, DicaFinanceiraDto } from '../services/api';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
+
+// ── Helpers de prazo ──────────────────────────────────────────────────────────
+function endDate(item: ParceladoVigenteItem): Date {
+  const d = new Date(item.primeiraData);
+  d.setMonth(d.getMonth() + item.totalParcelas - 1);
+  return d;
+}
+function parcelasRestantes(item: ParceladoVigenteItem): number {
+  return item.totalParcelas - item.parcelaMin + 1;
+}
+function progressoPct(item: ParceladoVigenteItem): number {
+  return ((item.parcelaMin - 1) / item.totalParcelas) * 100;
+}
+function fmtMesAno(date: Date): string {
+  return date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+}
+function monthsDiff(date: Date): number {
+  const now = new Date();
+  return (date.getFullYear() - now.getFullYear()) * 12 + (date.getMonth() - now.getMonth());
+}
 
 const SLICE_COLORS = [
   '#58a6ff', '#3fb950', '#f85149', '#d29922', '#bc8cff',
@@ -91,10 +111,13 @@ export default function DividasScreen() {
   const { colors } = useTheme();
   const s = styles(colors);
 
-  const [loading, setLoading]     = useState(true);
-  const [groups, setGroups]       = useState<CatGroup[]>([]);
-  const [totalDivida, setTotal]   = useState(0);
-  const [selected, setSelected]   = useState<CatGroup | null>(null);
+  const [loading, setLoading]       = useState(true);
+  const [groups, setGroups]         = useState<CatGroup[]>([]);
+  const [totalDivida, setTotal]     = useState(0);
+  const [allItens, setAllItens]     = useState<ParceladoVigenteItem[]>([]);
+  const [selected, setSelected]     = useState<CatGroup | null>(null);
+  const [analise, setAnalise]       = useState<DicaFinanceiraDto[] | null>(null);
+  const [loadingAnalise, setLoadingAnalise] = useState(false);
 
   useFocusEffect(useCallback(() => {
     setLoading(true);
@@ -102,9 +125,47 @@ export default function DividasScreen() {
       .then(res => {
         setTotal(res.totalDivida);
         setGroups(buildGroups(res.itens));
+        setAllItens(res.itens);
       })
       .finally(() => setLoading(false));
   }, []));
+
+  const mensalidadeTotal = useMemo(
+    () => allItens.reduce((s, x) => s + x.valorParcela, 0),
+    [allItens],
+  );
+  const quitacaoFinal = useMemo(() => {
+    if (!allItens.length) return null;
+    return allItens.reduce<Date>((max, x) => {
+      const d = endDate(x);
+      return d > max ? d : max;
+    }, endDate(allItens[0]));
+  }, [allItens]);
+
+  // Percentual geral de quitação (parcelas pagas / total de parcelas, ponderado por valor)
+  const pctQuitacao = useMemo(() => {
+    const totalPago  = allItens.reduce((s, x) => s + (x.parcelaMin - 1) * x.valorParcela, 0);
+    const totalGeral = allItens.reduce((s, x) => s + x.totalParcelas   * x.valorParcela, 0);
+    return totalGeral > 0 ? (totalPago / totalGeral) * 100 : 0;
+  }, [allItens]);
+
+  async function handleAnalise() {
+    setLoadingAnalise(true);
+    try {
+      const result = await lancamentosService.getAnaliseDividas();
+      setAnalise(result);
+    } catch {
+      setAnalise(null);
+    } finally {
+      setLoadingAnalise(false);
+    }
+  }
+
+  // Itens ordenados por data de quitação (mais próximo primeiro)
+  const timeline = useMemo(
+    () => [...allItens].sort((a, b) => endDate(a).getTime() - endDate(b).getTime()),
+    [allItens],
+  );
 
   if (loading) return (
     <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -131,6 +192,52 @@ export default function DividasScreen() {
           <Text style={s.headerLabel}>Total em dívidas parceladas</Text>
           <Text style={s.headerTotal}>{fmtBRL(totalDivida)}</Text>
           <Text style={s.headerSub}>{groups.reduce((n, g) => n + g.itens.length, 0)} compras em aberto</Text>
+
+          <TouchableOpacity
+            style={[s.analiseBtn, loadingAnalise && { opacity: 0.6 }, { marginTop: 12 }]}
+            onPress={handleAnalise}
+            disabled={loadingAnalise}
+          >
+            {loadingAnalise
+              ? <><ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} /><Text style={s.analiseBtnText}>Analisando...</Text></>
+              : <Text style={s.analiseBtnText}>{analise ? '↺ Reanalisar com IA' : '🤖 Analisar com IA'}</Text>
+            }
+          </TouchableOpacity>
+          <View style={s.headerStats}>
+            <View style={s.headerStatItem}>
+              <Text style={s.headerStatLabel}>💸 Mensalidade</Text>
+              <Text style={s.headerStatValue}>{fmtBRL(mensalidadeTotal)}</Text>
+            </View>
+            <View style={s.headerStatDivider} />
+            <View style={s.headerStatItem}>
+              <Text style={s.headerStatLabel}>🏁 Quitação final</Text>
+              <Text style={s.headerStatValue}>
+                {quitacaoFinal ? fmtMesAno(quitacaoFinal) : '—'}
+              </Text>
+              {quitacaoFinal && (
+                <Text style={s.headerStatSub}>
+                  em {monthsDiff(quitacaoFinal)} {monthsDiff(quitacaoFinal) !== 1 ? 'meses' : 'mês'}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {/* Barra de progresso geral */}
+          <View style={s.quitacaoWrap}>
+            <View style={s.quitacaoLabelRow}>
+              <Text style={s.quitacaoLabel}>Progresso geral de quitação</Text>
+              <Text style={s.quitacaoPct}>{pctQuitacao.toFixed(1)}%</Text>
+            </View>
+            <View style={s.progressTrack}>
+              <View style={[s.progressFill, {
+                width: `${pctQuitacao}%` as any,
+                backgroundColor: pctQuitacao >= 75 ? colors.green : pctQuitacao >= 40 ? colors.orange : colors.blue,
+              }]} />
+            </View>
+            <Text style={s.quitacaoSub}>
+              {(100 - pctQuitacao).toFixed(1)}% restante · {fmtBRL(totalDivida)} a quitar
+            </Text>
+          </View>
         </View>
 
         {/* ── Donut ── */}
@@ -171,7 +278,90 @@ export default function DividasScreen() {
           </View>
         </View>
 
+        {/* ── Linha do tempo ── */}
+        <View style={s.chartCard}>
+          <Text style={s.sectionTitle}>📅 Linha do tempo</Text>
+          <Text style={s.sectionSub}>Ordenado por quitação mais próxima</Text>
+          <View style={{ gap: 14, marginTop: 10 }}>
+            {timeline.map((item, i) => {
+              const end     = endDate(item);
+              const restant = parcelasRestantes(item);
+              const pct     = progressoPct(item);
+              const meses   = monthsDiff(end);
+              const urgente = meses <= 3;
+              const barColor = urgente ? colors.green : meses <= 12 ? colors.orange : colors.blue;
+              return (
+                <View key={i} style={s.timelineItem}>
+                  <View style={s.timelineTop}>
+                    <Text style={s.timelineDesc} numberOfLines={1}>{item.descricao}</Text>
+                    <Text style={[s.timelineEnd, { color: barColor }]}>{fmtMesAno(end)}</Text>
+                  </View>
+                  <View style={s.timelineMeta}>
+                    <Text style={s.timelineMetaText}>
+                      {item.parcelaMin}/{item.totalParcelas}x · {restant} restante{restant !== 1 ? 's' : ''} · {fmtBRL(item.valorParcela)}/mês
+                    </Text>
+                    <Text style={[s.timelineMetaText, { color: barColor }]}>
+                      {meses <= 0 ? 'Último mês!' : `em ${meses} ${meses !== 1 ? 'meses' : 'mês'}`}
+                    </Text>
+                  </View>
+                  {/* Barra de progresso */}
+                  <View style={s.progressTrack}>
+                    <View style={[s.progressFill, { width: `${pct}%` as any, backgroundColor: barColor }]} />
+                  </View>
+                  <View style={s.timelineSaldoRow}>
+                    <Text style={s.timelineSaldoLabel}>Saldo restante</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={[s.timelineMetaText, { color: barColor, fontWeight: '700' }]}>
+                        {pct.toFixed(0)}% quitado
+                      </Text>
+                      <Text style={s.timelineSaldo}>{fmtBRL(item.saldoRestante)}</Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+
       </ScrollView>
+
+      {/* ── Modal Análise IA ── */}
+      <Modal visible={!!analise} transparent animationType="slide" onRequestClose={() => setAnalise(null)}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalSheet}>
+            <View style={s.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.modalTitle}>🤖 Análise do Analista</Text>
+                <Text style={s.modalSubtitle}>Insights personalizados sobre suas dívidas</Text>
+              </View>
+              <TouchableOpacity onPress={() => setAnalise(null)} style={s.modalClose}>
+                <Text style={{ color: colors.textSecondary, fontSize: 20 }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 480 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+              {analise?.map((d, i) => {
+                const cor   = d.tipo === 'critico' ? colors.red : d.tipo === 'atencao' ? colors.orange : colors.green;
+                const emoji = d.tipo === 'critico' ? '🚨' : d.tipo === 'atencao' ? '⚠️' : '✅';
+                return (
+                  <View key={i} style={[s.dicaItem, i > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+                    <View style={s.dicaTopo}>
+                      <Text style={s.dicaEmoji}>{emoji}</Text>
+                      <Text style={[s.dicaTitulo, { color: cor }]}>{d.titulo}</Text>
+                    </View>
+                    <Text style={s.dicaDesc}>{d.descricao}</Text>
+                    {d.dicaEducativa && (
+                      <View style={s.dicaEduBox}>
+                        <Text style={s.dicaEduText}>💡 {d.dicaEducativa}</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Modal detalhe ── */}
       <Modal
@@ -204,7 +394,7 @@ export default function DividasScreen() {
                   ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: colors.border }} />}
                   renderItem={({ item }) => (
                     <View style={s.detalheItem}>
-                      <View style={{ flex: 1, gap: 3 }}>
+                      <View style={{ flex: 1, gap: 4 }}>
                         <Text style={s.detalheDesc}>{item.descricao}</Text>
                         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                           {item.cartaoNome && (
@@ -213,14 +403,22 @@ export default function DividasScreen() {
                             </View>
                           )}
                           <View style={s.chipParcela}>
-                            <Text style={s.chipText}>
-                              {item.parcelaMin}/{item.totalParcelas}x
-                            </Text>
+                            <Text style={s.chipText}>{item.parcelaMin}/{item.totalParcelas}x</Text>
                           </View>
                           <Text style={s.detalheData}>
-                            📅 {new Date(item.primeiraData).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                            🏁 quita {fmtMesAno(endDate(item))}
                           </Text>
                         </View>
+                        {/* Mini barra de progresso */}
+                        <View style={[s.progressTrack, { marginTop: 2 }]}>
+                          <View style={[s.progressFill, {
+                            width: `${progressoPct(item)}%` as any,
+                            backgroundColor: colors.blue,
+                          }]} />
+                        </View>
+                        <Text style={{ fontSize: 10, color: colors.textTertiary }}>
+                          {parcelasRestantes(item)} parcela{parcelasRestantes(item) !== 1 ? 's' : ''} restante{parcelasRestantes(item) !== 1 ? 's' : ''}
+                        </Text>
                       </View>
                       <View style={{ alignItems: 'flex-end', gap: 2 }}>
                         <Text style={s.detalheSaldo}>{fmtBRL(item.saldoRestante)}</Text>
@@ -248,6 +446,18 @@ function styles(c: ColorScheme) {
     headerLabel:  { fontSize: 12, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
     headerTotal:  { fontSize: 32, fontWeight: 'bold', color: c.red },
     headerSub:    { fontSize: 13, color: c.textTertiary },
+    headerStats:  { flexDirection: 'row', marginTop: 16, width: '100%',
+                    backgroundColor: c.surfaceElevated, borderRadius: 10, overflow: 'hidden' },
+    headerStatItem:    { flex: 1, alignItems: 'center', paddingVertical: 12, gap: 2 },
+    headerStatDivider: { width: 1, backgroundColor: c.border },
+    headerStatLabel:   { fontSize: 11, color: c.textSecondary },
+    headerStatValue:   { fontSize: 15, fontWeight: 'bold', color: c.text },
+    headerStatSub:     { fontSize: 10, color: c.textTertiary },
+    quitacaoWrap:      { width: '100%', marginTop: 14, gap: 6 },
+    quitacaoLabelRow:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    quitacaoLabel:     { fontSize: 12, color: c.textSecondary },
+    quitacaoPct:       { fontSize: 14, fontWeight: 'bold', color: c.text },
+    quitacaoSub:       { fontSize: 11, color: c.textTertiary, textAlign: 'right' },
 
     chartCard:    { backgroundColor: c.surface, borderRadius: 14, padding: 16, gap: 8,
                     borderWidth: 1, borderColor: c.border },
@@ -284,5 +494,34 @@ function styles(c: ColorScheme) {
     chipCartao:   { backgroundColor: c.blueDim, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: c.blueBorder },
     chipParcela:  { backgroundColor: c.surfaceElevated, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
     chipText:     { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
+
+    // Análise IA
+    analiseHeader:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    analiseBtn:        { backgroundColor: c.blue, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10,
+                         flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    analiseBtnText:    { color: '#fff', fontSize: 14, fontWeight: '700' },
+    analiseHint:       { fontSize: 13, color: c.textTertiary, marginTop: 12, lineHeight: 20 },
+    analiseLoading:    { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
+    analiseLoadingText:{ fontSize: 13, color: c.textSecondary },
+    dicaItem:          { paddingVertical: 14, gap: 6 },
+    dicaTopo:          { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    dicaEmoji:         { fontSize: 16 },
+    dicaTitulo:        { fontSize: 14, fontWeight: '700', flex: 1 },
+    dicaDesc:          { fontSize: 13, color: c.text, lineHeight: 19 },
+    dicaEduBox:        { backgroundColor: c.surfaceElevated, borderRadius: 8, padding: 10, marginTop: 4 },
+    dicaEduText:       { fontSize: 12, color: c.textSecondary, lineHeight: 17 },
+
+    // Linha do tempo
+    timelineItem: { gap: 5, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: c.border },
+    timelineTop:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    timelineDesc: { flex: 1, fontSize: 13, fontWeight: '600', color: c.text, marginRight: 8 },
+    timelineEnd:  { fontSize: 13, fontWeight: '700' },
+    timelineMeta: { flexDirection: 'row', justifyContent: 'space-between' },
+    timelineMetaText: { fontSize: 11, color: c.textSecondary },
+    progressTrack: { height: 6, backgroundColor: c.surfaceElevated, borderRadius: 3, overflow: 'hidden' },
+    progressFill:  { height: 6, borderRadius: 3 },
+    timelineSaldoRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
+    timelineSaldoLabel: { fontSize: 11, color: c.textTertiary },
+    timelineSaldo: { fontSize: 12, fontWeight: '700', color: c.red },
   });
 }

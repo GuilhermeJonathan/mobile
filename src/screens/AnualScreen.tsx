@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator, Dimensions,
 } from 'react-native';
-import Svg, { Rect, Line, Text as SvgText, G } from 'react-native-svg';
+import Svg, { Rect, Line, Path, Circle, Text as SvgText, G } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, ResumoAnual, ResumoMes } from '../services/api';
 import { fmtBRL, fmtBRLCompact } from '../utils/currency';
@@ -31,12 +31,14 @@ interface AnualData {
 
 // ── Gráfico de barras duplas (receitas × despesas) ────────────────────────────
 function MonthlyBarsChart({ data, colors }: { data: MesData[]; colors: ColorScheme }) {
-  const screenW   = Dimensions.get('window').width - 48;
+  const screenW   = Dimensions.get('window').width - 64; // 16 margin + 16 pad × 2 lados
   const chartH    = 160;
   const padB      = 24;
   const padT      = 10;
+  const padR      = 42;                          // espaço para labels do grid
   const innerH    = chartH - padB - padT;
-  const colW      = screenW / 12;
+  const innerW    = screenW - padR;
+  const colW      = innerW / 12;
   const barW      = Math.floor(colW * 0.35);
   const gap       = 2;
 
@@ -52,12 +54,12 @@ function MonthlyBarsChart({ data, colors }: { data: MesData[]; colors: ColorSche
 
   return (
     <Svg width={screenW} height={chartH}>
-      {/* Grid */}
+      {/* Grid — linha só até innerW, label alinhado à direita do SVG */}
       {gridLines.map((g, i) => (
         <G key={i}>
-          <Line x1={0} y1={g.y} x2={screenW} y2={g.y}
+          <Line x1={0} y1={g.y} x2={innerW} y2={g.y}
             stroke={colors.gridLine} strokeWidth={0.5} strokeDasharray="3,3" />
-          <SvgText x={screenW - 2} y={g.y - 2} fontSize={8} fill={colors.textTertiary} textAnchor="end">
+          <SvgText x={screenW - 2} y={g.y + 3} fontSize={8} fill={colors.textTertiary} textAnchor="end">
             {g.label}
           </SvgText>
         </G>
@@ -73,11 +75,8 @@ function MonthlyBarsChart({ data, colors }: { data: MesData[]; colors: ColorSche
 
         return (
           <G key={i}>
-            {/* Barra receita (verde) */}
             <Rect x={recX} y={baseY - recH} width={barW} height={recH} rx={2} fill={colors.green} opacity={0.85} />
-            {/* Barra despesa (vermelho) */}
-            <Rect x={desX} y={baseY - desH} width={barW} height={desH} rx={2} fill={colors.red} opacity={0.85} />
-            {/* Label mês */}
+            <Rect x={desX} y={baseY - desH} width={barW} height={desH} rx={2} fill={colors.red}   opacity={0.85} />
             <SvgText x={cx} y={chartH - 4} fontSize={9} fill={colors.textSecondary} textAnchor="middle">
               {MESES_SHORT[d.mes - 1]}
             </SvgText>
@@ -88,14 +87,76 @@ function MonthlyBarsChart({ data, colors }: { data: MesData[]; colors: ColorSche
   );
 }
 
+// ── Gráfico de linhas (receitas × despesas) ───────────────────────────────────
+function MonthlyLinesChart({ data, colors }: { data: MesData[]; colors: ColorScheme }) {
+  const screenW = Dimensions.get('window').width - 64; // 16 margin + 16 pad × 2 lados
+  const chartH  = 160;
+  const padB    = 24;
+  const padT    = 10;
+  const padL    = 4;
+  const padR    = 42;
+  const innerH  = chartH - padB - padT;
+  const innerW  = screenW - padL - padR;
+
+  const maxVal = Math.max(...data.flatMap(d => [d.receitas, d.despesas]), 1);
+
+  function xOf(i: number) { return padL + (i / 11) * innerW; }
+  function yOf(v: number) { return padT + innerH * (1 - v / maxVal); }
+
+  function buildPath(getter: (d: MesData) => number) {
+    return data
+      .map((d, i) => `${i === 0 ? 'M' : 'L'}${xOf(i).toFixed(1)},${yOf(getter(d)).toFixed(1)}`)
+      .join(' ');
+  }
+
+  const gridLines = [0.25, 0.5, 0.75, 1].map(f => ({
+    y: padT + innerH * (1 - f),
+    label: fmtBRLCompact(maxVal * f),
+  }));
+
+  return (
+    <Svg width={screenW} height={chartH}>
+      {/* Grid */}
+      {gridLines.map((g, i) => (
+        <G key={i}>
+          <Line x1={padL} y1={g.y} x2={padL + innerW} y2={g.y}
+            stroke={colors.gridLine} strokeWidth={0.5} strokeDasharray="3,3" />
+          <SvgText x={screenW - 2} y={g.y + 3} fontSize={8} fill={colors.textTertiary} textAnchor="end">
+            {g.label}
+          </SvgText>
+        </G>
+      ))}
+
+      {/* Linha receitas */}
+      <Path d={buildPath(d => d.receitas)} stroke={colors.green} strokeWidth={2}
+        fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />
+      {/* Linha despesas */}
+      <Path d={buildPath(d => d.despesas)} stroke={colors.red} strokeWidth={2}
+        fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />
+
+      {/* Pontos */}
+      {data.map((d, i) => (
+        <G key={i}>
+          <Circle cx={xOf(i)} cy={yOf(d.receitas)} r={3} fill={colors.green} opacity={d.receitas > 0 ? 1 : 0} />
+          <Circle cx={xOf(i)} cy={yOf(d.despesas)} r={3} fill={colors.red}   opacity={d.despesas > 0 ? 1 : 0} />
+          <SvgText x={xOf(i)} y={chartH - 4} fontSize={9} fill={colors.textSecondary} textAnchor="middle">
+            {MESES_SHORT[d.mes - 1]}
+          </SvgText>
+        </G>
+      ))}
+    </Svg>
+  );
+}
+
 // ── Tela principal ────────────────────────────────────────────────────────────
 export default function AnualScreen() {
   const { colors } = useTheme();
   const s = styles(colors);
 
-  const [ano, setAno]         = useState(new Date().getFullYear());
-  const [dados, setDados]     = useState<AnualData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [ano, setAno]           = useState(new Date().getFullYear());
+  const [dados, setDados]       = useState<AnualData | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [chartType, setChartType] = useState<'bars' | 'lines'>('bars');
 
   const load = useCallback(async (a: number) => {
     setLoading(true);
@@ -183,7 +244,23 @@ export default function AnualScreen() {
 
       {/* ── Gráfico mensal ── */}
       <View style={s.section}>
-        <Text style={s.sectionTitle}>Receitas × Despesas por mês</Text>
+        <View style={s.chartHeader}>
+          <Text style={s.sectionTitle}>Receitas × Despesas por mês</Text>
+          <View style={s.chartToggle}>
+            <TouchableOpacity
+              style={[s.toggleBtn, chartType === 'bars' && s.toggleBtnActive]}
+              onPress={() => setChartType('bars')}
+            >
+              <Text style={[s.toggleBtnText, chartType === 'bars' && s.toggleBtnTextActive]}>Barras</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.toggleBtn, chartType === 'lines' && s.toggleBtnActive]}
+              onPress={() => setChartType('lines')}
+            >
+              <Text style={[s.toggleBtnText, chartType === 'lines' && s.toggleBtnTextActive]}>Linhas</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         <View style={s.legend}>
           <View style={s.legendItem}>
             <View style={[s.legendDot, { backgroundColor: colors.green }]} />
@@ -194,7 +271,10 @@ export default function AnualScreen() {
             <Text style={s.legendText}>Despesas</Text>
           </View>
         </View>
-        <MonthlyBarsChart data={meses} colors={colors} />
+        {chartType === 'bars'
+          ? <MonthlyBarsChart  data={meses} colors={colors} />
+          : <MonthlyLinesChart data={meses} colors={colors} />
+        }
       </View>
 
       {/* ── Stats ── */}
@@ -305,6 +385,13 @@ function styles(c: ColorScheme) {
     section:      { backgroundColor: c.surface, borderRadius: 14, marginHorizontal: 16,
                     marginBottom: 12, padding: 16, borderWidth: 1, borderColor: c.border },
     sectionTitle: { fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 4 },
+
+    chartHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+    chartToggle:  { flexDirection: 'row', backgroundColor: c.surfaceElevated, borderRadius: 8, padding: 2, gap: 2 },
+    toggleBtn:    { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+    toggleBtnActive: { backgroundColor: c.surface, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 2, elevation: 2 },
+    toggleBtnText:      { fontSize: 13, color: c.textTertiary },
+    toggleBtnTextActive: { color: c.text, fontWeight: '700' },
 
     legend:       { flexDirection: 'row', gap: 16, marginBottom: 10 },
     legendItem:   { flexDirection: 'row', alignItems: 'center', gap: 5 },

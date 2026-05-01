@@ -373,6 +373,72 @@ function ProjectionChart({ data }: { data: { label: string; receitas: number; de
   );
 }
 
+// ─── Gauge de Comprometimento de Renda ───────────────────────────────────────
+function ComprometimentoGauge({ pct, sc, compact = false }: { pct: number; sc: ColorScheme; compact?: boolean }) {
+  const W = compact ? 168 : 240;
+  const H = compact ? 100 : 140;
+  const cx = W / 2;
+  const cy = compact ? 84  : 120;
+  const R  = compact ? 58  : 82;
+  const r  = compact ? 42  : 60;
+  const midR = compact ? 50 : 71;
+  const tw   = compact ? 16 : 22;
+  const valFs = compact ? 18 : 30;
+
+  function pt(p: number, radius: number) {
+    const rad = (180 - p * 180) * Math.PI / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy - radius * Math.sin(rad) };
+  }
+
+  function seg(start: number, end: number) {
+    const s = pt(start, midR), e = pt(end, midR);
+    const lg = end - start > 0.5 ? 1 : 0;
+    return `M${s.x.toFixed(1)},${s.y.toFixed(1)} A${midR},${midR} 0 ${lg} 1 ${e.x.toFixed(1)},${e.y.toFixed(1)}`;
+  }
+
+  const clamped  = Math.max(0, Math.min(100, pct)) / 100;
+  const needRad  = (180 - clamped * 180) * Math.PI / 180;
+  // Agulha: apenas sobre o arco — ponta dentro, base fora
+  const needTip  = r - 5;          // ponta (lado interno do arco)
+  const needBase = R + 6;          // base  (lado externo do arco)
+  const tipX     = cx + needTip  * Math.cos(needRad);
+  const tipY     = cy - needTip  * Math.sin(needRad);
+  const baseX    = cx + needBase * Math.cos(needRad);
+  const baseY    = cy - needBase * Math.sin(needRad);
+  const perpRad  = needRad + Math.PI / 2;
+  const bw       = 3.5;
+  const needlePath = [
+    `M${tipX.toFixed(1)},${tipY.toFixed(1)}`,
+    `L${(baseX + bw * Math.cos(perpRad)).toFixed(1)},${(baseY - bw * Math.sin(perpRad)).toFixed(1)}`,
+    `L${(baseX - bw * Math.cos(perpRad)).toFixed(1)},${(baseY + bw * Math.sin(perpRad)).toFixed(1)}Z`,
+  ].join(' ');
+
+  const valColor = pct <= 50 ? '#4CAF50' : pct <= 70 ? '#CDDC39' : pct <= 90 ? '#FF9800' : '#e53935';
+  const p0   = pt(0, R + 8);
+  const p100 = pt(1, R + 8);
+
+  return (
+    <Svg width={W} height={H}>
+      {/* Track fundo */}
+      <Path d={seg(0, 1)} stroke={sc.inputBorder} strokeWidth={tw} fill="none" strokeLinecap="butt" />
+      {/* Segmentos coloridos: verde → amarelo → laranja → vermelho */}
+      <Path d={seg(0,   0.5)} stroke="#4CAF50" strokeWidth={tw} fill="none" strokeLinecap="butt" />
+      <Path d={seg(0.5, 0.7)} stroke="#CDDC39" strokeWidth={tw} fill="none" strokeLinecap="butt" />
+      <Path d={seg(0.7, 0.9)} stroke="#FF9800" strokeWidth={tw} fill="none" strokeLinecap="butt" />
+      <Path d={seg(0.9, 1.0)} stroke="#e53935" strokeWidth={tw} fill="none" strokeLinecap="butt" />
+      {/* Labels 0% e 100% */}
+      <SvgText x={p0.x - 3}   y={p0.y + 4}   textAnchor="end"   fontSize={10} fill={sc.textTertiary}>0%</SvgText>
+      <SvgText x={p100.x + 3} y={p100.y + 4} textAnchor="start" fontSize={10} fill={sc.textTertiary}>100%</SvgText>
+      {/* Agulha — marcador fino sobre o arco */}
+      <Path d={needlePath} fill={sc.text} opacity={0.85} />
+      {/* Valor */}
+      <SvgText x={cx} y={cy - (compact ? 8 : 14)} textAnchor="middle" fontSize={valFs} fontWeight="bold" fill={valColor}>
+        {pct.toFixed(0)}%
+      </SvgText>
+    </Svg>
+  );
+}
+
 // Flags de módulo — persistem durante toda a sessão do app (reset só ao fechar)
 let _sessionCounted  = false;  // sobe o contador 1x por sessão
 let _modalDismissed  = false;  // "agora não" foi clicado — não reexibir
@@ -638,23 +704,18 @@ export default function DashboardScreen() {
         const dias = dashboard?.diasReserva ?? null;
         const comp = dashboard?.comprometimentoRenda ?? null;
 
-        // Cor dos dias de reserva: ≥90 verde, ≥30 amarelo, <30 vermelho
         const diasColor = dias === null ? colors.textSecondary
-          : dias >= 90 ? '#4CAF50'
-          : dias >= 30 ? '#FF9800'
-          : '#e53935';
+          : dias >= 90 ? '#4CAF50' : dias >= 30 ? '#FF9800' : '#e53935';
 
-        // Cor do comprometimento: ≤70% verde, ≤90% amarelo, >90% vermelho
         const compColor = comp === null ? colors.textSecondary
-          : comp <= 70 ? '#4CAF50'
-          : comp <= 90 ? '#FF9800'
-          : '#e53935';
+          : comp <= 50 ? '#4CAF50' : comp <= 70 ? '#CDDC39' : comp <= 90 ? '#FF9800' : '#e53935';
 
         return (
-          <View style={[styles.saudeCard]}>
+          <View style={styles.saudeCard}>
             <Text style={styles.saudeTitle}>❤️ Saúde Financeira</Text>
             <View style={styles.saudeRow}>
-              {/* Dias de Reserva */}
+
+              {/* Col 1 — Reserva */}
               {dias !== null && (
                 <View style={styles.saudeItem}>
                   <Text style={[styles.saudeValor, { color: diasColor }]}>
@@ -666,22 +727,24 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
               )}
-              {dias !== null && comp !== null && (
-                <View style={styles.saudeDivider} />
-              )}
-              {/* Comprometimento de Renda */}
+              {dias !== null && comp !== null && <View style={styles.saudeDivider} />}
+
+              {/* Col 2 — Gauge de comprometimento */}
               {comp !== null && (
-                <View style={styles.saudeItem}>
-                  <Text style={[styles.saudeValor, { color: compColor }]}>
-                    {hideValues ? '• • •' : `${comp.toFixed(0)}%`}
-                  </Text>
+                <View style={[styles.saudeItem, { flex: 1.6, alignItems: 'center' }]}>
+                  {hideValues ? (
+                    <Text style={[styles.saudeValor, { color: compColor }]}>• • •</Text>
+                  ) : (
+                    <ComprometimentoGauge pct={comp} sc={colors} compact />
+                  )}
                   <Text style={styles.saudeLabel}>Comprometido</Text>
                   <Text style={styles.saudeSub}>
                     {comp <= 50 ? '🟢 Saudável' : comp <= 70 ? '🟡 Moderado' : comp <= 90 ? '🟠 Elevado' : '🔴 Crítico'}
                   </Text>
                 </View>
               )}
-              {/* Análise IA — terceira coluna */}
+
+              {/* Col 3 — Análise IA */}
               {dicas.length > 0 && (comp !== null || dias !== null) && (
                 <View style={styles.saudeDivider} />
               )}
@@ -702,6 +765,7 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 );
               })()}
+
             </View>
           </View>
         );

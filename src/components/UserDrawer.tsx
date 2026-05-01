@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated, Dimensions, Modal, StyleSheet, Switch, Image,
-  Text, TouchableOpacity, TouchableWithoutFeedback, View,
-  ActivityIndicator, ScrollView, Alert, Platform,
+  Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View,
+  ActivityIndicator, ScrollView, Alert, Platform, KeyboardAvoidingView,
 } from 'react-native';
 
 const isMobileWeb = Platform.OS === 'web' && Dimensions.get('window').width < 768;
@@ -64,6 +64,17 @@ export default function UserDrawer({ visible, onClose }: Props) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [meuVinculo, setMeuVinculo] = useState<MeuVinculoDto | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // — Alterar senha —
+  const [pwdModal, setPwdModal]     = useState(false);
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd]         = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew]         = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [savingPwd, setSavingPwd]   = useState(false);
+  const [pwdError, setPwdError]     = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -161,6 +172,38 @@ export default function UserDrawer({ visible, onClose }: Props) {
     Alert.alert('Foto de perfil', undefined, opts);
   }
 
+  function openPwdModal() {
+    setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
+    setPwdError(null); setShowCurrent(false); setShowNew(false); setShowConfirm(false);
+    setPwdModal(true);
+  }
+
+  async function handleChangePassword() {
+    if (!currentPwd) { setPwdError('Informe a senha atual.'); return; }
+    if (newPwd.length < 6) { setPwdError('A nova senha deve ter pelo menos 6 caracteres.'); return; }
+    if (newPwd !== confirmPwd) { setPwdError('As senhas não coincidem.'); return; }
+
+    setSavingPwd(true);
+    setPwdError(null);
+    try {
+      await authService.changePassword(currentPwd, newPwd);
+      setPwdModal(false);
+      Alert.alert('Sucesso', 'Senha alterada com sucesso!');
+    } catch (err: any) {
+      const msg: string = err?.response?.data?.message
+        ?? err?.response?.data
+        ?? err?.message
+        ?? 'Erro ao alterar senha.';
+      setPwdError(
+        msg.toLowerCase().includes('incorreta') || msg.toLowerCase().includes('incorrect')
+          ? 'Senha atual incorreta.'
+          : msg,
+      );
+    } finally {
+      setSavingPwd(false);
+    }
+  }
+
   function formatExpiry(date: Date | null): string {
     if (!date) return '—';
     const diff = date.getTime() - Date.now();
@@ -212,7 +255,13 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
             {user?.name ? <Text style={s.name} numberOfLines={1}>{user.name}</Text> : null}
             <Text style={s.email} numberOfLines={1}>{user?.email ?? '—'}</Text>
-            <Text style={s.expiry}>{formatExpiry(user?.expiresAt ?? null)}</Text>
+            <View style={s.expiryRow}>
+              <Text style={s.expiry}>{formatExpiry(user?.expiresAt ?? null)}</Text>
+              <TouchableOpacity onPress={openPwdModal} style={s.pwdIconBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={s.pwdIconText}>🔑</Text>
+                <Text style={s.pwdIconLabel}>Alterar senha</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* ── Central de alertas ─────────────────────────────────── */}
@@ -290,6 +339,27 @@ export default function UserDrawer({ visible, onClose }: Props) {
               </TouchableOpacity>
             </>
           )}
+
+          <View style={s.divider} />
+
+          {/* ── Relatórios ─────────────────────────────────────────── */}
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => { onClose(); navigationRef.current?.navigate('Anual' as never); }}
+          >
+            <Text style={s.rowIcon}>📅</Text>
+            <Text style={s.rowLabel}>Visão Anual</Text>
+          </TouchableOpacity>
+
+          <View style={s.divider} />
+
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => { onClose(); navigationRef.current?.navigate('Dividas' as never); }}
+          >
+            <Text style={s.rowIcon}>💳</Text>
+            <Text style={s.rowLabel}>Dívidas Parceladas</Text>
+          </TouchableOpacity>
 
           <View style={s.divider} />
 
@@ -378,6 +448,61 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
         </ScrollView>
       </Animated.View>
+
+      {/* ── Modal alterar senha ─────────────────────────────────────── */}
+      <Modal visible={pwdModal} transparent animationType="fade" onRequestClose={() => setPwdModal(false)}>
+        <KeyboardAvoidingView
+          style={{ flex: 1, backgroundColor: '#00000088', justifyContent: 'center', alignItems: 'center', padding: 24 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={s.pwdBox}>
+            <Text style={s.pwdTitle}>Alterar senha</Text>
+
+            <Text style={s.pwdLabel}>Senha atual</Text>
+            <View style={s.pwdInputRow}>
+              <TextInput style={s.pwdInput} placeholder="••••••••" placeholderTextColor={s.pwdPlaceholder.color}
+                secureTextEntry={!showCurrent} value={currentPwd}
+                onChangeText={t => { setCurrentPwd(t); setPwdError(null); }} autoCapitalize="none" />
+              <TouchableOpacity onPress={() => setShowCurrent(v => !v)} style={s.eyeBtn}>
+                <Text style={s.eyeIcon}>{showCurrent ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={s.pwdLabel}>Nova senha</Text>
+            <View style={s.pwdInputRow}>
+              <TextInput style={s.pwdInput} placeholder="mínimo 6 caracteres" placeholderTextColor={s.pwdPlaceholder.color}
+                secureTextEntry={!showNew} value={newPwd}
+                onChangeText={t => { setNewPwd(t); setPwdError(null); }} autoCapitalize="none" />
+              <TouchableOpacity onPress={() => setShowNew(v => !v)} style={s.eyeBtn}>
+                <Text style={s.eyeIcon}>{showNew ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={s.pwdLabel}>Confirmar nova senha</Text>
+            <View style={s.pwdInputRow}>
+              <TextInput style={s.pwdInput} placeholder="repita a nova senha" placeholderTextColor={s.pwdPlaceholder.color}
+                secureTextEntry={!showConfirm} value={confirmPwd}
+                onChangeText={t => { setConfirmPwd(t); setPwdError(null); }} autoCapitalize="none" />
+              <TouchableOpacity onPress={() => setShowConfirm(v => !v)} style={s.eyeBtn}>
+                <Text style={s.eyeIcon}>{showConfirm ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {pwdError && <Text style={s.pwdError}>{pwdError}</Text>}
+
+            <View style={s.pwdActions}>
+              <TouchableOpacity style={[s.pwdBtn, s.pwdBtnCancel]} onPress={() => setPwdModal(false)} disabled={savingPwd}>
+                <Text style={s.pwdBtnCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.pwdBtn, s.pwdBtnSave]} onPress={handleChangePassword} disabled={savingPwd}>
+                {savingPwd
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={s.pwdBtnSaveText}>Salvar</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </Modal>
   );
 }
@@ -421,7 +546,11 @@ function styles(
 
     name:   { color: c.text,          fontSize: 17, fontWeight: '700', textAlign: 'center' },
     email:  { color: c.textSecondary,  fontSize: 13, textAlign: 'center' },
+    expiryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
     expiry: { color: c.textTertiary,   fontSize: 12 },
+    pwdIconBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, opacity: 0.55 },
+    pwdIconText:  { fontSize: 11 },
+    pwdIconLabel: { fontSize: 11, color: c.textTertiary },
 
     divider: { height: 1, backgroundColor: c.border, marginHorizontal: 16, marginVertical: 8 },
     row: {
@@ -461,5 +590,29 @@ function styles(
     alertItemDesc:  { fontSize: 13, fontWeight: '600', color: c.text },
     alertItemLabel: { fontSize: 11, marginTop: 2 },
     alertItemValor: { fontSize: 13, fontWeight: '700' },
+
+    // Modal — alterar senha
+    pwdBox: {
+      backgroundColor: c.surface, borderRadius: 16, padding: 24,
+      width: '100%', maxWidth: 380, borderWidth: 1, borderColor: c.border,
+    },
+    pwdTitle:   { fontSize: 17, fontWeight: 'bold', color: c.text, marginBottom: 16 },
+    pwdLabel:   { fontSize: 12, color: c.textSecondary, marginTop: 14, marginBottom: 6 },
+    pwdPlaceholder: { color: c.textTertiary },
+    pwdInputRow: {
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: c.background, borderRadius: 10,
+      borderWidth: 1, borderColor: c.inputBorder, paddingHorizontal: 12,
+    },
+    pwdInput:  { flex: 1, color: c.text, fontSize: 15, paddingVertical: 11 },
+    eyeBtn:    { padding: 6 },
+    eyeIcon:   { fontSize: 17 },
+    pwdError:  { color: c.red, fontSize: 12, marginTop: 10 },
+    pwdActions: { flexDirection: 'row', gap: 10, marginTop: 20 },
+    pwdBtn:    { flex: 1, borderRadius: 10, padding: 13, alignItems: 'center' },
+    pwdBtnCancel:     { backgroundColor: c.background, borderWidth: 1, borderColor: c.border },
+    pwdBtnCancelText: { color: c.textSecondary, fontWeight: '600' },
+    pwdBtnSave:       { backgroundColor: c.green },
+    pwdBtnSaveText:   { color: '#fff', fontWeight: 'bold' },
   });
 }
