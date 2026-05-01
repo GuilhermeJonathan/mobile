@@ -50,11 +50,16 @@ const DESKTOP_BREAKPOINT = 1024;
 // ─── Logo cachorro no header ─────────────────────────────────────────────────
 export function AppHeaderTitle() {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <DogMascot size={56} color={darkColors.green} mood="happy" />
-      <Text style={{ color: darkColors.text, fontWeight: '800', fontSize: 17 }}>
-        Meu FinDog
-      </Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <DogMascot size={72} color={darkColors.green} mood="happy" />
+      <View style={{ flexDirection: 'column', justifyContent: 'center' }}>
+        <Text style={{ color: darkColors.text, fontWeight: '900', fontSize: 20, lineHeight: 24 }}>
+          Meu FinDog
+        </Text>
+        <Text style={{ color: darkColors.textSecondary, fontSize: 12, fontWeight: '400', lineHeight: 16 }}>
+          seu assistente financeiro
+        </Text>
+      </View>
     </View>
   );
 }
@@ -236,7 +241,7 @@ function MainTabs() {
         component={DashboardScreen}
         options={isDesktop
           ? { title: 'Dashboard' }
-          : { headerTitle: () => <AppHeaderTitle /> }}
+          : { headerTitle: () => <AppHeaderTitle />, headerStyle: { backgroundColor: darkColors.surface, height: 72 } }}
       />
       <Tab.Screen
         name="Lançamentos"
@@ -314,6 +319,7 @@ function MainTabs() {
           isExpired={trialExpired}
           trialDaysRemaining={trialDays}
         />
+        <OnboardingTour active sidebarWidth={240} />
         <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
         <View style={{ flex: 1, flexDirection: 'row', backgroundColor: darkColors.background }}>
           <DesktopShell
