@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   Modal, TextInput, ActivityIndicator, Alert, RefreshControl,
-  Dimensions, Platform,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import DatePickerField from '../components/DatePickerField';
@@ -581,7 +581,7 @@ export default function MetasScreen() {
   );
 }
 
-const CARD_W = Dimensions.get('window').width - 32;
+// CARD_W removido — usar width: '100%' para funcionar corretamente no desktop com sidebar
 
 function styles(c: ColorScheme) {
   return StyleSheet.create({
@@ -606,7 +606,7 @@ function styles(c: ColorScheme) {
 
     // Card
     card: {
-      width: CARD_W, borderRadius: 16, padding: 18,
+      width: '100%', borderRadius: 16, padding: 18,
       marginBottom: 16, overflow: 'hidden',
     },
     iconBtn: {

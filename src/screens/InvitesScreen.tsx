@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   Modal, TextInput, ActivityIndicator,
   ScrollView, Platform,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { inviteService } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
@@ -17,6 +18,7 @@ interface GeneratedInvite {
   expiresAt: string;
   link: string;
   email?: string;
+  usedAt?: string | null;
 }
 
 export default function InvitesScreen({ navigation }: any) {
@@ -31,6 +33,39 @@ export default function InvitesScreen({ navigation }: any) {
 
   const [invites, setInvites] = useState<GeneratedInvite[]>([]);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      async function fetchInvites() {
+        setLoading(true);
+        try {
+          const remote = await inviteService.list();
+          setInvites(prev => {
+            const merged = [...prev];
+            for (const dto of remote) {
+              const link = `${APP_URL}/register?invite=${dto.token}`;
+              if (!merged.find(i => i.token === dto.token)) {
+                merged.push({
+                  token: dto.token,
+                  expiresAt: dto.expiresAt,
+                  link,
+                  email: dto.email ?? undefined,
+                  usedAt: dto.usedAt,
+                });
+              }
+            }
+            return merged;
+          });
+        } catch {
+          // silently ignore — show whatever is already in state
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchInvites();
+    }, [])
+  );
 
   function openModal() {
     setEmail('');
@@ -54,12 +89,22 @@ export default function InvitesScreen({ navigation }: any) {
     }
   }
 
-  function copyLink(invite: GeneratedInvite) {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(invite.link);
+  async function copyLink(invite: GeneratedInvite) {
+    try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(invite.link);
+      }
+    } catch {
+      // silently ignore if clipboard API is unavailable
     }
     setCopiedToken(invite.token);
     setTimeout(() => setCopiedToken(null), 2000);
+  }
+
+  function getInviteStatus(invite: GeneratedInvite): { label: string; color: string } {
+    if (invite.usedAt != null) return { label: 'Usado', color: '#e53935' };
+    if (new Date(invite.expiresAt) < new Date()) return { label: 'Expirado', color: '#9e9e9e' };
+    return { label: 'Ativo', color: '#4caf50' };
   }
 
   function formatExpiry(iso: string) {
@@ -88,30 +133,44 @@ export default function InvitesScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* List of generated invites (session only) */}
-      <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-        {invites.length === 0 && (
-          <Text style={styles.empty}>Nenhum convite gerado nesta sessão.</Text>
-        )}
-        {invites.map(invite => (
-          <View key={invite.token} style={styles.inviteCard}>
-            <View style={styles.inviteInfo}>
-              {invite.email ? (
-                <Text style={styles.inviteEmail} numberOfLines={1}>{invite.email}</Text>
-              ) : (
-                <Text style={styles.inviteEmailAny}>Qualquer e-mail</Text>
-              )}
-              <Text style={styles.inviteExpiry}>Expira em {formatExpiry(invite.expiresAt)}</Text>
-              <Text style={styles.inviteLink} numberOfLines={2}>{invite.link}</Text>
-            </View>
-            <TouchableOpacity style={styles.copyBtn} onPress={() => copyLink(invite)}>
-              <Text style={styles.copyBtnText}>
-                {copiedToken === invite.token ? '✅ Copiado' : '📋 Copiar'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </ScrollView>
+      {/* List of invites */}
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={styles.generateBtn.backgroundColor} size="large" />
+        </View>
+      ) : (
+        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+          {invites.length === 0 && (
+            <Text style={styles.empty}>Nenhum convite encontrado.</Text>
+          )}
+          {invites.map(invite => {
+            const status = getInviteStatus(invite);
+            return (
+              <View key={invite.token} style={styles.inviteCard}>
+                <View style={styles.inviteInfo}>
+                  <View style={styles.inviteTopRow}>
+                    {invite.email ? (
+                      <Text style={styles.inviteEmail} numberOfLines={1}>{invite.email}</Text>
+                    ) : (
+                      <Text style={styles.inviteEmailAny}>Qualquer e-mail</Text>
+                    )}
+                    <View style={[styles.statusBadge, { backgroundColor: status.color + '22', borderColor: status.color }]}>
+                      <Text style={[styles.statusBadgeText, { color: status.color }]}>{status.label}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.inviteExpiry}>Expira em {formatExpiry(invite.expiresAt)}</Text>
+                  <Text style={styles.inviteLink} numberOfLines={2}>{invite.link}</Text>
+                </View>
+                <TouchableOpacity style={styles.copyBtn} onPress={() => copyLink(invite)}>
+                  <Text style={styles.copyBtnText}>
+                    {copiedToken === invite.token ? '✅ Copiado' : '📋 Copiar'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
 
       {/* Generate Modal */}
       <Modal
@@ -199,6 +258,7 @@ function makeStyles(c: ColorScheme) {
       paddingVertical: 14, paddingHorizontal: 20, alignItems: 'center',
     },
     generateBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+    loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     list: { flex: 1 },
     listContent: { padding: 16, gap: 12 },
     empty: { color: c.textSecondary, textAlign: 'center', marginTop: 32, fontSize: 15 },
@@ -208,8 +268,14 @@ function makeStyles(c: ColorScheme) {
       flexDirection: 'row', alignItems: 'flex-start', gap: 12,
     },
     inviteInfo: { flex: 1 },
-    inviteEmail: { color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 2 },
-    inviteEmailAny: { color: c.textSecondary, fontSize: 14, fontStyle: 'italic', marginBottom: 2 },
+    inviteTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
+    inviteEmail: { color: c.text, fontSize: 14, fontWeight: '600', flexShrink: 1 },
+    inviteEmailAny: { color: c.textSecondary, fontSize: 14, fontStyle: 'italic', flexShrink: 1 },
+    statusBadge: {
+      borderRadius: 6, borderWidth: 1,
+      paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8,
+    },
+    statusBadgeText: { fontSize: 11, fontWeight: '700' },
     inviteExpiry: { color: c.textTertiary, fontSize: 12, marginBottom: 6 },
     inviteLink: { color: c.textSecondary, fontSize: 11 },
     copyBtn: {

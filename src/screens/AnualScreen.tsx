@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator, Dimensions,
+  TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import Svg, { Rect, Line, Path, Circle, Text as SvgText, G } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
@@ -30,8 +30,8 @@ interface AnualData {
 }
 
 // ── Gráfico de barras duplas (receitas × despesas) ────────────────────────────
-function MonthlyBarsChart({ data, colors }: { data: MesData[]; colors: ColorScheme }) {
-  const screenW   = Dimensions.get('window').width - 64; // 16 margin + 16 pad × 2 lados
+function MonthlyBarsChart({ data, colors, width }: { data: MesData[]; colors: ColorScheme; width: number }) {
+  const screenW   = width;
   const chartH    = 160;
   const padB      = 24;
   const padT      = 10;
@@ -88,8 +88,8 @@ function MonthlyBarsChart({ data, colors }: { data: MesData[]; colors: ColorSche
 }
 
 // ── Gráfico de linhas (receitas × despesas) ───────────────────────────────────
-function MonthlyLinesChart({ data, colors }: { data: MesData[]; colors: ColorScheme }) {
-  const screenW = Dimensions.get('window').width - 64; // 16 margin + 16 pad × 2 lados
+function MonthlyLinesChart({ data, colors, width }: { data: MesData[]; colors: ColorScheme; width: number }) {
+  const screenW = width;
   const chartH  = 160;
   const padB    = 24;
   const padT    = 10;
@@ -157,6 +157,7 @@ export default function AnualScreen() {
   const [dados, setDados]       = useState<AnualData | null>(null);
   const [loading, setLoading]   = useState(true);
   const [chartType, setChartType] = useState<'bars' | 'lines'>('bars');
+  const [chartWidth, setChartWidth] = useState(300);
 
   const load = useCallback(async (a: number) => {
     setLoading(true);
@@ -243,7 +244,7 @@ export default function AnualScreen() {
       </View>
 
       {/* ── Gráfico mensal ── */}
-      <View style={s.section}>
+      <View style={s.section} onLayout={e => setChartWidth(e.nativeEvent.layout.width - 32)}>
         <View style={s.chartHeader}>
           <Text style={s.sectionTitle}>Receitas × Despesas por mês</Text>
           <View style={s.chartToggle}>
@@ -272,8 +273,8 @@ export default function AnualScreen() {
           </View>
         </View>
         {chartType === 'bars'
-          ? <MonthlyBarsChart  data={meses} colors={colors} />
-          : <MonthlyLinesChart data={meses} colors={colors} />
+          ? <MonthlyBarsChart  data={meses} colors={colors} width={chartWidth} />
+          : <MonthlyLinesChart data={meses} colors={colors} width={chartWidth} />
         }
       </View>
 

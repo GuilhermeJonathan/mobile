@@ -39,7 +39,7 @@ function BarraProgresso({ gasto, limite, colors }: { gasto: number; limite: numb
   );
 }
 
-export default function OrcamentoScreen() {
+export default function OrcamentoScreen({ navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -53,6 +53,7 @@ export default function OrcamentoScreen() {
   const [modalItem, setModalItem]   = useState<OrcamentoItem | null>(null);
   const [limiteInput, setLimiteInput] = useState('');
   const [saving, setSaving]         = useState(false);
+  const [saveError, setSaveError]   = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,10 +81,13 @@ export default function OrcamentoScreen() {
     if (!modalItem) return;
     const limite = maskToNumber(limiteInput);
     setSaving(true);
+    setSaveError(null);
     try {
       await categoriasService.atualizarLimite(modalItem.categoriaId, limite);
       setModalItem(null);
       await load();
+    } catch {
+      setSaveError('Não foi possível salvar o limite. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -97,6 +101,11 @@ export default function OrcamentoScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Botão voltar */}
+      <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backBtn}>
+        <Text style={styles.backIcon}>←</Text>
+      </TouchableOpacity>
+
       {/* Nav mês */}
       <View style={styles.navMes}>
         <TouchableOpacity onPress={() => navMes(-1)} style={styles.navBtn}>
@@ -207,7 +216,12 @@ export default function OrcamentoScreen() {
               autoFocus
             />
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.btnCancel} onPress={() => setModalItem(null)}>
+              {saveError && (
+                <Text style={{ color: '#f85149', fontSize: 12, marginBottom: 8, textAlign: 'center' }}>
+                  {saveError}
+                </Text>
+              )}
+              <TouchableOpacity style={styles.btnCancel} onPress={() => { setModalItem(null); setSaveError(null); }}>
                 <Text style={styles.btnCancelText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.btnSave} onPress={salvarLimite} disabled={saving}>
@@ -226,6 +240,9 @@ function makeStyles(c: ColorScheme) {
     container:   { flex: 1, backgroundColor: c.background },
     centered:    { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 8 },
     scroll:      { padding: 16, paddingBottom: 40 },
+
+    backBtn: { padding: 8, paddingHorizontal: 16, paddingTop: 12 },
+    backIcon: { fontSize: 22, color: c.text },
 
     navMes: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

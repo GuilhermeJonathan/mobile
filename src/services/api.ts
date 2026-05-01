@@ -332,6 +332,14 @@ export const whatsappService = {
     api.delete('/whatsapp/vinculo'),
 };
 
+export interface InviteDto {
+  token: string;
+  email: string | null;
+  expiresAt: string;
+  isValid: boolean;
+  usedAt: string | null;
+}
+
 export const inviteService = {
   validate: (token: string) =>
     loginApi.get<{ isValid: boolean; email: string | null; expiresAt: string | null }>(
@@ -343,4 +351,7 @@ export const inviteService = {
       '/invite',
       { email: email ?? null, expirationDays: expirationDays ?? 7 }
     ).then(r => r.data),
+
+  list: () =>
+    loginApi.get<InviteDto[]>('/invite').then(r => r.data),
 };

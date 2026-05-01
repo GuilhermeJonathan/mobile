@@ -9,7 +9,7 @@ const isMobileWeb = Platform.OS === 'web' && Dimensions.get('window').width < 76
 const isDesktop   = Platform.OS === 'web' && Dimensions.get('window').width >= 1024;
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { authService, UserInfo } from '../services/authService';
+import { authService, UserInfo, PlanInfo } from '../services/authService';
 import { resetToLogin } from '../navigation/navigationRef';
 import { useTheme } from '../theme/ThemeContext';
 import { navigationRef } from '../navigation/navigationRef';
@@ -65,6 +65,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [meuVinculo, setMeuVinculo] = useState<MeuVinculoDto | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
 
   // — Alterar senha —
   const [pwdModal, setPwdModal]     = useState(false);
@@ -82,6 +83,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
       authService.getUserInfo().then(setUser);
       authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
       vinculosService.meuVinculo().then(setMeuVinculo).catch(() => setMeuVinculo(null));
+      authService.getPlanInfo().then(setPlanInfo).catch(() => setPlanInfo(null));
       Animated.parallel([
         Animated.timing(slideAnim, { toValue: 0,           duration: 260, useNativeDriver: true }),
         Animated.timing(fadeAnim,  { toValue: 1,           duration: 260, useNativeDriver: true }),
@@ -256,6 +258,23 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
             {user?.name ? <Text style={s.name} numberOfLines={1}>{user.name}</Text> : null}
             <Text style={s.email} numberOfLines={1}>{user?.email ?? '—'}</Text>
+
+            {planInfo?.isTrialActive && planInfo.trialDaysRemaining !== null && (
+              <View style={[s.planBadge, s.planBadgeTrial]}>
+                <Text style={s.planBadgeText}>🎯 Trial · {planInfo.trialDaysRemaining}d restantes</Text>
+              </View>
+            )}
+            {planInfo?.isTrialExpired && (
+              <View style={[s.planBadge, s.planBadgeExpired]}>
+                <Text style={s.planBadgeText}>⚠️ Trial expirado</Text>
+              </View>
+            )}
+            {planInfo?.hasPaidPlan && (
+              <View style={[s.planBadge, s.planBadgePaid]}>
+                <Text style={s.planBadgeText}>💳 Plano ativo</Text>
+              </View>
+            )}
+
             <View style={s.expiryRow}>
               <Text style={s.expiry}>{formatExpiry(user?.expiresAt ?? null)}</Text>
               <TouchableOpacity onPress={openPwdModal} style={s.pwdIconBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -552,6 +571,16 @@ function styles(
 
     name:   { color: c.text,          fontSize: 17, fontWeight: '700', textAlign: 'center' },
     email:  { color: c.textSecondary,  fontSize: 13, textAlign: 'center' },
+
+    planBadge: {
+      borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
+      borderWidth: 1, marginTop: 6,
+    },
+    planBadgeTrial:   { backgroundColor: '#FF980022', borderColor: '#FF9800' },
+    planBadgeExpired: { backgroundColor: '#e5393522', borderColor: '#e53935' },
+    planBadgePaid:    { backgroundColor: '#4caf5022', borderColor: '#4caf50' },
+    planBadgeText:    { fontSize: 12, fontWeight: '600', color: c.text },
+
     expiryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
     expiry: { color: c.textTertiary,   fontSize: 12 },
     pwdIconBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, opacity: 0.55 },

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, ScrollView, Modal, FlatList,
-  RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions,
+  RefreshControl, TouchableOpacity, ActivityIndicator, Platform,
 } from 'react-native';
 import Svg, { Rect, Text as SvgText, Line, Circle, Path, G } from 'react-native-svg';
 import { lancamentosService, categoriasService, OrcamentoItem, api } from '../services/api';
@@ -231,12 +231,12 @@ function CategoryPieChart({ data, totalDespesas }: {
 }
 
 // ─── Gráfico de linhas para projeção ─────────────────────────────────────────
-function ProjectionChart({ data }: { data: { label: string; receitas: number; despesas: number; isFuture: boolean }[] }) {
+function ProjectionChart({ data, width }: { data: { label: string; receitas: number; despesas: number; isFuture: boolean }[]; width: number }) {
   const { colors } = useTheme();
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  // Ocupa toda a largura: window - margens da section (16*2); o padding é cancelado pelo marginHorizontal: -18 do wrapper
-  const screenW = Dimensions.get('window').width - 32;
+  // Largura passada pelo pai (container medido via onLayout, menos margens da section)
+  const screenW = width;
   const chartH = 200;
   const padL = 56;
   const padR = 24;
@@ -476,6 +476,12 @@ export default function DashboardScreen() {
   const [metas, setMetas] = useState<{ valorMeta: number; valorAtual: number; status: number }[]>([]);
   const [metasLoading, setMetasLoading] = useState(false);
 
+  // Largura do container — inicia com window.innerWidth (web) para evitar flash de layout mobile
+  // e depois é refinada via onLayout para excluir a sidebar
+  const [contentWidth, setContentWidth] = useState<number>(() =>
+    Platform.OS === 'web' && typeof window !== 'undefined' ? window.innerWidth : 400
+  );
+
   // Modal "sem dados" — exibido a partir do 2º acesso se não houver lançamentos
   const [showEmptyModal, setShowEmptyModal] = useState(false);
   const emptyModalChecked = useRef(false);
@@ -605,8 +611,7 @@ export default function DashboardScreen() {
     setCatLoading(true);
     try {
       const todos = await lancamentosService.getByMes(mes, ano);
-      const filtrados = todos.filter((l: any) => l.categoriaNome === categoria &&
-        (l.tipo === 2 || l.tipo === 3)); // Debito | Pix
+      const filtrados = todos.filter((l: any) => l.categoriaNome === categoria);
       setCatLancs(filtrados);
     } finally {
       setCatLoading(false);
@@ -617,6 +622,7 @@ export default function DashboardScreen() {
     const d = new Date(ano, mes - 1 + delta, 1);
     setMes(d.getMonth() + 1);
     setAno(d.getFullYear());
+    emptyModalChecked.current = false; // permite reavaliar modal no novo mês
     setLoading(true);
   }
 
@@ -631,7 +637,7 @@ export default function DashboardScreen() {
   const resumo = dashboard?.resumoDebitos ?? [];
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={e => setContentWidth(e.nativeEvent.layout.width)}>
     <ScrollView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
     >
@@ -823,11 +829,10 @@ export default function DashboardScreen() {
 
       {/* Gráfico de categorias + donut + pizza */}
       {resumo.length > 0 && (() => {
-        const screenW = Dimensions.get('window').width;
-        const isWide = screenW >= 700;
+        const isWide = contentWidth >= 700;
         const barW = isWide
-          ? Math.floor(screenW / 2) - 72   // metade da tela menos padding
-          : screenW - 68;
+          ? Math.floor(contentWidth / 2) - 72   // metade da área menos padding
+          : contentWidth - 68;
 
         return (
           <View style={styles.section}>
@@ -921,7 +926,7 @@ export default function DashboardScreen() {
       {projectionVisible && projection.length > 0 && (
         <View style={[styles.section, { marginTop: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]}>
           <View style={styles.projectionWrap}>
-            <ProjectionChart data={projection} />
+            <ProjectionChart data={projection} width={contentWidth - 32} />
           </View>
         </View>
       )}
