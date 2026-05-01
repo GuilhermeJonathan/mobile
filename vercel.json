@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx expo export --platform web",
+  "buildCommand": "npx expo export --platform web && cp web/favicon.png web/favicon.svg web/og-image.png web/og-image.svg dist/",
   "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
