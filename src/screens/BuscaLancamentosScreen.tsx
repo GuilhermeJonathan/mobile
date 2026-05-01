@@ -9,6 +9,7 @@ import { SituacaoLancamento, TipoLancamento } from '../types';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
+import DogMascot from '../components/DogMascot';
 
 const PAGE_SIZE = 20;
 
@@ -206,7 +207,7 @@ export default function BuscaLancamentosScreen({ navigation }: any) {
 
       {!loading && buscou && totalCount === 0 && (
         <View style={styles.centered}>
-          <Text style={styles.emptyIcon}>😶</Text>
+          <DogMascot size={90} mood="sad" />
           <Text style={styles.emptyTitle}>Nenhum resultado</Text>
           <Text style={styles.emptyText}>Tente outro termo de busca</Text>
         </View>
@@ -257,8 +258,7 @@ function makeStyles(c: ColorScheme) {
     },
 
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8, paddingHorizontal: 32 },
-    emptyIcon:  { fontSize: 48, marginBottom: 8 },
-    emptyTitle: { fontSize: 18, fontWeight: 'bold', color: c.text },
+    emptyTitle: { fontSize: 18, fontWeight: 'bold', color: c.text, marginTop: 8 },
     emptyText:  { fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 20 },
 
     list: { paddingVertical: 8 },

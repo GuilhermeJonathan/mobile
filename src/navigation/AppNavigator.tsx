@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, ActivityIndicator, View, TouchableOpacity, Image, Platform, Dimensions } from 'react-native';
+import { Text, ActivityIndicator, View, TouchableOpacity, Image, Platform, Dimensions, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { darkColors } from '../theme/colors';
 import { authService } from '../services/authService';
 import { navigationRef } from './navigationRef';
 import DogMascot from '../components/DogMascot';
+import DesktopShell from '../components/DesktopShell';
 import LoginScreen from '../screens/LoginScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import LancamentosScreen from '../screens/LancamentosScreen';
@@ -40,8 +41,11 @@ const Tab = createBottomTabNavigator();
 // Mobile web = browser em tela estreita; esconde abas extras e move pro drawer
 const isMobileWeb = Platform.OS === 'web' && Dimensions.get('window').width < 768;
 
+// Breakpoint para layout desktop com sidebar lateral
+const DESKTOP_BREAKPOINT = 1024;
+
 // ─── Logo cachorro no header ─────────────────────────────────────────────────
-function AppHeaderTitle() {
+export function AppHeaderTitle() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <DogMascot size={56} color={darkColors.green} mood="happy" />
@@ -82,10 +86,16 @@ function MainTabs() {
   const [trialModal, setTrialModal]       = useState(false);
   const [trialDays, setTrialDays]         = useState<number | null>(null);
   const [trialExpired, setTrialExpired]   = useState(false);
+  // Tracks the active route name for sidebar highlighting
+  const [activeRoute, setActiveRoute]     = useState('Dashboard');
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { badge, refresh } = useVencimentos();
 
-  // ── Auth guard: sem token válido → Login (usuário precisa se autenticar) ────
+  // Desktop web: sidebar layout; everything else: bottom tabs
+  const isDesktop = Platform.OS === 'web' && width >= DESKTOP_BREAKPOINT;
+
+  // ── Auth guard: sem token válido → Login ────────────────────────────────
   useEffect(() => {
     authService.getToken().then(token => {
       if (!token) {
@@ -108,7 +118,6 @@ function MainTabs() {
         setTrialExpired(true);
         setTrialModal(true);
       } else if (plan.isTrialActive && plan.trialDaysRemaining !== null && plan.trialDaysRemaining <= 3) {
-        // Aviso nos últimos 3 dias
         setTrialDays(plan.trialDaysRemaining);
         setTrialModal(true);
       }
@@ -120,16 +129,17 @@ function MainTabs() {
     authService.getUserInfo().then(u => setAvatarUrl(u?.avatarUrl ?? null));
   }, [drawerOpen]);
 
-  return (
-    <>
-      <TrialExpiredModal
-        visible={trialModal}
-        isExpired={trialExpired}
-        trialDaysRemaining={trialDays}
-      />
-      <OnboardingTour active onOpenDrawer={() => setDrawerOpen(true)} onCloseDrawer={() => setDrawerOpen(false)} />
-      <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <Tab.Navigator
+  // ── Sidebar navigation handler ──────────────────────────────────────────
+  // No desktop todos os itens abrem DENTRO do Tab (área de conteúdo à direita).
+  // isRootStack é ignorado aqui — usado apenas quando navegando no mobile.
+  function handleDesktopNavigate(routeName: string, _isRootStack?: boolean) {
+    setActiveRoute(routeName);
+    navigationRef.current?.navigate('Main' as never, { screen: routeName } as never);
+  }
+
+  // ── Shared tab navigator ─────────────────────────────────────────────────
+  const tabNavigator = (
+    <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ size }) => {
           const icons: Record<string, string> = {
@@ -144,7 +154,8 @@ function MainTabs() {
         },
         tabBarActiveTintColor: darkColors.green,
         tabBarInactiveTintColor: darkColors.textTertiary,
-        tabBarStyle: {
+        // Hide bottom bar on desktop — sidebar takes over navigation
+        tabBarStyle: isDesktop ? { display: 'none' } : {
           backgroundColor: darkColors.surface,
           borderTopColor: darkColors.border,
           paddingBottom: insets.bottom,
@@ -154,55 +165,68 @@ function MainTabs() {
         headerStyle: { backgroundColor: darkColors.surface },
         headerTintColor: darkColors.text,
         headerTitleStyle: { fontWeight: 'bold' },
-        headerRight: () => (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginRight: 8 }}>
+        headerRight: isDesktop
+          ? () => (
+            // Desktop: search only (user is in sidebar)
             <TouchableOpacity
               onPress={() => navigationRef.current?.navigate('BuscaLancamentos' as never)}
-              style={{ padding: 6 }}
+              style={{ padding: 6, marginRight: 8 }}
             >
               <Text style={{ fontSize: 20 }}>🔍</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setDrawerOpen(true)} style={{ padding: 4 }}>
-              <View>
-                {avatarUrl ? (
-                  <Image
-                    source={{ uri: avatarUrl }}
-                    style={{
-                      width: 32, height: 32, borderRadius: 16,
-                      borderWidth: 1.5, borderColor: darkColors.green,
-                    }}
-                  />
-                ) : (
-                  <Text style={{ fontSize: 22 }}>👤</Text>
-                )}
-                {badge > 0 && (
-                  <View style={{
-                    position: 'absolute', top: -4, right: -4,
-                    backgroundColor: darkColors.red, borderRadius: 8,
-                    minWidth: 16, height: 16,
-                    justifyContent: 'center', alignItems: 'center',
-                    paddingHorizontal: 3,
-                  }}>
-                    <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>
-                      {badge > 99 ? '99+' : badge}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          </View>
-        ),
+          )
+          : () => (
+            // Mobile: search + avatar with badge
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginRight: 8 }}>
+              <TouchableOpacity
+                onPress={() => navigationRef.current?.navigate('BuscaLancamentos' as never)}
+                style={{ padding: 6 }}
+              >
+                <Text style={{ fontSize: 20 }}>🔍</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setDrawerOpen(true)} style={{ padding: 4 }}>
+                <View>
+                  {avatarUrl ? (
+                    <Image
+                      source={{ uri: avatarUrl }}
+                      style={{
+                        width: 32, height: 32, borderRadius: 16,
+                        borderWidth: 1.5, borderColor: darkColors.green,
+                      }}
+                    />
+                  ) : (
+                    <Text style={{ fontSize: 22 }}>👤</Text>
+                  )}
+                  {badge > 0 && (
+                    <View style={{
+                      position: 'absolute', top: -4, right: -4,
+                      backgroundColor: darkColors.red, borderRadius: 8,
+                      minWidth: 16, height: 16,
+                      justifyContent: 'center', alignItems: 'center',
+                      paddingHorizontal: 3,
+                    }}>
+                      <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>
+                        {badge > 99 ? '99+' : badge}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
+          ),
       })}
     >
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ headerTitle: () => <AppHeaderTitle /> }}
+        options={isDesktop
+          ? { title: 'Dashboard' }
+          : { headerTitle: () => <AppHeaderTitle /> }}
       />
       <Tab.Screen
         name="Lançamentos"
         component={LancamentosScreen}
-        options={{ tabBarBadge: badge > 0 ? badge : undefined }}
+        options={{ tabBarBadge: badge > 0 && !isDesktop ? badge : undefined }}
       />
       <Tab.Screen name="Receitas" component={ReceitasScreen} />
       <Tab.Screen name="Cartões" component={CartoesScreen} />
@@ -220,7 +244,78 @@ function MainTabs() {
           ? { tabBarButton: () => null, tabBarItemStyle: { display: 'none' }, title: 'Orçamento' }
           : { title: 'Orçamento' }}
       />
+
+      {/* ── Telas extras: ocultas no mobile, abertas pela sidebar no desktop ── */}
+      <Tab.Screen
+        name="Dividas"
+        component={DividasScreen}
+        options={{ title: 'Dívidas Parceladas', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="Anual"
+        component={AnualScreen}
+        options={{ title: 'Visão Anual', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="Familia"
+        component={FamiliaScreen}
+        options={{ title: 'Família', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="Metas"
+        component={MetasScreen}
+        options={{ title: 'Metas', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="BuscaLancamentos"
+        component={BuscaLancamentosScreen}
+        options={{ title: 'Buscar Lançamentos', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="WhatsApp"
+        component={WhatsAppVincularScreen}
+        options={{ headerShown: false, tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
     </Tab.Navigator>
+  );
+
+  // ── Desktop layout: sidebar + content ───────────────────────────────────
+  if (isDesktop) {
+    return (
+      <>
+        <TrialExpiredModal
+          visible={trialModal}
+          isExpired={trialExpired}
+          trialDaysRemaining={trialDays}
+        />
+        <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        <View style={{ flex: 1, flexDirection: 'row', backgroundColor: darkColors.background }}>
+          <DesktopShell
+            activeRoute={activeRoute}
+            onNavigate={handleDesktopNavigate}
+            onOpenDrawer={() => setDrawerOpen(true)}
+            avatarUrl={avatarUrl}
+            badge={badge}
+          />
+          <View style={{ flex: 1 }}>
+            {tabNavigator}
+          </View>
+        </View>
+      </>
+    );
+  }
+
+  // ── Mobile layout: bottom tabs ───────────────────────────────────────────
+  return (
+    <>
+      <TrialExpiredModal
+        visible={trialModal}
+        isExpired={trialExpired}
+        trialDaysRemaining={trialDays}
+      />
+      <OnboardingTour active onOpenDrawer={() => setDrawerOpen(true)} onCloseDrawer={() => setDrawerOpen(false)} />
+      <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      {tabNavigator}
     </>
   );
 }
