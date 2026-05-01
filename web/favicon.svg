@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="64" height="64">
+
+  <!-- Tail -->
+  <clipPath id="tailClip">
+    <rect x="8" y="90" width="26" height="44"/>
+  </clipPath>
+  <circle cx="34" cy="112" r="21" stroke="#9a4606" stroke-width="10" fill="none" clip-path="url(#tailClip)"/>
+
+  <!-- Left ear outer -->
+  <rect x="44" y="6" width="50" height="78" rx="22" fill="#c07820" transform="rotate(-16 69 45)"/>
+  <!-- Left ear inner -->
+  <rect x="55" y="22" width="28" height="46" rx="12" fill="#8c4406" transform="rotate(-16 69 45)"/>
+
+  <!-- Right ear outer -->
+  <rect x="146" y="6" width="50" height="78" rx="22" fill="#c07820" transform="rotate(16 171 45)"/>
+  <!-- Right ear inner -->
+  <rect x="157" y="22" width="28" height="46" rx="12" fill="#8c4406" transform="rotate(16 171 45)"/>
+
+  <!-- Body / head -->
+  <rect x="36" y="28" width="168" height="154" rx="68" fill="#e8972a"/>
+
+  <!-- Snout -->
+  <rect x="86" y="124" width="68" height="46" rx="22" fill="#f5b84a"/>
+
+  <!-- Left eye -->
+  <circle cx="94" cy="102" r="20" fill="white"/>
+  <circle cx="99" cy="102" r="11" fill="#1a0800"/>
+  <circle cx="103" cy="96" r="4" fill="white"/>
+
+  <!-- Right eye -->
+  <circle cx="146" cy="102" r="20" fill="white"/>
+  <circle cx="151" cy="102" r="11" fill="#1a0800"/>
+  <circle cx="155" cy="96" r="4" fill="white"/>
+
+  <!-- Nose -->
+  <rect x="107" y="130" width="26" height="14" rx="7" fill="#1a0800"/>
+
+  <!-- Smile -->
+  <clipPath id="smileClip">
+    <rect x="108" y="145" width="24" height="10"/>
+  </clipPath>
+  <circle cx="120" cy="143" r="12" stroke="#1a0800" stroke-opacity="0.73" stroke-width="3" fill="none" clip-path="url(#smileClip)"/>
+
+  <!-- Tongue -->
+  <path d="M113,153 L127,153 Q130,153 130,156 L130,162 Q130,168 120,168 Q110,168 110,162 L110,156 Q110,153 113,153 Z" fill="#e03535"/>
+
+  <!-- Collar -->
+  <rect x="78" y="176" width="84" height="9" rx="5" fill="#3fb950"/>
+
+  <!-- Tag -->
+  <circle cx="120" cy="183" r="7" fill="#f0c030" stroke="#3fb950" stroke-width="2"/>
+
+</svg>
