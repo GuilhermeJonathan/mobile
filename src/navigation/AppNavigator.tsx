@@ -51,15 +51,10 @@ const DESKTOP_BREAKPOINT = 1024;
 export function AppHeaderTitle() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <DogMascot size={72} color={darkColors.green} mood="happy" />
-      <View style={{ flexDirection: 'column', justifyContent: 'center' }}>
-        <Text style={{ color: darkColors.text, fontWeight: '900', fontSize: 20, lineHeight: 24 }}>
-          Meu FinDog
-        </Text>
-        <Text style={{ color: darkColors.textSecondary, fontSize: 12, fontWeight: '400', lineHeight: 16 }}>
-          seu assistente financeiro
-        </Text>
-      </View>
+      <DogMascot size={56} color={darkColors.green} mood="happy" />
+      <Text style={{ color: darkColors.text, fontWeight: '900', fontSize: 20, lineHeight: 24, flexShrink: 0 }}>
+        Meu FinDog
+      </Text>
     </View>
   );
 }
@@ -241,7 +236,7 @@ function MainTabs() {
         component={DashboardScreen}
         options={isDesktop
           ? { title: 'Dashboard' }
-          : { headerTitle: () => <AppHeaderTitle />, headerStyle: { backgroundColor: darkColors.surface, height: 72 } }}
+          : { headerTitle: () => <AppHeaderTitle />, headerStyle: { backgroundColor: darkColors.surface } }}
       />
       <Tab.Screen
         name="Lançamentos"
