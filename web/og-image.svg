@@ -1,73 +1,108 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <!-- Fundo -->
-  <rect width="1200" height="630" fill="#0d1117"/>
-
-  <!-- Gradiente sutil no fundo -->
   <defs>
-    <radialGradient id="bg" cx="30%" cy="50%" r="60%">
-      <stop offset="0%" stop-color="#1a2332"/>
-      <stop offset="100%" stop-color="#0d1117"/>
-    </radialGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#3fb950" stop-opacity="0.15"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="60%" stop-color="#111820"/>
+      <stop offset="100%" stop-color="#0a1628"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="30%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3fb950" stop-opacity="0.12"/>
       <stop offset="100%" stop-color="#3fb950" stop-opacity="0"/>
     </radialGradient>
   </defs>
+
+  <!-- Background -->
   <rect width="1200" height="630" fill="url(#bg)"/>
-  <circle cx="300" cy="315" r="260" fill="url(#glow)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
 
-  <!-- Cachorro — orelhas -->
-  <ellipse cx="200" cy="220" rx="52" ry="90" fill="#c8762a" transform="rotate(-15 200 220)"/>
-  <ellipse cx="380" cy="220" rx="52" ry="90" fill="#c8762a" transform="rotate(15 380 220)"/>
-  <!-- Orelhas internas -->
-  <ellipse cx="200" cy="228" rx="34" ry="64" fill="#e8973a" transform="rotate(-15 200 228)"/>
-  <ellipse cx="380" cy="228" rx="34" ry="64" fill="#e8973a" transform="rotate(15 380 228)"/>
+  <!--
+    DogMascot exato — S=2.0, offset (ox=50, oy=95)
+    Cada coordenada = componente_original * 2 + offset
+    Canvas original 240×220 → escalado 480×440
+  -->
 
-  <!-- Cabeça principal -->
-  <circle cx="290" cy="330" r="148" fill="#f5b84a"/>
+  <!-- RABO (tail arc — forma "(") -->
+  <!-- Container: left=8*2+50=66, top=90*2+95=275, w=52, h=88 -->
+  <!-- Circle center: (34*2+50, 112*2+95) = (118, 319), r=42, stroke=20 -->
+  <clipPath id="tc">
+    <rect x="66" y="275" width="52" height="88"/>
+  </clipPath>
+  <circle cx="118" cy="319" r="42" stroke="#9a4606" stroke-width="20" fill="none" clip-path="url(#tc)"/>
 
-  <!-- Olhos -->
-  <circle cx="240" cy="295" r="26" fill="#fff"/>
-  <circle cx="340" cy="295" r="26" fill="#fff"/>
-  <circle cx="246" cy="299" r="15" fill="#1a1a2e"/>
-  <circle cx="346" cy="299" r="15" fill="#1a1a2e"/>
-  <!-- Brilho dos olhos -->
-  <circle cx="252" cy="293" r="5" fill="#fff"/>
-  <circle cx="352" cy="293" r="5" fill="#fff"/>
+  <!-- ORELHA esquerda externa: left=44, top=6, w=50, h=78, rx=22, rot-center=(69,45) -->
+  <!-- Scaled: x=138, y=107, w=100, h=156, rx=44, rot-center=(188,185) -->
+  <rect x="138" y="107" width="100" height="156" rx="44" fill="#c07820" transform="rotate(-16 188 185)"/>
+  <!-- ORELHA esquerda interna: left=55, top=22, w=28, h=46, rx=12 -->
+  <!-- Scaled: x=160, y=139, w=56, h=92, rx=24 -->
+  <rect x="160" y="139" width="56" height="92" rx="24" fill="#8c4406" transform="rotate(-16 188 185)"/>
 
-  <!-- Focinho -->
-  <ellipse cx="290" cy="355" rx="46" ry="34" fill="#e8973a"/>
-  <!-- Nariz -->
-  <ellipse cx="290" cy="338" rx="18" ry="12" fill="#1a1a2e"/>
-  <ellipse cx="287" cy="335" rx="6" ry="4" fill="#444" opacity="0.5"/>
-  <!-- Boca -->
-  <path d="M 268 358 Q 290 378 312 358" stroke="#c8762a" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- ORELHA direita externa: left=146, top=6, w=50, h=78, rot-center=(171,45) -->
+  <!-- Scaled: x=342, y=107, w=100, h=156, rx=44, rot-center=(392,185) -->
+  <rect x="342" y="107" width="100" height="156" rx="44" fill="#c07820" transform="rotate(16 392 185)"/>
+  <!-- ORELHA direita interna -->
+  <rect x="364" y="139" width="56" height="92" rx="24" fill="#8c4406" transform="rotate(16 392 185)"/>
 
-  <!-- Lingua -->
-  <ellipse cx="290" cy="375" rx="14" ry="10" fill="#e05a5a"/>
+  <!-- CORPO/CABEÇA: left=36, top=28, w=168, h=154, rx=68 -->
+  <!-- Scaled: x=122, y=151, w=336, h=308, rx=136 -->
+  <rect x="122" y="151" width="336" height="308" rx="136" fill="#e8972a"/>
 
-  <!-- Rabo (canto inferior esquerdo do cachorro) -->
-  <path d="M 160 430 Q 100 390 120 340 Q 130 310 155 330" stroke="#c8762a" stroke-width="20" fill="none" stroke-linecap="round"/>
+  <!-- FOCINHO: left=86, top=124, w=68, h=46, rx=22 -->
+  <!-- Scaled: x=222, y=343, w=136, h=92, rx=44 -->
+  <rect x="222" y="343" width="136" height="92" rx="44" fill="#f5b84a"/>
 
-  <!-- Coleira verde -->
-  <rect x="205" y="455" width="170" height="28" rx="14" fill="#3fb950"/>
-  <circle cx="290" cy="469" r="12" fill="#2ea043" stroke="#3fb950" stroke-width="2"/>
-  <circle cx="290" cy="469" r="6" fill="#f5b84a"/>
+  <!-- OLHO esquerdo branco: left=74, top=82, r=20 → cx=94, cy=102 -->
+  <!-- Scaled: cx=238, cy=299, r=40 -->
+  <circle cx="238" cy="299" r="40" fill="white"/>
+  <!-- Pupila: left=88, top=91, r=11 → cx=99, cy=102 -->
+  <!-- Scaled: cx=248, cy=299, r=22 -->
+  <circle cx="248" cy="299" r="22" fill="#1a0800"/>
+  <!-- Brilho: left=95, top=91 → cx=99, cy=95 -->
+  <!-- Scaled: cx=256, cy=285, r=8 -->
+  <circle cx="256" cy="285" r="8" fill="white"/>
 
-  <!-- Divisor vertical -->
-  <line x1="560" y1="80" x2="560" y2="550" stroke="#3fb950" stroke-width="1.5" opacity="0.3"/>
+  <!-- OLHO direito branco: cx=146, cy=102 → scaled cx=342, cy=299, r=40 -->
+  <circle cx="342" cy="299" r="40" fill="white"/>
+  <!-- Pupila: cx=151, cy=102 → scaled cx=352, cy=299, r=22 -->
+  <circle cx="352" cy="299" r="22" fill="#1a0800"/>
+  <!-- Brilho: cx=155, cy=95 → scaled cx=360, cy=285, r=8 -->
+  <circle cx="360" cy="285" r="8" fill="white"/>
 
-  <!-- Texto direito -->
-  <!-- Tagline pequena -->
-  <text x="640" y="200" font-family="Arial, sans-serif" font-size="32" fill="#3fb950" font-weight="600" letter-spacing="3">SEU ASSISTENTE FINANCEIRO</text>
+  <!-- NARIZ: left=107, top=130, w=26, h=14, rx=9 -->
+  <!-- Scaled: x=264, y=355, w=52, h=28, rx=18 -->
+  <rect x="264" y="355" width="52" height="28" rx="18" fill="#1a0800"/>
 
-  <!-- Nome principal -->
-  <text x="634" y="310" font-family="Arial, sans-serif" font-size="120" fill="#ffffff" font-weight="800" letter-spacing="-2">Meu</text>
-  <text x="634" y="430" font-family="Arial, sans-serif" font-size="120" fill="#3fb950" font-weight="800" letter-spacing="-2">FinDog</text>
+  <!-- SORRISO: view left=108, top=145, w=24, h=10 → circle center=(120,143), r=12 -->
+  <!-- Scaled: clip x=266, y=385, w=48, h=20 | circle cx=290, cy=381, r=24 -->
+  <clipPath id="sc">
+    <rect x="266" y="385" width="48" height="20"/>
+  </clipPath>
+  <circle cx="290" cy="381" r="24" stroke="#1a0800" stroke-opacity="0.73" stroke-width="6" fill="none" clip-path="url(#sc)"/>
 
-  <!-- URL -->
-  <text x="640" y="510" font-family="Arial, sans-serif" font-size="26" fill="#8b949e">app.findog.com.br</text>
+  <!-- LÍNGUA: left=110, top=152, w=20, h=16 → scaled left=270, top=399, w=40, h=32 -->
+  <!-- borderTopLeft/Right=3*2=6, borderBottomLeft/Right=10*2=20 -->
+  <path d="M276,399 L304,399 Q310,399 310,405 L310,419 Q310,431 290,431 Q270,431 270,419 L270,405 Q270,399 276,399 Z" fill="#e03535"/>
 
-  <!-- Bolinha decorativa -->
-  <circle cx="640" cy="165" r="8" fill="#3fb950"/>
+  <!-- COLEIRA: left=78, top=176, w=84, h=9, rx=5 -->
+  <!-- Scaled: x=206, y=447, w=168, h=18, rx=10 -->
+  <rect x="206" y="447" width="168" height="18" rx="10" fill="#3fb950"/>
+  <rect x="206" y="447" width="168" height="6" rx="10" fill="rgba(255,255,255,0.2)"/>
+
+  <!-- TAG: cx=120, cy=180 → scaled cx=290, cy=455, r=14 -->
+  <circle cx="290" cy="462" r="14" fill="#f0c030" stroke="#3fb950" stroke-width="3"/>
+
+  <!-- DIVISOR -->
+  <line x1="590" y1="80" x2="590" y2="550" stroke="#3fb950" stroke-opacity="0.2" stroke-width="1.5"/>
+
+  <!-- TEXTO -->
+  <rect x="640" y="140" width="268" height="36" rx="18" fill="#3fb95022" stroke="#3fb950" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="774" y="163" font-family="Arial, sans-serif" font-size="15" fill="#3fb950" font-weight="700" text-anchor="middle" letter-spacing="2">SEU ASSISTENTE FINANCEIRO</text>
+
+  <text x="640" y="260" font-family="'Arial Black', Arial, sans-serif" font-size="100" fill="#ffffff" font-weight="900" letter-spacing="-2">Meu</text>
+  <text x="640" y="370" font-family="'Arial Black', Arial, sans-serif" font-size="100" fill="#3fb950" font-weight="900" letter-spacing="-2">FinDog</text>
+
+  <text x="640" y="420" font-family="Arial, sans-serif" font-size="22" fill="#8b949e">Lançamentos · Metas · Orçamento</text>
+  <text x="640" y="450" font-family="Arial, sans-serif" font-size="22" fill="#8b949e">Integração com WhatsApp</text>
+
+  <rect x="640" y="488" width="230" height="38" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="755" y="512" font-family="Arial, sans-serif" font-size="17" fill="#58a6ff" text-anchor="middle">app.findog.com.br</text>
 </svg>
