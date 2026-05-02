@@ -148,7 +148,7 @@ export interface ProjecaoMes {
 
 export const lancamentosService = {
   getByMes: (mes: number, ano: number) =>
-    api.get(`/lancamentos/${mes}/${ano}`).then(r => r.data),
+    api.get(`/lancamentos/${mes}/${ano}`).then(r => r.data?.items ?? r.data),
   getParceladosVigentes: (): Promise<ParceladosVigentesResult> =>
     api.get('/lancamentos/parcelados-vigentes').then(r => r.data),
   getResumoAnual: (ano: number): Promise<ResumoAnual> =>
@@ -212,7 +212,7 @@ export const vinculosService = {
 };
 
 export const categoriasService = {
-  getAll: () => api.get('/categorias').then(r => r.data),
+  getAll: () => api.get('/categorias').then(r => r.data?.items ?? r.data),
   create: (data: object) => api.post('/categorias', data).then(r => r.data),
   delete: (id: string) => api.delete(`/categorias/${id}`),
   atualizarLimite: (id: string, limiteMensal: number | null) =>
@@ -222,7 +222,7 @@ export const categoriasService = {
 };
 
 export const cartoesService = {
-  getAll: (mes: number, ano: number) => api.get(`/cartoes?mes=${mes}&ano=${ano}`).then(r => r.data),
+  getAll: (mes: number, ano: number) => api.get(`/cartoes?mes=${mes}&ano=${ano}`).then(r => r.data?.items ?? r.data),
   createCartao: (data: object) => api.post('/cartoes', data).then(r => r.data),
   updateCartao: (id: string, data: object) => api.put(`/cartoes/${id}`, data),
   deleteCartao: (id: string) => api.delete(`/cartoes/${id}`),
