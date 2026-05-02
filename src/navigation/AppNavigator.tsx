@@ -52,9 +52,14 @@ export function AppHeaderTitle() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <DogMascot size={56} color={darkColors.green} mood="happy" />
-      <Text style={{ color: darkColors.text, fontWeight: '900', fontSize: 20, lineHeight: 24, flexShrink: 0 }}>
-        Meu FinDog
-      </Text>
+      <View style={{ flexDirection: 'column' }}>
+        <Text style={{ color: darkColors.textSecondary, fontWeight: '700', fontSize: 13, lineHeight: 15 }}>
+          Meu
+        </Text>
+        <Text style={{ color: darkColors.text, fontWeight: '900', fontSize: 20, lineHeight: 22 }}>
+          FinDog
+        </Text>
+      </View>
     </View>
   );
 }
