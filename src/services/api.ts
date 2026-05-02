@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resetToLogin } from '../navigation/navigationRef';
+import { authService } from './authService';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:7066/api';
 const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:7228';
@@ -16,13 +17,51 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Interceptor de resposta: tenta renovar o token via refresh antes de deslogar
+let isRefreshing = false;
+let refreshQueue: Array<(token: string | null) => void> = [];
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      await AsyncStorage.removeItem('@cf_token');
-      resetToLogin();
+    const original = error.config;
+
+    if (error.response?.status !== 401 || original._retry) {
+      return Promise.reject(error);
     }
+
+    original._retry = true;
+
+    if (isRefreshing) {
+      // Enfileira a requisição até o refresh terminar
+      return new Promise((resolve, reject) => {
+        refreshQueue.push((token) => {
+          if (token) {
+            original.headers.Authorization = `Bearer ${token}`;
+            resolve(api(original));
+          } else {
+            reject(error);
+          }
+        });
+      });
+    }
+
+    isRefreshing = true;
+    const newToken = await authService.refreshAccessToken();
+    isRefreshing = false;
+
+    if (newToken) {
+      refreshQueue.forEach(cb => cb(newToken));
+      refreshQueue = [];
+      original.headers.Authorization = `Bearer ${newToken}`;
+      return api(original);
+    }
+
+    // Refresh falhou — desloga
+    refreshQueue.forEach(cb => cb(null));
+    refreshQueue = [];
+    await authService.logout();
+    resetToLogin();
     return Promise.reject(error);
   }
 );

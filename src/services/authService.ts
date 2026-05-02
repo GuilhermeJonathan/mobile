@@ -4,8 +4,9 @@ import { decodeToken, isTokenExpired, tokenExpiresAt, JwtPayload } from '../util
 
 const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:7228';
 
-const AVATAR_KEY = '@cf_avatar';
-const PLAN_KEY  = '@cf_plan';
+const AVATAR_KEY        = '@cf_avatar';
+const PLAN_KEY          = '@cf_plan';
+const REFRESH_TOKEN_KEY = '@cf_refresh_token';
 
 export interface PlanInfo {
   hasPaidPlan: boolean;
@@ -45,6 +46,9 @@ export const authService = {
     });
     const token: string = data.accessToken;
     await AsyncStorage.setItem('@cf_token', token);
+    if (data.refreshToken) {
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+    }
     await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
     if (data.planInfo) {
       await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo));
@@ -63,9 +67,20 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    await AsyncStorage.removeItem('@cf_token');
-    await AsyncStorage.removeItem(AVATAR_KEY);
-    await AsyncStorage.removeItem(PLAN_KEY);
+    await AsyncStorage.multiRemove(['@cf_token', REFRESH_TOKEN_KEY, AVATAR_KEY, PLAN_KEY]);
+  },
+
+  async refreshAccessToken(): Promise<string | null> {
+    try {
+      const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+      if (!refreshToken) return null;
+      const { data } = await axios.post(`${LOGIN_API_URL}/user/refresh`, { refreshToken });
+      await AsyncStorage.setItem('@cf_token', data.accessToken);
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+      return data.accessToken as string;
+    } catch {
+      return null;
+    }
   },
 
   async getPlanInfo(): Promise<PlanInfo | null> {
