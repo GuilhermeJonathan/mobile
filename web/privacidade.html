@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Privacidade — Meu FinDog</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      line-height: 1.7;
+    }
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header a {
+      color: #58a6ff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    header span { color: #6e7681; font-size: 14px; }
+    .logo { font-size: 22px; font-weight: 900; color: #fff; }
+    .logo em { color: #238636; font-style: normal; }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #f0f6fc;
+      margin-bottom: 8px;
+    }
+    .updated {
+      font-size: 13px;
+      color: #6e7681;
+      margin-bottom: 40px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f0f6fc;
+      margin: 36px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #21262d;
+    }
+    p { margin-bottom: 14px; color: #8b949e; }
+    ul {
+      margin: 0 0 14px 20px;
+      color: #8b949e;
+    }
+    ul li { margin-bottom: 6px; }
+    a { color: #58a6ff; }
+    .badge {
+      display: inline-block;
+      background: #238636;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    footer {
+      text-align: center;
+      padding: 32px;
+      color: #6e7681;
+      font-size: 13px;
+      border-top: 1px solid #21262d;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Meu <em>FinDog</em></div>
+  <span>|</span>
+  <a href="https://app.findog.com.br">Voltar ao app</a>
+</header>
+
+<main>
+  <h1>Política de Privacidade</h1>
+  <p class="updated">Última atualização: maio de 2026</p>
+
+  <p>
+    O <strong>Meu FinDog</strong> ("nós", "nosso") é um aplicativo de controle financeiro pessoal.
+    Esta Política de Privacidade descreve como coletamos, usamos e protegemos as informações
+    dos nossos usuários.
+  </p>
+
+  <h2>1. Dados que coletamos</h2>
+  <ul>
+    <li><strong>Conta:</strong> nome, e-mail e senha (armazenada com hash seguro)</li>
+    <li><strong>Financeiros:</strong> lançamentos, categorias, saldos e metas que você cadastra</li>
+    <li><strong>WhatsApp (opcional):</strong> número de telefone vinculado para registrar lançamentos via mensagem</li>
+    <li><strong>Uso:</strong> logs de acesso e erros para diagnóstico (via Sentry)</li>
+  </ul>
+
+  <h2>2. Como usamos os dados</h2>
+  <ul>
+    <li>Exibir seu histórico financeiro no app</li>
+    <li>Processar mensagens do WhatsApp e criar lançamentos automaticamente</li>
+    <li>Enviar notificações de vencimento e lembretes (quando habilitado)</li>
+    <li>Melhorar a experiência e corrigir erros do aplicativo</li>
+  </ul>
+
+  <h2>3. Compartilhamento de dados</h2>
+  <p>
+    Não vendemos nem compartilhamos seus dados pessoais com terceiros para fins comerciais.
+    Utilizamos serviços de infraestrutura confiáveis:
+  </p>
+  <ul>
+    <li><strong>Render.com</strong> — hospedagem das APIs</li>
+    <li><strong>Supabase / PostgreSQL</strong> — banco de dados</li>
+    <li><strong>Meta (WhatsApp Business API)</strong> — integração de mensagens</li>
+    <li><strong>Sentry</strong> — monitoramento de erros (sem dados pessoais)</li>
+    <li><strong>Azure OpenAI</strong> — sugestão de categorias via IA (apenas descrição do lançamento)</li>
+  </ul>
+
+  <h2>4. Segurança</h2>
+  <p>
+    Seus dados são transmitidos via HTTPS e armazenados em servidores seguros.
+    Senhas são armazenadas com hash (bcrypt). Tokens JWT têm expiração e podem
+    ser revogados a qualquer momento.
+  </p>
+
+  <h2>5. Seus direitos</h2>
+  <p>Você pode, a qualquer momento:</p>
+  <ul>
+    <li>Acessar e exportar seus dados financeiros</li>
+    <li>Desvincular o número de WhatsApp</li>
+    <li>Solicitar a exclusão completa da sua conta e dados</li>
+  </ul>
+  <p>
+    Para exercer seus direitos, entre em contato pelo e-mail:
+    <a href="mailto:contato@findog.com.br">contato@findog.com.br</a>
+  </p>
+
+  <h2>6. Retenção de dados</h2>
+  <p>
+    Seus dados ficam armazenados enquanto sua conta estiver ativa.
+    Após solicitação de exclusão, os dados são removidos em até 30 dias.
+  </p>
+
+  <h2>7. Cookies</h2>
+  <p>
+    O aplicativo não utiliza cookies para rastreamento. Tokens de autenticação
+    são armazenados localmente no dispositivo (AsyncStorage) e usados apenas
+    para autenticar as requisições.
+  </p>
+
+  <h2>8. Alterações nesta política</h2>
+  <p>
+    Podemos atualizar esta política periodicamente. Notificaremos por e-mail
+    em caso de mudanças significativas.
+  </p>
+
+  <h2>9. Contato</h2>
+  <p>
+    Dúvidas sobre privacidade? Fale conosco:<br />
+    <a href="mailto:contato@findog.com.br">contato@findog.com.br</a><br />
+    <a href="https://findog.com.br">findog.com.br</a>
+  </p>
+</main>
+
+<footer>
+  © 2026 Meu FinDog · <a href="https://app.findog.com.br">app.findog.com.br</a>
+</footer>
+
+</body>
+</html>

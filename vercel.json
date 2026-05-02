@@ -1,9 +1,10 @@
 {
-  "buildCommand": "npx expo export --platform web && cp web/favicon.png web/favicon.svg web/og-image.png web/og-image.svg dist/",
+  "buildCommand": "npx expo export --platform web && cp web/favicon.png web/favicon.svg web/og-image.png web/og-image.svg web/privacidade.html dist/",
   "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
-    { "source": "/((?!.*\\.(?:png|jpg|jpeg|svg|ico|webp|gif|woff2?|ttf|eot|json|txt|xml|pdf)$).*)", "destination": "/index.html" }
+    { "source": "/privacidade", "destination": "/privacidade.html" },
+    { "source": "/((?!.*\\.(?:png|jpg|jpeg|svg|ico|webp|gif|woff2?|ttf|eot|json|txt|xml|pdf|html)$).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
