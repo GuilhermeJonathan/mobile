@@ -37,6 +37,7 @@ import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
 import TrialExpiredModal from '../components/TrialExpiredModal';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
+import { OfflineBanner } from '../components/OfflineBanner';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -431,6 +432,8 @@ export default function AppNavigator() {
 
   return (
     <VencimentosProvider>
+    <View style={{ flex: 1 }}>
+    <OfflineBanner />
     <NavigationContainer
       ref={navigationRef}
       linking={linking}
@@ -556,6 +559,7 @@ export default function AppNavigator() {
         />
       </Stack.Navigator>
     </NavigationContainer>
+    </View>
     </VencimentosProvider>
   );
 }

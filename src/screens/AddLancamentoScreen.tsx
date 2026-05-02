@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { lancamentosService, categoriasService, cartoesService } from '../services/api';
 import { Categoria, CartaoCredito, SituacaoLancamento, TipoLancamento } from '../types';
+import { useCategorias, useCreateCategoria } from '../hooks/useCategorias';
 import DatePickerField from '../components/DatePickerField';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
@@ -76,7 +77,8 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   const [situacao,    setSituacao]    = useState<SituacaoLancamento>(SituacaoLancamento.AVencer);
   const [categoriaId, setCategoriaId] = useState<string | undefined>();
   const [cartaoId,    setCartaoId]    = useState<string | undefined>();
-  const [categorias,  setCategorias]  = useState<Categoria[]>([]);
+  const { data: categorias = [] } = useCategorias();
+  const createCategoria = useCreateCategoria();
   const [cartoes,     setCartoes]     = useState<CartaoCredito[]>([]);
   const [modo,        setModo]        = useState<Modo>('avista');
   const [parcelas,    setParcelas]    = useState('2');
@@ -92,11 +94,8 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   const [novoCartao,         setNovoCartao]         = useState('');
   const [savingCartao,       setSavingCartao]       = useState(false);
 
-  useEffect(() => { loadCategorias(); loadCartoes(); }, []);
+  useEffect(() => { loadCartoes(); }, []);
 
-  async function loadCategorias() {
-    try { setCategorias(await categoriasService.getAll()); } catch {}
-  }
   async function loadCartoes() {
     try { setCartoes(await cartoesService.getAll(mes, ano)); } catch {}
   }
@@ -121,8 +120,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
     if (!novaCategoria.trim()) return;
     setSavingCat(true);
     try {
-      const result = await categoriasService.create({ nome: novaCategoria.trim(), tipo });
-      await loadCategorias();
+      const result = await createCategoria.mutateAsync({ nome: novaCategoria.trim(), tipo });
       setCategoriaId(result.id);
       setNovaCategoria('');
       setModalCatVisible(false);

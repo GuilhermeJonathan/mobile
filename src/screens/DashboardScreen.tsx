@@ -7,6 +7,8 @@ import {
 import Svg, { Rect, Text as SvgText, Line, Circle, Path, G } from 'react-native-svg';
 import { lancamentosService, categoriasService, OrcamentoItem, api } from '../services/api';
 import { Dashboard, DicaFinanceira } from '../types';
+import { useDashboard } from '../hooks/useDashboard';
+import { SkeletonList } from '../components/SkeletonLoader';
 import { fmtBRL, fmtBRLCompact } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
@@ -453,10 +455,8 @@ export default function DashboardScreen() {
   const now = new Date();
   const [mes, setMes] = useState(now.getMonth() + 1);
   const [ano, setAno] = useState(now.getFullYear());
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: dashboard, isLoading, refetch: refetchDashboard } = useDashboard(mes, ano);
   const [userName, setUserName] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
   const [hideValues, setHideValues] = useState(false);
 
   // Projeção — carrega só quando o usuário expandir
@@ -496,26 +496,22 @@ export default function DashboardScreen() {
   const [catLancs, setCatLancs] = useState<any[]>([]);
   const [catLoading, setCatLoading] = useState(false);
 
-  // Carga inicial: apenas o dashboard do mês (1 chamada)
-  const load = useCallback(async () => {
+  // Carrega dicas financeiras separadamente
+  const loadDicas = useCallback(async () => {
     try {
-      const [data, dicasData] = await Promise.all([
-        lancamentosService.getDashboard(mes, ano),
-        lancamentosService.getDicas(mes, ano).catch(() => [] as DicaFinanceira[]),
-      ]);
-      setDashboard(data);
+      const dicasData = await lancamentosService.getDicas(mes, ano).catch(() => [] as DicaFinanceira[]);
       setDicas(dicasData);
-      // Reseta lazy data ao trocar de mês
-      setProjection([]);
-      setProjectionVisible(false);
-      setTotalDividas(null);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    } catch {}
   }, [mes, ano]);
 
-  useEffect(() => { load(); }, [load]);
+  // Reseta lazy data quando o mês muda
+  useEffect(() => {
+    setProjection([]);
+    setProjectionVisible(false);
+    setTotalDividas(null);
+    loadDicas();
+  }, [mes, ano, loadDicas]);
+
   useEffect(() => {
     authService.getUserInfo().then(u => {
       if (u?.name) setUserName(u.name.split(' ')[0]); // só primeiro nome
@@ -534,7 +530,7 @@ export default function DashboardScreen() {
 
   // Quando os dados chegarem: se for 2ª sessão+ e não houver dados, abre o modal
   useEffect(() => {
-    if (loading || !dashboard || emptyModalChecked.current) return;
+    if (isLoading || !dashboard || emptyModalChecked.current) return;
     emptyModalChecked.current = true;
     const isEmpty = (dashboard.totalCreditos ?? 0) === 0 && (dashboard.totalDebitos ?? 0) === 0;
     if (!isEmpty) return;
@@ -542,7 +538,7 @@ export default function DashboardScreen() {
       const count = parseInt(val ?? '0', 10);
       if (count >= 2 && !_modalDismissed) setShowEmptyModal(true);
     });
-  }, [loading, dashboard]);
+  }, [isLoading, dashboard]);
 
   // Reseta dados lazy ao focar a tela (cobre troca de usuário sem mudança de mês)
   useFocusEffect(useCallback(() => {
@@ -623,14 +619,9 @@ export default function DashboardScreen() {
     setMes(d.getMonth() + 1);
     setAno(d.getFullYear());
     emptyModalChecked.current = false; // permite reavaliar modal no novo mês
-    setLoading(true);
   }
 
-  if (loading) return (
-    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color={colors.green} />
-    </View>
-  );
+  if (isLoading) return <SkeletonList count={5} />;
 
   const saldoColor = (dashboard?.saldo ?? 0) >= 0 ? '#4CAF50' : '#e53935';
   const totalDespesas = dashboard?.totalDebitos ?? 0;
@@ -639,7 +630,7 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container} onLayout={e => setContentWidth(e.nativeEvent.layout.width)}>
     <ScrollView
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+      refreshControl={<RefreshControl refreshing={false} onRefresh={() => { refetchDashboard(); loadDicas(); }} />}
     >
       {/* ── Greeting ─────────────────────────────────────────────── */}
       <View style={styles.greeting}>

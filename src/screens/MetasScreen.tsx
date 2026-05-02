@@ -1,16 +1,17 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   Modal, TextInput, ActivityIndicator, Alert, RefreshControl,
   Platform,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import DatePickerField from '../components/DatePickerField';
 import { useTheme } from '../theme/ThemeContext';
 import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 import { fmtBRL } from '../utils/currency';
 import { api } from '../services/api';
+import { useMetas, useCreateMeta, useDeleteMeta } from '../hooks/useMetas';
+import { SkeletonList } from '../components/SkeletonLoader';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 interface Meta {
@@ -198,9 +199,10 @@ export default function MetasScreen() {
   const { colors } = useTheme();
   const s = useMemo(() => styles(colors), [colors]);
 
-  const [metas, setMetas]       = useState<Meta[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: metasRaw, isLoading, refetch } = useMetas();
+  const metas: Meta[] = (metasRaw as Meta[] | undefined) ?? [];
+  const createMeta = useCreateMeta();
+  const deleteMeta = useDeleteMeta();
   const [busca, setBusca]       = useState('');
 
   // Modal nova/editar meta
@@ -224,17 +226,6 @@ export default function MetasScreen() {
   const [confirmModal, setConfirmModal] = useState<{
     title: string; message: string; onConfirm: () => void;
   } | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      setMetas(await metasService.getAll());
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   function abrirNova() {
     setEditMeta(null);
@@ -272,11 +263,11 @@ export default function MetasScreen() {
       };
       if (editMeta) {
         await metasService.update(editMeta.id, body);
+        await refetch();
       } else {
-        await metasService.create(body);
+        await createMeta.mutateAsync(body);
       }
       setModalMeta(false);
-      await load();
     } finally {
       setSaving(false);
     }
@@ -289,7 +280,7 @@ export default function MetasScreen() {
     try {
       await metasService.atualizarValor(modalValor.id, novo);
       setModalValor(null);
-      await load();
+      await refetch();
     } finally {
       setSavingValor(false);
     }
@@ -298,8 +289,7 @@ export default function MetasScreen() {
   function deletar(meta: Meta) {
     const doDelete = async () => {
       try {
-        await metasService.delete(meta.id);
-        await load();
+        await deleteMeta.mutateAsync(meta.id);
       } catch {
         Alert.alert('Erro', 'Não foi possível excluir a meta. Tente novamente.');
       }
@@ -338,16 +328,12 @@ export default function MetasScreen() {
   const totalMeta  = ativas.reduce((s, m) => s + m.valorMeta, 0);
   const totalAtual = ativas.reduce((s, m) => s + m.valorAtual, 0);
 
-  if (loading) return (
-    <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
-      <ActivityIndicator color={colors.green} size="large" />
-    </View>
-  );
+  if (isLoading) return <SkeletonList count={5} />;
 
   return (
     <View style={s.container}>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={() => refetch()} />}
         contentContainerStyle={s.scroll}
       >
         {/* Resumo topo */}

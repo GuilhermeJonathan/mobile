@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { lancamentosService, categoriasService, cartoesService } from '../services/api';
 import { Categoria, CartaoCredito, Lancamento, SituacaoLancamento, TipoLancamento, TipoReceita } from '../types';
+import { useCategorias, useCreateCategoria } from '../hooks/useCategorias';
 import { fmtBRL, parseBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
@@ -72,7 +73,8 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
   const [situacao, setSituacao] = useState<SituacaoLancamento>(lancamento.situacao);
   const [categoriaId, setCategoriaId] = useState<string | undefined>(lancamento.categoriaId ?? undefined);
   const [cartaoId, setCartaoId] = useState<string | undefined>(lancamento.cartaoId ?? undefined);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const { data: categorias = [] } = useCategorias();
+  const createCategoria = useCreateCategoria();
   const [cartoes, setCartoes] = useState<CartaoCredito[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -111,13 +113,8 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
   }
 
   useEffect(() => {
-    loadCategorias();
     loadCartoes();
   }, []);
-
-  async function loadCategorias() {
-    try { setCategorias(await categoriasService.getAll()); } catch {}
-  }
 
   async function loadCartoes() {
     try { setCartoes(await cartoesService.getAll(lancamento.mes, lancamento.ano)); } catch {}
@@ -127,8 +124,7 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
     if (!novaCategoria.trim()) return;
     setSavingCategoria(true);
     try {
-      const result = await categoriasService.create({ nome: novaCategoria.trim(), tipo });
-      await loadCategorias();
+      const result = await createCategoria.mutateAsync({ nome: novaCategoria.trim(), tipo });
       setCategoriaId(result.id);
       setNovaCategoria('');
       setModalVisible(false);

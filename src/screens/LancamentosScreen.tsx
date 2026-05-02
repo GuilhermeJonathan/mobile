@@ -13,6 +13,8 @@ import type { ColorScheme } from '../theme/colors';
 import { useVencimentos } from '../contexts/VencimentosContext';
 import EmptyState from '../components/EmptyState';
 import { navStorePut } from '../utils/navStore';
+import { useLancamentos } from '../hooks/useDashboard';
+import { SkeletonList } from '../components/SkeletonLoader';
 
 const TIPO_CONTA_EMOJI: Record<number, string> = {
   [TipoConta.ContaCorrente]: '🏦',
@@ -74,9 +76,8 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const now = new Date();
   const [mes, setMes] = useState(now.getMonth() + 1);
   const [ano, setAno] = useState(now.getFullYear());
+  const { data: lancamentosData = [], isLoading, refetch: refetchLancamentos } = useLancamentos(mes, ano);
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [expandedCartoes, setExpandedCartoes] = useState<Set<string>>(new Set());
   const [filtro, setFiltro] = useState<Filtro>('todos');
@@ -100,29 +101,25 @@ export default function LancamentosScreen({ navigation, route }: any) {
     authService.getUserInfo().then(info => setCurrentUserId(info?.id ?? null));
   }, []);
 
-  const load = useCallback(async () => {
+  // Sync hook data into local state (local state is needed for optimistic updates)
+  useEffect(() => {
+    setLancamentos(lancamentosData);
+  }, [lancamentosData]);
+
+  // Load previous month stats for comparison
+  const loadPrevMonth = useCallback(async () => {
+    const mesAnt = mes === 1 ? 12 : mes - 1;
+    const anoAnt = mes === 1 ? ano - 1 : ano;
     try {
-      const mesAnt = mes === 1 ? 12 : mes - 1;
-      const anoAnt = mes === 1 ? ano - 1 : ano;
-
-      const [data, anterior] = await Promise.all([
-        lancamentosService.getByMes(mes, ano),
-        lancamentosService.getByMes(mesAnt, anoAnt).catch(() => []),
-      ]);
-
-      setLancamentos(data);
-
+      const anterior = await lancamentosService.getByMes(mesAnt, anoAnt).catch(() => []);
       const antCredito = (anterior as any[]).filter(l => l.tipo === TipoLancamento.Credito).reduce((s: number, l: any) => s + l.valor, 0);
       const antDebito  = (anterior as any[]).filter(l => l.tipo !== TipoLancamento.Credito).reduce((s: number, l: any) => s + l.valor, 0);
       setPrevCredito(antCredito);
       setPrevDebito(antDebito);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    } catch {}
   }, [mes, ano]);
 
-  useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
+  useFocusEffect(useCallback(() => { loadPrevMonth(); }, [loadPrevMonth]));
 
   // Aplica filtro + mês vindo de navegação externa (ex: central de alertas / dashboard)
   useEffect(() => {
@@ -133,7 +130,6 @@ export default function LancamentosScreen({ navigation, route }: any) {
     if (p.mes && p.ano) {
       setMes(Number(p.mes));
       setAno(Number(p.ano));
-      setLoading(true);
       changed = true;
     }
     if (changed) navigation.setParams({ filtroSit: undefined, mes: undefined, ano: undefined });
@@ -143,7 +139,6 @@ export default function LancamentosScreen({ navigation, route }: any) {
     const d = new Date(ano, mes - 1 + delta, 1);
     setMes(d.getMonth() + 1);
     setAno(d.getFullYear());
-    setLoading(true);
   }
 
   function toggleCartao(cartaoId: string) {
@@ -165,8 +160,8 @@ export default function LancamentosScreen({ navigation, route }: any) {
     try {
       await lancamentosService.atualizarSituacaoComConta(item.id, novaSituacao, contaId);
       // Recarrega para refletir saldo atualizado
-      const data = await lancamentosService.getByMes(mes, ano);
-      setLancamentos(data);
+      const { data: refreshed } = await refetchLancamentos();
+      setLancamentos(refreshed ?? []);
       refreshBadge();
     } catch {
       setLancamentos(prev => prev.map(l => l.id === item.id ? { ...l, situacao: item.situacao } : l));
@@ -212,8 +207,8 @@ export default function LancamentosScreen({ navigation, route }: any) {
         }
       }
 
-      const data = await lancamentosService.getByMes(mes, ano);
-      setLancamentos(data);
+      const { data: refreshed } = await refetchLancamentos();
+      setLancamentos(refreshed ?? []);
       refreshBadge();
     } catch {
       setLancamentos(prev => prev.map(l => l.id === item.id ? { ...l, situacao: item.situacao } : l));
@@ -256,8 +251,8 @@ export default function LancamentosScreen({ navigation, route }: any) {
     }
 
     // Recarrega lista
-    const data = await lancamentosService.getByMes(mes, ano);
-    setLancamentos(data);
+    const { data: refreshed } = await refetchLancamentos();
+    setLancamentos(refreshed ?? []);
     refreshBadge();
   }
 
@@ -370,11 +365,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
     return d >= hoje && d <= em3dias;
   }).length;
 
-  if (loading) return (
-    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color={colors.green} />
-    </View>
-  );
+  if (isLoading) return <SkeletonList count={5} />;
 
   const listItems = buildListItems();
 
@@ -831,7 +822,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
         }
         renderItem={renderItem}
         ListHeaderComponent={renderResumo}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={() => refetchLancamentos()} />}
         ListEmptyComponent={
           <EmptyState
             title="Nenhum lançamento ainda! 💸"
