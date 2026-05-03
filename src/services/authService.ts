@@ -67,7 +67,10 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    await AsyncStorage.multiRemove(['@cf_token', REFRESH_TOKEN_KEY, AVATAR_KEY, PLAN_KEY]);
+    await AsyncStorage.removeItem('@cf_token');
+    await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+    await AsyncStorage.removeItem(AVATAR_KEY);
+    await AsyncStorage.removeItem(PLAN_KEY);
   },
 
   async refreshAccessToken(): Promise<string | null> {
