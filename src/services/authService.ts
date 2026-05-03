@@ -7,6 +7,8 @@ const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:72
 const AVATAR_KEY        = '@cf_avatar';
 const PLAN_KEY          = '@cf_plan';
 const REFRESH_TOKEN_KEY = '@cf_refresh_token';
+const PHONE_KEY         = '@cf_phone';
+const DOCUMENT_KEY      = '@cf_document';
 
 export interface PlanInfo {
   hasPaidPlan: boolean;
@@ -34,6 +36,8 @@ export interface UserInfo {
   email: string;
   avatarUrl: string | null;
   expiresAt: Date | null;
+  cellphone: string | null;
+  document: string | null;
 }
 
 export const authService = {
@@ -71,6 +75,8 @@ export const authService = {
     await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
     await AsyncStorage.removeItem(AVATAR_KEY);
     await AsyncStorage.removeItem(PLAN_KEY);
+    await AsyncStorage.removeItem(PHONE_KEY);
+    await AsyncStorage.removeItem(DOCUMENT_KEY);
   },
 
   async refreshAccessToken(): Promise<string | null> {
@@ -98,12 +104,16 @@ export const authService = {
     const payload: JwtPayload | null = decodeToken(token);
     if (!payload) return null;
     const avatarUrl = (await AsyncStorage.getItem(AVATAR_KEY)) || null;
+    const cellphone = (await AsyncStorage.getItem(PHONE_KEY)) || null;
+    const document  = (await AsyncStorage.getItem(DOCUMENT_KEY)) || null;
     return {
       id: payload.nameid ?? '',
       name: payload.unique_name ?? '',
       email: payload.email ?? '',
       avatarUrl,
       expiresAt: tokenExpiresAt(token),
+      cellphone,
+      document,
     };
   },
 
@@ -148,6 +158,9 @@ export const authService = {
     });
     const token: string = data.accessToken;
     await AsyncStorage.setItem('@cf_token', token);
+    if (data.refreshToken) {
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+    }
     await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
     if (data.planInfo) {
       await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo));
@@ -155,10 +168,26 @@ export const authService = {
     return token;
   },
 
+  /** Busca dados completos do usuário autenticado na API e atualiza o cache local. */
+  async fetchMe(): Promise<void> {
+    try {
+      const { data } = await loginApi.get('/user/me');
+      await AsyncStorage.setItem(PHONE_KEY, data.cellphone ?? '');
+      await AsyncStorage.setItem(DOCUMENT_KEY, data.document ?? '');
+    } catch { /* silencioso */ }
+  },
+
   /** Atualiza o avatar no backend e na cache local. */
   async updateAvatar(dataUrl: string | null): Promise<void> {
     await loginApi.patch('/user/me/avatar', { avatarUrl: dataUrl });
     await AsyncStorage.setItem(AVATAR_KEY, dataUrl ?? '');
+  },
+
+  /** Atualiza nome, telefone e documento do usuário autenticado. */
+  async updateProfile(name: string, cellphone: string | null, document?: string | null): Promise<void> {
+    await loginApi.patch('/user/me/profile', { name, cellphone, document: document ?? null });
+    await AsyncStorage.setItem(PHONE_KEY, cellphone ?? '');
+    if (document != null) await AsyncStorage.setItem(DOCUMENT_KEY, document);
   },
 
   /** Altera a senha do usuário autenticado. Lança erro se a senha atual estiver incorreta. */
@@ -174,5 +203,14 @@ export const authService = {
   /** Redefine a senha usando o token recebido por e-mail. */
   async resetPassword(email: string, token: string, password: string): Promise<void> {
     await axios.put(`${LOGIN_API_URL}/user/password`, { email, password, token, termName: null });
+  },
+
+  /** Exclui permanentemente a conta do usuário autenticado e limpa todos os dados locais. */
+  async deleteAccount(): Promise<void> {
+    await loginApi.delete('/user/me');
+    await AsyncStorage.removeItem('@cf_token');
+    await AsyncStorage.removeItem('@cf_refresh_token');
+    await AsyncStorage.removeItem('@cf_avatar');
+    await AsyncStorage.removeItem('@cf_plan');
   },
 };

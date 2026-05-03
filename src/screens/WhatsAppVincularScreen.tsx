@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { whatsappService, WhatsAppVinculoDto } from '../services/api';
+import { authService } from '../services/authService';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 import WhatsAppIcon from '../components/WhatsAppIcon';
@@ -64,6 +65,11 @@ export default function WhatsAppVincularScreen({ navigation }: any) {
     setSaving(true);
     try {
       await whatsappService.vincular(withCountry);
+      // sincroniza telefone no perfil do usuário
+      const userInfo = await authService.getUserInfo();
+      if (userInfo) {
+        await authService.updateProfile(userInfo.name, withCountry).catch(() => {});
+      }
       setSuccess('✅ Número vinculado com sucesso!');
       setPhone('');
       await load();
@@ -137,30 +143,6 @@ export default function WhatsAppVincularScreen({ navigation }: any) {
           <Text style={s.botHint}>Salve este número e mande uma mensagem para começar</Text>
         </View>
 
-        {/* ── Como usar ─────────────────────────────────────────────────── */}
-        <View style={s.howCard}>
-          <Text style={s.howTitle}>Como usar</Text>
-          {[
-            { ex: 'Gasolina hoje 300 reais',    desc: 'Registra débito de R$ 300' },
-            { ex: 'Almoço 45,50',               desc: 'Débito com data de hoje' },
-            { ex: 'Recebi salário 5000',         desc: 'Registra crédito de R$ 5.000' },
-            { ex: 'Mercado ontem 230',           desc: 'Débito registrado ontem' },
-          ].map(({ ex, desc }) => (
-            <View key={ex} style={s.exRow}>
-              <View style={s.exBubble}>
-                <Text style={s.exText}>{ex}</Text>
-              </View>
-              <Text style={s.exDesc}>{desc}</Text>
-            </View>
-          ))}
-          <View style={s.tipRow}>
-            <Text style={s.tipIcon}>💡</Text>
-            <Text style={s.tipText}>
-              Envie <Text style={s.bold}>ajuda</Text> para ver todos os exemplos.
-            </Text>
-          </View>
-        </View>
-
         {/* ── Status do vínculo ──────────────────────────────────────────── */}
         {vinculo ? (
           <View style={s.linkedCard}>
@@ -225,6 +207,31 @@ export default function WhatsAppVincularScreen({ navigation }: any) {
             <Text style={s.successText}>{success}</Text>
           </View>
         )}
+
+        {/* ── Como usar ─────────────────────────────────────────────────── */}
+        <View style={s.howCard}>
+          <Text style={s.howTitle}>Como usar</Text>
+          {[
+            { ex: 'Gasolina hoje 300 reais',    desc: 'Registra débito de R$ 300' },
+            { ex: 'Almoço 45,50',               desc: 'Débito com data de hoje' },
+            { ex: 'Recebi salário 5000',         desc: 'Registra crédito de R$ 5.000' },
+            { ex: 'Mercado ontem 230',           desc: 'Débito registrado ontem' },
+          ].map(({ ex, desc }) => (
+            <View key={ex} style={s.exRow}>
+              <View style={s.exBubble}>
+                <Text style={s.exText}>{ex}</Text>
+              </View>
+              <Text style={s.exDesc}>{desc}</Text>
+            </View>
+          ))}
+          <View style={s.tipRow}>
+            <Text style={s.tipIcon}>💡</Text>
+            <Text style={s.tipText}>
+              Envie <Text style={s.bold}>ajuda</Text> para ver todos os exemplos.
+            </Text>
+          </View>
+        </View>
+
       </ScrollView>
 
       {/* Modal confirmação desvincular */}

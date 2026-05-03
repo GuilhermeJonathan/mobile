@@ -16,6 +16,11 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // — Excluir conta —
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   // — Alterar senha —
   const [pwdModal, setPwdModal] = useState(false);
   const [currentPwd, setCurrentPwd] = useState('');
@@ -38,6 +43,20 @@ export default function ProfileScreen() {
     setLoggingOut(true);
     await authService.logout();
     resetToLogin();
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await authService.deleteAccount();
+      setDeleteModal(false);
+      resetToLogin();
+    } catch {
+      setDeleteError('Não foi possível excluir a conta. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function openPwdModal() {
@@ -156,6 +175,49 @@ export default function ProfileScreen() {
         }
       </TouchableOpacity>
 
+      {/* Excluir conta */}
+      <TouchableOpacity
+        style={styles.btnDeleteAccount}
+        onPress={() => { setDeleteError(null); setDeleteModal(true); }}
+        disabled={deleting}
+      >
+        <Text style={styles.btnDeleteAccountText}>Excluir minha conta</Text>
+      </TouchableOpacity>
+
+      {/* Modal — Confirmar exclusão de conta */}
+      <Modal visible={deleteModal} transparent animationType="fade" onRequestClose={() => setDeleteModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Excluir conta</Text>
+            <Text style={styles.deleteWarningText}>
+              Esta ação é irreversível. Todos os seus dados serão excluídos permanentemente.
+            </Text>
+
+            {deleteError && <Text style={styles.errorText}>{deleteError}</Text>}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+                onPress={() => setDeleteModal(false)}
+                disabled={deleting}
+              >
+                <Text style={styles.modalBtnCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnDelete]}
+                onPress={handleDeleteAccount}
+                disabled={deleting}
+              >
+                {deleting
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={styles.modalBtnDeleteText}>Sim, excluir tudo</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Modal — Alterar senha */}
       <Modal visible={pwdModal} transparent animationType="fade" onRequestClose={() => setPwdModal(false)}>
         <KeyboardAvoidingView
@@ -272,6 +334,17 @@ function makeStyles(c: ColorScheme) {
       alignItems: 'center', marginTop: 8,
     },
     btnLogoutText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    btnDeleteAccount: {
+      borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16,
+      alignItems: 'center', marginTop: 8,
+      borderWidth: 1, borderColor: c.red,
+    },
+    btnDeleteAccountText: { color: c.red, fontSize: 14, fontWeight: '600' },
+    deleteWarningText: {
+      fontSize: 14, color: c.textSecondary, lineHeight: 20, marginBottom: 8,
+    },
+    modalBtnDelete: { backgroundColor: c.red },
+    modalBtnDeleteText: { color: '#fff', fontWeight: 'bold' },
 
     // Modal — alterar senha
     modalOverlay: {

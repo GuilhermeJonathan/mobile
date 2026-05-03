@@ -16,7 +16,7 @@ import { navigationRef } from '../navigation/navigationRef';
 import { useVencimentos } from '../contexts/VencimentosContext';
 import { fmtBRL } from '../utils/currency';
 import WhatsAppIcon from './WhatsAppIcon';
-import { vinculosService, MeuVinculoDto } from '../services/api';
+import { vinculosService, MeuVinculoDto, whatsappService } from '../services/api';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
@@ -53,6 +53,31 @@ async function resizeOnWeb(uri: string, maxPx = 400): Promise<string> {
   });
 }
 
+function maskDocument(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length <= 11) {
+    // CPF: 000.000.000-00
+    return digits
+      .replace(/^(\d{3})(\d)/, '$1.$2')
+      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
+  }
+  // CNPJ: 00.000.000/0000-00
+  return digits.slice(0, 14)
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+}
+
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2)  return digits.replace(/^(\d{0,2})/, '($1');
+  if (digits.length <= 6)  return digits.replace(/^(\d{2})(\d{0,4})/, '($1) $2');
+  if (digits.length <= 10) return digits.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  return digits.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+}
+
 export default function UserDrawer({ visible, onClose }: Props) {
   const { colors, isDark, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -78,9 +103,22 @@ export default function UserDrawer({ visible, onClose }: Props) {
   const [savingPwd, setSavingPwd]   = useState(false);
   const [pwdError, setPwdError]     = useState<string | null>(null);
 
+  // — Meus Dados —
+  const [dadosModal, setDadosModal]         = useState(false);
+  const [editName, setEditName]             = useState('');
+  const [editPhone, setEditPhone]           = useState('');
+  const [editDocument, setEditDocument]     = useState('');
+  const [savingProfile, setSavingProfile]   = useState(false);
+  const [profileError, setProfileError]     = useState('');
+  const [profileSuccess, setProfileSuccess] = useState(false);
+  // — Excluir conta —
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleting, setDeleting]       = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
   useEffect(() => {
     if (visible) {
-      authService.getUserInfo().then(setUser);
+      authService.fetchMe().then(() => authService.getUserInfo().then(setUser));
       authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
       vinculosService.meuVinculo().then(setMeuVinculo).catch(() => setMeuVinculo(null));
       authService.getPlanInfo().then(setPlanInfo).catch(() => setPlanInfo(null));
@@ -102,6 +140,57 @@ export default function UserDrawer({ visible, onClose }: Props) {
     await authService.logout();
     onClose();
     resetToLogin();
+  }
+
+  function openDadosModal() {
+    setEditName(user?.name ?? '');
+    setEditPhone(maskPhone(user?.cellphone ?? ''));
+    setEditDocument(maskDocument(user?.document ?? ''));
+    setProfileError('');
+    setProfileSuccess(false);
+    setDeleteModal(false);
+    setDadosModal(true);
+  }
+
+  async function handleSaveProfile() {
+    if (!editName.trim()) { setProfileError('O nome não pode estar vazio.'); return; }
+    setSavingProfile(true);
+    setProfileError('');
+    setProfileSuccess(false);
+    try {
+      const cellphone = editPhone.replace(/\D/g, '') || null;
+      const document  = editDocument.replace(/\D/g, '') || null;
+      await authService.updateProfile(editName.trim(), cellphone, document);
+      // Renova o token para refletir o novo nome no JWT
+      await authService.refreshAccessToken().catch(() => {});
+      // Relê os dados já com o token novo
+      const updated = await authService.getUserInfo();
+      if (updated) setUser(updated);
+      if (cellphone) {
+        const withCountry = cellphone.startsWith('55') ? cellphone : `55${cellphone}`;
+        await whatsappService.vincular(withCountry).catch(() => {});
+      }
+      setProfileSuccess(true);
+    } catch {
+      setProfileError('Não foi possível salvar. Tente novamente.');
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await authService.deleteAccount();
+      setDeleteModal(false);
+      onClose();
+      resetToLogin();
+    } catch {
+      setDeleteError('Não foi possível excluir a conta. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function handlePickAvatar() {
@@ -460,6 +549,14 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
           <View style={s.divider} />
 
+          {/* ── Meus Dados ─────────────────────────────────────────── */}
+          <TouchableOpacity style={s.row} onPress={openDadosModal}>
+            <Text style={s.rowIcon}>👤</Text>
+            <Text style={s.rowLabel}>Meus Dados</Text>
+          </TouchableOpacity>
+
+          <View style={s.divider} />
+
           {/* ── Logout ─────────────────────────────────────────────── */}
           <TouchableOpacity style={s.logoutBtn} onPress={handleLogout} disabled={loggingOut}>
             {loggingOut
@@ -473,6 +570,155 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
         </ScrollView>
       </Animated.View>
+
+      {/* ── Modal Meus Dados ───────────────────────────────────────── */}
+      <Modal visible={dadosModal} transparent animationType="fade" onRequestClose={() => setDadosModal(false)}>
+        <TouchableWithoutFeedback onPress={() => setDadosModal(false)}>
+          <View style={s.dadosOverlay}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', maxWidth: 420 }}>
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                <TouchableWithoutFeedback>
+                  <View style={s.dadosCard}>
+
+                    {/* Cabeçalho */}
+                    <View style={s.dadosHeader}>
+                      <Text style={s.dadosTitle}>Meus Dados</Text>
+                      <TouchableOpacity onPress={() => setDadosModal(false)} style={s.dadosCloseBtn}>
+                        <Text style={s.dadosCloseIcon}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* ── Foto ─────────────────────────────────────────── */}
+                    <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                      <TouchableOpacity onPress={promptAvatarOptions} activeOpacity={0.8}>
+                        {uploadingAvatar ? (
+                          <View style={[s.dadosAvatar, s.dadosAvatarPlaceholder]}>
+                            <ActivityIndicator color={colors.green} />
+                          </View>
+                        ) : user?.avatarUrl ? (
+                          <View>
+                            <Image source={{ uri: user.avatarUrl }} style={s.dadosAvatar} />
+                            <View style={s.dadosAvatarBadge}><Text style={{ fontSize: 13 }}>📷</Text></View>
+                          </View>
+                        ) : (
+                          <View style={[s.dadosAvatar, s.dadosAvatarPlaceholder]}>
+                            <Text style={{ fontSize: 28 }}>👤</Text>
+                            <View style={s.dadosAvatarBadge}><Text style={{ fontSize: 13 }}>📷</Text></View>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                      <Text style={s.dadosAvatarHint}>Toque para alterar a foto</Text>
+                    </View>
+
+                    {/* ── Nome ─────────────────────────────────────────── */}
+                    <Text style={s.dadosLabel}>Nome</Text>
+                    <TextInput
+                      style={s.dadosInput}
+                      value={editName}
+                      onChangeText={t => { setEditName(t); setProfileError(''); setProfileSuccess(false); }}
+                      placeholder="Seu nome"
+                      placeholderTextColor={colors.inputPlaceholder}
+                      autoCapitalize="words"
+                    />
+
+                    {/* ── E-mail (somente leitura) ──────────────────────── */}
+                    <Text style={s.dadosLabel}>E-mail</Text>
+                    <View style={s.dadosInputReadonly}>
+                      <Text style={s.dadosInputReadonlyText}>{user?.email || '—'}</Text>
+                      <Text style={{ fontSize: 11, color: colors.textTertiary }}>🔒</Text>
+                    </View>
+
+                    {/* ── Telefone ─────────────────────────────────────── */}
+                    <Text style={s.dadosLabel}>Telefone / WhatsApp</Text>
+                    <TextInput
+                      style={s.dadosInput}
+                      value={editPhone}
+                      onChangeText={t => { setEditPhone(maskPhone(t)); setProfileError(''); setProfileSuccess(false); }}
+                      placeholder="(11) 99999-0000"
+                      placeholderTextColor={colors.inputPlaceholder}
+                      keyboardType="phone-pad"
+                    />
+
+                    {/* ── Documento ────────────────────────────────────── */}
+                    <Text style={s.dadosLabel}>Documento (CPF/CNPJ)</Text>
+                    <TextInput
+                      style={s.dadosInput}
+                      value={editDocument}
+                      onChangeText={t => { setEditDocument(maskDocument(t)); setProfileError(''); setProfileSuccess(false); }}
+                      placeholder="000.000.000-00"
+                      placeholderTextColor={colors.inputPlaceholder}
+                      keyboardType="numeric"
+                    />
+
+                    {/* Feedback */}
+                    {profileError !== '' && (
+                      <Text style={{ color: '#e53935', fontSize: 13, marginTop: 4 }}>{profileError}</Text>
+                    )}
+                    {profileSuccess && (
+                      <Text style={{ color: colors.green, fontSize: 13, marginTop: 4 }}>✅ Dados salvos com sucesso!</Text>
+                    )}
+
+                    {/* Botão salvar */}
+                    <TouchableOpacity style={s.dadosSaveBtn} onPress={handleSaveProfile} disabled={savingProfile}>
+                      {savingProfile
+                        ? <ActivityIndicator color="#fff" size="small" />
+                        : <Text style={s.dadosSaveBtnText}>Salvar alterações</Text>
+                      }
+                    </TouchableOpacity>
+
+                    {/* ── Plano ─────────────────────────────────────────── */}
+                    {planInfo && (
+                      <>
+                        <Text style={[s.dadosLabel, { marginTop: 20 }]}>Plano</Text>
+                        <Text style={s.dadosValue}>
+                          {planInfo.hasPaidPlan
+                            ? `Pago${planInfo.planExpiresAt ? ` · expira ${new Date(planInfo.planExpiresAt).toLocaleDateString('pt-BR')}` : ''}`
+                            : planInfo.isTrialActive
+                              ? `Trial · ${planInfo.trialDaysRemaining}d restantes`
+                              : 'Trial expirado'}
+                        </Text>
+                      </>
+                    )}
+
+                    {/* Separador zona de perigo */}
+                    <View style={s.dadosDangerDivider}>
+                      <View style={s.dadosDangerLine} />
+                      <Text style={s.dadosDangerLabel}>ZONA DE PERIGO</Text>
+                      <View style={s.dadosDangerLine} />
+                    </View>
+
+                    {/* Excluir conta */}
+                    {!deleteModal ? (
+                      <TouchableOpacity style={s.dadosDeleteBtn} onPress={() => setDeleteModal(true)}>
+                        <Text style={s.dadosDeleteText}>🗑 Excluir minha conta</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={s.dadosDeleteConfirm}>
+                        <Text style={s.dadosDeleteWarning}>
+                          Esta ação é irreversível. Todos os seus dados serão excluídos permanentemente.
+                        </Text>
+                        {deleteError !== '' && (
+                          <Text style={{ color: '#e53935', fontSize: 13, textAlign: 'center' }}>{deleteError}</Text>
+                        )}
+                        <TouchableOpacity style={s.deleteModalConfirmBtn} onPress={handleDeleteAccount} disabled={deleting}>
+                          {deleting
+                            ? <ActivityIndicator color="#fff" size="small" />
+                            : <Text style={s.deleteModalConfirmText}>Sim, excluir tudo</Text>
+                          }
+                        </TouchableOpacity>
+                        <TouchableOpacity style={s.deleteModalCancelBtn} onPress={() => { setDeleteModal(false); setDeleteError(''); }}>
+                          <Text style={s.deleteModalCancelText}>Cancelar</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                  </View>
+                </TouchableWithoutFeedback>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       {/* ── Modal alterar senha ─────────────────────────────────────── */}
       <Modal visible={pwdModal} transparent animationType="fade" onRequestClose={() => setPwdModal(false)}>
@@ -608,6 +854,60 @@ function styles(
     },
     logoutIcon: { fontSize: 18 },
     logoutText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+
+    // Modal Meus Dados
+    dadosOverlay: {
+      flex: 1, backgroundColor: '#00000088',
+      justifyContent: 'center', alignItems: 'center', padding: 24,
+    },
+    dadosCard: {
+      backgroundColor: c.surface, borderRadius: 16, padding: 24,
+      width: '100%', borderWidth: 1, borderColor: c.border,
+    },
+    dadosHeader:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+    dadosTitle:    { fontSize: 18, fontWeight: 'bold', color: c.text },
+    dadosCloseBtn: { padding: 4 },
+    dadosCloseIcon:{ fontSize: 16, color: c.textTertiary },
+    dadosAvatar:   { width: 72, height: 72, borderRadius: 36 },
+    dadosAvatarPlaceholder: {
+      backgroundColor: c.surfaceElevated, borderWidth: 2, borderColor: c.border,
+      justifyContent: 'center', alignItems: 'center',
+    },
+    dadosAvatarBadge: {
+      position: 'absolute', bottom: 0, right: 0,
+      width: 22, height: 22, borderRadius: 11,
+      backgroundColor: c.surfaceElevated, borderWidth: 1.5, borderColor: c.border,
+      justifyContent: 'center', alignItems: 'center',
+    },
+    dadosAvatarHint: { fontSize: 11, color: c.textTertiary, marginTop: 6 },
+    dadosLabel: { fontSize: 11, color: c.textTertiary, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 14, marginBottom: 4 },
+    dadosValue: { fontSize: 15, color: c.text },
+    dadosInput: {
+      backgroundColor: c.inputBg, borderRadius: 10, padding: 12,
+      fontSize: 15, borderWidth: 1, borderColor: c.inputBorder, color: c.text,
+    },
+    dadosInputReadonly: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: c.surfaceElevated, borderRadius: 10, padding: 12,
+      borderWidth: 1, borderColor: c.border,
+    },
+    dadosInputReadonlyText: { fontSize: 15, color: c.textSecondary },
+    dadosSaveBtn:     { backgroundColor: c.green, borderRadius: 10, paddingVertical: 13, alignItems: 'center', marginTop: 16 },
+    dadosSaveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+    dadosDangerDivider: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 12 },
+    dadosDangerLine:    { flex: 1, height: 1, backgroundColor: '#e5393550' },
+    dadosDangerLabel:   { fontSize: 10, fontWeight: '700', color: '#e53935', letterSpacing: 1 },
+
+    dadosDeleteBtn:     { paddingVertical: 10, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: '#e5393540' },
+    dadosDeleteText:    { color: '#e53935', fontSize: 14 },
+    dadosDeleteConfirm: { gap: 10 },
+    dadosDeleteWarning: { fontSize: 13, color: c.textSecondary, textAlign: 'center', lineHeight: 18 },
+
+    deleteModalConfirmBtn:  { backgroundColor: c.red, borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
+    deleteModalConfirmText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+    deleteModalCancelBtn:   { backgroundColor: c.surfaceElevated, borderRadius: 10, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: c.border },
+    deleteModalCancelText:  { color: c.text, fontSize: 15 },
 
     alertHeader: {
       flexDirection: 'row', alignItems: 'center', gap: 8,
