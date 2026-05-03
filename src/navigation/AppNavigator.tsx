@@ -359,11 +359,16 @@ export default function AppNavigator() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // getToken já valida expiração localmente
-    authService.getToken().then(token => {
+    async function checkAuth() {
+      let token = await authService.getToken();
+      if (!token) {
+        // access token expirado ou ausente — tenta renovar com refresh token
+        token = await authService.refreshAccessToken();
+      }
       setIsLoggedIn(!!token);
       setChecking(false);
-    });
+    }
+    checkAuth();
   }, []);
 
   if (checking) {
