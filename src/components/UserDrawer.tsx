@@ -677,6 +677,17 @@ export default function UserDrawer({ visible, onClose }: Props) {
                               ? `Trial · ${planInfo.trialDaysRemaining}d restantes`
                               : 'Trial expirado'}
                         </Text>
+                        {!planInfo.hasPaidPlan && (
+                          <TouchableOpacity
+                            onPress={() => {
+                              onClose();
+                              navigationRef.current?.navigate('Planos' as never);
+                            }}
+                            style={s.verPlanosBtn}
+                          >
+                            <Text style={s.verPlanosBtnText}>Ver planos →</Text>
+                          </TouchableOpacity>
+                        )}
                       </>
                     )}
 
@@ -894,6 +905,9 @@ function styles(
     dadosInputReadonlyText: { fontSize: 15, color: c.textSecondary },
     dadosSaveBtn:     { backgroundColor: c.green, borderRadius: 10, paddingVertical: 13, alignItems: 'center', marginTop: 16 },
     dadosSaveBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+    verPlanosBtn:     { marginTop: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: c.green, alignSelf: 'flex-start' },
+    verPlanosBtnText: { color: c.green, fontSize: 13, fontWeight: '600' },
 
     dadosDangerDivider: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 12 },
     dadosDangerLine:    { flex: 1, height: 1, backgroundColor: '#e5393550' },

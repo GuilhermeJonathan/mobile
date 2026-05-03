@@ -213,4 +213,17 @@ export const authService = {
     await AsyncStorage.removeItem('@cf_avatar');
     await AsyncStorage.removeItem('@cf_plan');
   },
+
+  async checkTermsAccepted(): Promise<boolean> {
+    try {
+      const { data } = await loginApi.get<boolean>('/term/termos-de-uso/accepted');
+      return data;
+    } catch {
+      return true; // em caso de erro, não bloqueia o usuário
+    }
+  },
+
+  async acceptTerms(): Promise<void> {
+    await loginApi.post('/term/termos-de-uso/accept');
+  },
 };

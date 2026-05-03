@@ -33,9 +33,12 @@ import LandingScreen from '../screens/LandingScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
+import PlanosScreen from '../screens/PlanosScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
 import TrialExpiredModal from '../components/TrialExpiredModal';
+import TrialBanner from '../components/TrialBanner';
+import TermsModal from '../components/TermsModal';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
 import { OfflineBanner } from '../components/OfflineBanner';
 
@@ -94,6 +97,7 @@ const LINKING_CONFIG = {
         Contas: 'contas',
       },
     },
+    Planos: 'planos',
     // Catch-all: qualquer rota não reconhecida → 404
     NotFound: '*',
   },
@@ -106,8 +110,15 @@ function MainTabs() {
   const [trialModal, setTrialModal]       = useState(false);
   const [trialDays, setTrialDays]         = useState<number | null>(null);
   const [trialExpired, setTrialExpired]   = useState(false);
+  const [trialBannerDays, setTrialBannerDays] = useState<number | null>(null);
+  const [termsModal, setTermsModal]       = useState(false);
   // Tracks the active route name for sidebar highlighting
   const [activeRoute, setActiveRoute]     = useState('Dashboard');
+
+  async function handleAcceptTerms() {
+    await authService.acceptTerms().catch(() => {});
+    setTermsModal(false);
+  }
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { badge, refresh } = useVencimentos();
@@ -137,10 +148,22 @@ function MainTabs() {
       if (plan.isTrialExpired) {
         setTrialExpired(true);
         setTrialModal(true);
-      } else if (plan.isTrialActive && plan.trialDaysRemaining !== null && plan.trialDaysRemaining <= 3) {
-        setTrialDays(plan.trialDaysRemaining);
-        setTrialModal(true);
+      } else if (plan.isTrialActive && plan.trialDaysRemaining !== null) {
+        // Banner visível durante TODO o trial
+        setTrialBannerDays(plan.trialDaysRemaining);
+        // Modal popup só nos últimos 3 dias
+        if (plan.trialDaysRemaining <= 3) {
+          setTrialDays(plan.trialDaysRemaining);
+          setTrialModal(true);
+        }
       }
+    });
+  }, []);
+
+  // Verifica aceite de termos ao entrar no app
+  useEffect(() => {
+    authService.checkTermsAccepted().then(accepted => {
+      if (!accepted) setTermsModal(true);
     });
   }, []);
 
@@ -320,6 +343,7 @@ function MainTabs() {
           isExpired={trialExpired}
           trialDaysRemaining={trialDays}
         />
+        <TermsModal visible={termsModal} onAccept={handleAcceptTerms} />
         <OnboardingTour active sidebarWidth={240} />
         <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
         <View style={{ flex: 1, flexDirection: 'row', backgroundColor: darkColors.background }}>
@@ -332,6 +356,12 @@ function MainTabs() {
             isAdmin={isAdmin}
           />
           <View style={{ flex: 1 }}>
+            {!trialExpired && trialBannerDays !== null && (
+              <TrialBanner
+                daysRemaining={trialBannerDays}
+                onPress={() => navigationRef.current?.navigate('Planos' as never)}
+              />
+            )}
             {tabNavigator}
           </View>
         </View>
@@ -347,9 +377,18 @@ function MainTabs() {
         isExpired={trialExpired}
         trialDaysRemaining={trialDays}
       />
+      <TermsModal visible={termsModal} onAccept={handleAcceptTerms} />
       <OnboardingTour active onOpenDrawer={() => setDrawerOpen(true)} onCloseDrawer={() => setDrawerOpen(false)} />
       <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      {tabNavigator}
+      <View style={{ flex: 1 }}>
+        {!trialExpired && trialBannerDays !== null && (
+          <TrialBanner
+            daysRemaining={trialBannerDays}
+            onPress={() => setTrialModal(true)}
+          />
+        )}
+        {tabNavigator}
+      </View>
     </>
   );
 }
@@ -561,6 +600,16 @@ export default function AppNavigator() {
             headerStyle: { backgroundColor: '#1a1a2e' },
             headerTintColor: '#fff',
           })}
+        />
+        <Stack.Screen
+          name="Planos"
+          component={PlanosScreen}
+          options={{
+            headerShown: true,
+            title: 'Planos',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

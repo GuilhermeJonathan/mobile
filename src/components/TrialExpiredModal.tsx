@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, Linking,
+  View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
 import { darkColors } from '../theme/colors';
 import { authService } from '../services/authService';
@@ -84,7 +84,9 @@ export default function TrialExpiredModal({ visible, trialDaysRemaining, isExpir
                   key={p.label}
                   style={[styles.planCard, p.highlight && styles.planCardHL]}
                   activeOpacity={0.85}
-                  onPress={() => Linking.openURL('https://meufinanceiro.app/planos')}
+                  onPress={() => {
+                    navigationRef.current?.navigate('Planos' as never);
+                  }}
                 >
                   {p.highlight && (
                     <View style={styles.badge}>
