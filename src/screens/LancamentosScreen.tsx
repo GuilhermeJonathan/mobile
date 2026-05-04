@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, ScrollView, TextInput, Platform,
-  Animated, PanResponder, Dimensions, LayoutAnimation,
+  Animated, Dimensions, LayoutAnimation,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, saldosService } from '../services/api';
@@ -89,19 +89,30 @@ function SwipeableRow({
   const onDeleteRef = useRef(onDelete);
   onDeleteRef.current = onDelete;
 
-  const snapOpen = useRef(() => {
+  // Rastreamento do gesto
+  const startX    = useRef(0);
+  const startY    = useRef(0);
+  const dragging  = useRef(false);
+  const lpTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearLP() {
+    if (lpTimer.current) { clearTimeout(lpTimer.current); lpTimer.current = null; }
+  }
+
+  function snapOpen() {
     Animated.spring(translateX, { toValue: -DELETE_BTN_W, useNativeDriver: true, friction: 8 }).start();
     snapped.current = true;
-  });
+  }
 
-  const snapClose = useRef(() => {
+  function snapClose() {
     Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
     snapped.current = false;
-  });
+  }
 
-  const triggerDelete = useRef(() => {
+  function doDelete() {
     if (triggered.current) return;
     triggered.current = true;
+    clearLP();
     Animated.timing(translateX, {
       toValue: -(Dimensions.get('window').width + 60),
       duration: 220,
@@ -110,38 +121,71 @@ function SwipeableRow({
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       onDeleteRef.current();
     });
-  });
+  }
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
-      onPanResponderMove: (_, gs) => {
-        if (triggered.current) return;
-        const base = snapped.current ? -DELETE_BTN_W : 0;
-        translateX.setValue(Math.min(0, base + gs.dx));
-      },
-      onPanResponderRelease: (_, gs) => {
-        if (triggered.current) return;
-        const base = snapped.current ? -DELETE_BTN_W : 0;
-        const pos  = base + gs.dx;
-        if (pos < -AUTO_DELETE_W)   triggerDelete.current();
-        else if (pos < -SNAP_AT)    snapOpen.current();
-        else                        snapClose.current();
-      },
-      onPanResponderTerminate: () => {
-        if (!triggered.current) snapClose.current();
-      },
-    }),
-  ).current;
+  function handleTouchStart(e: any) {
+    const t = e.nativeEvent.touches?.[0] ?? e.nativeEvent;
+    startX.current  = t.pageX;
+    startY.current  = t.pageY;
+    dragging.current = false;
+    clearLP();
+    // Inicia timer para long press
+    lpTimer.current = setTimeout(() => {
+      if (!dragging.current) {
+        clearLP();
+        onLongPress?.();
+      }
+    }, 480);
+  }
+
+  function handleTouchMove(e: any) {
+    const t  = e.nativeEvent.touches?.[0] ?? e.nativeEvent;
+    const dx = t.pageX - startX.current;
+    const dy = t.pageY - startY.current;
+
+    if (!dragging.current) {
+      // Movimento muito pequeno — aguarda definição da direção
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      clearLP();
+      // Vertical → deixa o scroll agir, não trata como swipe
+      if (Math.abs(dy) > Math.abs(dx) * 1.2) return;
+      dragging.current = true;
+    }
+
+    if (triggered.current) return;
+    const base = snapped.current ? -DELETE_BTN_W : 0;
+    translateX.setValue(Math.min(0, base + dx));
+  }
+
+  function handleTouchEnd(e: any) {
+    clearLP();
+    if (!dragging.current || triggered.current) return;
+    const t   = e.nativeEvent.changedTouches?.[0] ?? e.nativeEvent;
+    const dx  = t.pageX - startX.current;
+    const pos = (snapped.current ? -DELETE_BTN_W : 0) + dx;
+    if (pos < -AUTO_DELETE_W)  doDelete();
+    else if (pos < -SNAP_AT)   snapOpen();
+    else                       snapClose();
+  }
+
+  function handleTouchCancel() {
+    clearLP();
+    dragging.current = false;
+    if (!triggered.current) snapClose();
+  }
 
   return (
-    <View>
+    <View
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
+    >
       {/* Fundo vermelho com lixeira — aparece à medida que o card desliza */}
       <View style={srStyles.back}>
         <TouchableOpacity
           style={srStyles.deleteBtn}
-          onPress={() => triggerDelete.current()}
+          onPress={doDelete}
           activeOpacity={0.85}
         >
           <Text style={srStyles.deleteIcon}>🗑</Text>
@@ -149,15 +193,10 @@ function SwipeableRow({
       </View>
 
       {/* Card deslizável */}
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={{ transform: [{ translateX }] }}
-      >
+      <Animated.View style={{ transform: [{ translateX }] }}>
         <TouchableOpacity
-          activeOpacity={1}
-          onLongPress={onLongPress}
-          delayLongPress={450}
-          onPress={() => { if (snapped.current) snapClose.current(); }}
+          activeOpacity={0.85}
+          onPress={() => { if (snapped.current) snapClose(); }}
         >
           {children}
         </TouchableOpacity>
