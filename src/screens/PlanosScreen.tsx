@@ -66,11 +66,23 @@ export default function PlanosScreen() {
   async function handleSelectPlan(planId: string) {
     if (checkingOut) return;
     setCheckingOut(planId);
+
+    // No web, abre a janela ANTES do await para evitar bloqueio de popup
+    let webWin: Window | null = null;
+    if (Platform.OS === 'web') {
+      webWin = window.open('', '_blank');
+    }
+
     try {
       const url = await authService.createCheckout(planId as 'mensal' | 'anual');
-      await Linking.openURL(url);
+      if (Platform.OS === 'web' && webWin) {
+        webWin.location.href = url;
+      } else {
+        await Linking.openURL(url);
+      }
       setAwaitingPayment(true);
     } catch {
+      webWin?.close();
       Alert.alert('Erro ao abrir checkout', 'Não foi possível iniciar o pagamento. Tente novamente.');
     } finally {
       setCheckingOut(null);
