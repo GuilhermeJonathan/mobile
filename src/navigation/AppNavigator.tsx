@@ -35,6 +35,7 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 import PlanosScreen from '../screens/PlanosScreen';
 import PaymentTransactionsScreen from '../screens/PaymentTransactionsScreen';
+import PagamentoSucessoScreen from '../screens/PagamentoSucessoScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
 import TrialExpiredModal from '../components/TrialExpiredModal';
@@ -464,6 +465,18 @@ export default function AppNavigator() {
       return;
     }
 
+    // Pagamento MP: redireciona para tela de sucesso se vier com collection_status=approved
+    const mpParams = new URLSearchParams(window.location.search);
+    const mpStatus = mpParams.get('collection_status') ?? mpParams.get('status');
+    if (mpStatus === 'approved') {
+      // Limpa os params da URL sem reload
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => {
+        navigationRef.current?.navigate('PagamentoSucesso' as never);
+      }, 50);
+      return;
+    }
+
     // Logado: garante que a URL /lancamentos, /receitas etc. abra a aba correta.
     // Corrige race condition onde o Tab inicia em Dashboard e ignora a URL.
     if (typeof window === 'undefined') return;
@@ -627,6 +640,11 @@ export default function AppNavigator() {
           options={{
             headerShown: false,
           }}
+        />
+        <Stack.Screen
+          name="PagamentoSucesso"
+          component={PagamentoSucessoScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
