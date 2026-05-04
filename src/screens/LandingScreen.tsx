@@ -122,12 +122,15 @@ function WhatsMockup({ C }: { C: typeof DARK }) {
           <Text style={{ color: '#25D366', fontSize: 11 }}>online</Text>
         </View>
       </View>
+      {/* texto */}
       <ChatBubble text="Almoço 45,50" mine C={C} />
       <ChatBubble text={'💸 *Almoço* registrado!\nR$ 45,50 · Alimentação · hoje'} C={C} />
-      <ChatBubble text="Recebi salário 5000" mine C={C} />
-      <ChatBubble text={'📈 *Salário* registrado!\nR$ 5.000,00 · Receita · hoje'} C={C} />
-      <ChatBubble text="Mercado ontem 230" mine C={C} />
-      <ChatBubble text={'💸 *Mercado* registrado!\nR$ 230,00 · Alimentação · ontem'} C={C} />
+      {/* áudio */}
+      <ChatBubble text="🎙️  0:06" mine C={C} />
+      <ChatBubble text={'💸 *Gasolina* registrado!\nR$ 180,00 · Transporte · hoje'} C={C} />
+      {/* imagem */}
+      <ChatBubble text="📷  cupom_mercado.jpg" mine C={C} />
+      <ChatBubble text={'✅ *3 lançamentos* registrados!\n• Arroz 12,90\n• Frango 38,00\n• Detergente 4,50'} C={C} />
     </MCard>
   );
 }
@@ -654,11 +657,11 @@ export default function LandingScreen({ navigation }: any) {
               textAlign: 'center', lineHeight: isWeb ? 28 : 24, maxWidth: 560, marginBottom: 36 }}>
               Registre gastos pelo{' '}
               <Text style={{ color: '#25D366', fontWeight: '700' }}>WhatsApp</Text>
-              {', '}categorize com{' '}
-              <Text style={{ color: C.text, fontWeight: '700' }}>Inteligência Artificial</Text>
-              {' '}e gerencie as finanças em{' '}
-              <Text style={{ color: C.text, fontWeight: '700' }}>família</Text>
-              {' — '}tudo em um só app.
+              {' '}por{' '}
+              <Text style={{ color: C.text, fontWeight: '700' }}>texto, áudio, foto ou planilha</Text>
+              {' — '}a{' '}
+              <Text style={{ color: C.text, fontWeight: '700' }}>IA categoriza</Text>
+              {' '}e você acompanha tudo em família.
             </Text>
 
             {showForm ? (
@@ -729,7 +732,12 @@ export default function LandingScreen({ navigation }: any) {
             <DiffCard C={C} icon={<WhatsAppIcon size={32} />}
               title="Registre pelo WhatsApp"
               desc="Sem abrir o app. Mande uma mensagem e o lançamento entra automático com categoria e data."
-              items={['Texto, áudio ou foto de cupom', 'Confirmação instantânea', 'Funciona 24h por dia']} />
+              items={[
+                '💬 Texto — "Almoço 45,50 ontem"',
+                '🎙️ Áudio — fale o gasto, a IA transcreve',
+                '🖼️ Imagem — foto de cupom, extrato ou fatura',
+                '📊 Excel — importe planilha direto no app',
+              ]} />
             <DiffCard C={C} icon={<Text style={{ fontSize: 32 }}>🤖</Text>}
               title="Categorização com IA"
               desc="Inteligência artificial que entende o contexto e categoriza nas suas próprias categorias."
@@ -766,7 +774,7 @@ export default function LandingScreen({ navigation }: any) {
               desc="Cadastro em menos de 1 minuto. Sem cartão de crédito para iniciar o período gratuito." />
             {!isMobile && <View style={{ width: 1, height: 80, backgroundColor: C.border, alignSelf: 'center' }} />}
             <Step num="2" title="Vincule seu WhatsApp" C={C}
-              desc="Adicione o número do bot e comece a registrar gastos por mensagem, foto ou áudio." />
+              desc="Mande texto, áudio, foto de cupom ou planilha Excel — a IA lê e registra tudo automaticamente." />
             {!isMobile && <View style={{ width: 1, height: 80, backgroundColor: C.border, alignSelf: 'center' }} />}
             <Step num="3" title="Acompanhe tudo" C={C}
               desc="Dashboard atualizado em tempo real com saldo, categorias, metas e saúde financeira." />

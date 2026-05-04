@@ -8,13 +8,14 @@ import { resetToLogin } from '../navigation/navigationRef';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }: any) {
   const { colors, isDark, toggleTheme } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // — Excluir conta —
   const [deleteModal, setDeleteModal] = useState(false);
@@ -37,6 +38,7 @@ export default function ProfileScreen() {
       setUser(info);
       setLoading(false);
     });
+    authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
   }, []);
 
   async function handleLogout() {
@@ -166,6 +168,23 @@ export default function ProfileScreen() {
           <Text style={[styles.rowValue, { color: colors.green, flex: 0 }]}>›</Text>
         </View>
       </TouchableOpacity>
+
+      {/* Admin section */}
+      {isAdmin && (
+        <>
+          <Text style={styles.sectionLabel}>ADMIN</Text>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('PaymentTransactions')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>💳 Relatório de transações</Text>
+              <Text style={[styles.rowValue, { color: colors.green, flex: 0 }]}>›</Text>
+            </View>
+          </TouchableOpacity>
+        </>
+      )}
 
       {/* Logout */}
       <TouchableOpacity style={styles.btnLogout} onPress={handleLogout} disabled={loggingOut}>
@@ -329,6 +348,11 @@ function makeStyles(c: ColorScheme) {
     expiryHint: { fontSize: 12, color: c.orange, marginTop: 2 },
     themeHint: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
     divider: { height: 1, backgroundColor: c.border },
+    sectionLabel: {
+      color: c.textTertiary, fontSize: 10, fontWeight: '700',
+      letterSpacing: 1, marginBottom: 8, marginTop: 4,
+      textTransform: 'uppercase',
+    },
     btnLogout: {
       backgroundColor: c.red, borderRadius: 12, padding: 16,
       alignItems: 'center', marginTop: 8,

@@ -131,8 +131,8 @@ export default function WhatsAppVincularScreen({ navigation }: any) {
           </View>
           <Text style={s.heroTitle}>Registre pelo WhatsApp</Text>
           <Text style={s.heroSub}>
-            Envie uma mensagem para o número abaixo e registre lançamentos
-            sem abrir o app.
+            Mande uma mensagem, áudio, foto ou planilha — e o lançamento
+            entra automático, com categoria e data.
           </Text>
         </View>
 
@@ -210,7 +210,12 @@ export default function WhatsAppVincularScreen({ navigation }: any) {
 
         {/* ── Como usar ─────────────────────────────────────────────────── */}
         <View style={s.howCard}>
-          <Text style={s.howTitle}>Como usar</Text>
+
+          {/* 💬 Texto */}
+          <View style={s.methodRow}>
+            <View style={s.methodBadge}><Text style={s.methodBadgeIcon}>💬</Text></View>
+            <Text style={s.methodBadgeTitle}>Texto</Text>
+          </View>
           {[
             { ex: 'Gasolina hoje 300 reais',    desc: 'Registra débito de R$ 300' },
             { ex: 'Almoço 45,50',               desc: 'Débito com data de hoje' },
@@ -218,16 +223,64 @@ export default function WhatsAppVincularScreen({ navigation }: any) {
             { ex: 'Mercado ontem 230',           desc: 'Débito registrado ontem' },
           ].map(({ ex, desc }) => (
             <View key={ex} style={s.exRow}>
-              <View style={s.exBubble}>
-                <Text style={s.exText}>{ex}</Text>
-              </View>
+              <View style={s.exBubble}><Text style={s.exText}>{ex}</Text></View>
               <Text style={s.exDesc}>{desc}</Text>
             </View>
           ))}
+
+          <View style={s.howDivider} />
+
+          {/* 🎙️ Áudio */}
+          <View style={s.methodRow}>
+            <View style={[s.methodBadge, s.methodBadgeAudio]}><Text style={s.methodBadgeIcon}>🎙️</Text></View>
+            <Text style={s.methodBadgeTitle}>Áudio</Text>
+          </View>
+          <View style={s.exRow}>
+            <View style={[s.exBubble, s.exBubbleAudio]}>
+              <Text style={s.exTextAudio}>🎵  0:04</Text>
+            </View>
+            <Text style={s.exDesc}>Fale o gasto — o app transcreve e registra automaticamente</Text>
+          </View>
+
+          <View style={s.howDivider} />
+
+          {/* 🖼️ Imagem */}
+          <View style={s.methodRow}>
+            <View style={[s.methodBadge, s.methodBadgeImg]}><Text style={s.methodBadgeIcon}>🖼️</Text></View>
+            <Text style={s.methodBadgeTitle}>Imagem</Text>
+          </View>
+          <View style={s.exRow}>
+            <View style={[s.exBubble, s.exBubbleImg]}>
+              <Text style={s.exText}>📷  cupom.jpg</Text>
+            </View>
+            <Text style={s.exDesc}>Foto de cupom, extrato ou fatura — o app lê todos os itens</Text>
+          </View>
           <View style={s.tipRow}>
             <Text style={s.tipIcon}>💡</Text>
             <Text style={s.tipText}>
-              Envie <Text style={s.bold}>ajuda</Text> para ver todos os exemplos.
+              Adicione a legenda <Text style={s.bold}>fatura maio</Text> para registrar tudo no mês certo.
+            </Text>
+          </View>
+
+          <View style={s.howDivider} />
+
+          {/* 📊 Excel */}
+          <View style={s.methodRow}>
+            <View style={[s.methodBadge, s.methodBadgeExcel]}><Text style={s.methodBadgeIcon}>📊</Text></View>
+            <Text style={s.methodBadgeTitle}>Excel</Text>
+          </View>
+          <View style={s.tipRow}>
+            <Text style={s.tipIcon}>📁</Text>
+            <Text style={s.tipText}>
+              Importe planilhas <Text style={s.bold}>.xlsx</Text> pelo app, em <Text style={s.bold}>Lançamentos → Importar</Text>.
+            </Text>
+          </View>
+
+          <View style={s.howDivider} />
+          <View style={s.tipRow}>
+            <Text style={s.tipIcon}>💡</Text>
+            <Text style={s.tipText}>
+              Envie <Text style={s.bold}>ajuda</Text> para ver todos os exemplos de texto.
             </Text>
           </View>
         </View>
@@ -297,18 +350,32 @@ function makeStyles(c: ColorScheme) {
       backgroundColor: c.surface, borderRadius: 14, padding: 16,
       borderWidth: 1, borderColor: c.border, gap: 10,
     },
-    howTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 2 },
-    exRow:    { gap: 4 },
+    howDivider:{ height: 1, backgroundColor: c.border, marginVertical: 4 },
+
+    // Cabeçalho de método inline
+    methodRow:        { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+    methodBadge:      { width: 34, height: 34, borderRadius: 10, backgroundColor: '#25D36620',
+                        borderWidth: 1, borderColor: '#25D36640',
+                        alignItems: 'center', justifyContent: 'center' },
+    methodBadgeAudio: { backgroundColor: '#7c3aed18', borderColor: '#7c3aed40' },
+    methodBadgeImg:   { backgroundColor: '#0284c718', borderColor: '#0284c740' },
+    methodBadgeExcel: { backgroundColor: '#16a34a18', borderColor: '#16a34a40' },
+    methodBadgeIcon:  { fontSize: 18 },
+    methodBadgeTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+    exRow:     { gap: 4 },
     exBubble: {
       alignSelf: 'flex-start',
       backgroundColor: '#25D36618', borderRadius: 12, borderTopLeftRadius: 2,
       paddingHorizontal: 12, paddingVertical: 7,
     },
-    exText:  { color: '#25D366', fontSize: 14, fontWeight: '600' },
-    exDesc:  { fontSize: 12, color: c.textSecondary, marginLeft: 4 },
-    tipRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+    exBubbleAudio: { backgroundColor: c.surfaceElevated },
+    exBubbleImg:   { backgroundColor: c.surfaceElevated },
+    exText:      { color: '#25D366', fontSize: 14, fontWeight: '600' },
+    exTextAudio: { color: c.textSecondary, fontSize: 14, fontWeight: '600' },
+    exDesc:      { fontSize: 12, color: c.textSecondary, marginLeft: 4 },
+    tipRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 4 },
     tipIcon: { fontSize: 14 },
-    tipText: { fontSize: 13, color: c.textSecondary, flex: 1 },
+    tipText: { fontSize: 13, color: c.textSecondary, flex: 1, lineHeight: 18 },
     bold:    { fontWeight: '700', color: c.text },
 
     // Vinculado

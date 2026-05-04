@@ -34,6 +34,7 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 import PlanosScreen from '../screens/PlanosScreen';
+import PaymentTransactionsScreen from '../screens/PaymentTransactionsScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
 import TrialExpiredModal from '../components/TrialExpiredModal';
@@ -174,11 +175,15 @@ function MainTabs() {
   }, [drawerOpen]);
 
   // ── Sidebar navigation handler ──────────────────────────────────────────
-  // No desktop todos os itens abrem DENTRO do Tab (área de conteúdo à direita).
-  // isRootStack é ignorado aqui — usado apenas quando navegando no mobile.
-  function handleDesktopNavigate(routeName: string, _isRootStack?: boolean) {
+  // No desktop a maioria dos itens abre dentro do Tab (área de conteúdo à direita).
+  // Itens com isRootStack=true ficam no Stack raiz e precisam ser navegados diretamente.
+  function handleDesktopNavigate(routeName: string, isRootStack?: boolean) {
     setActiveRoute(routeName);
-    navigationRef.current?.navigate('Main' as never, { screen: routeName } as never);
+    if (isRootStack) {
+      navigationRef.current?.navigate(routeName as never);
+    } else {
+      navigationRef.current?.navigate('Main' as never, { screen: routeName } as never);
+    }
   }
 
   // ── Shared tab navigator ─────────────────────────────────────────────────
@@ -330,6 +335,11 @@ function MainTabs() {
         name="Invites"
         component={InvitesScreen}
         options={{ title: 'Convites', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="PaymentTransactions"
+        component={PaymentTransactionsScreen}
+        options={{ title: 'Transações', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
       />
     </Tab.Navigator>
   );
@@ -609,6 +619,13 @@ export default function AppNavigator() {
             title: 'Planos',
             headerStyle: { backgroundColor: darkColors.surface },
             headerTintColor: darkColors.text,
+          }}
+        />
+        <Stack.Screen
+          name="PaymentTransactions"
+          component={PaymentTransactionsScreen}
+          options={{
+            headerShown: false,
           }}
         />
       </Stack.Navigator>

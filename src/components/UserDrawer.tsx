@@ -447,6 +447,13 @@ export default function UserDrawer({ visible, onClose }: Props) {
                 <Text style={s.rowIcon}>🎟️</Text>
                 <Text style={s.rowLabel}>Convites</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={s.row}
+                onPress={() => { onClose(); navigationRef.current?.navigate('PaymentTransactions' as never); }}
+              >
+                <Text style={s.rowIcon}>💳</Text>
+                <Text style={s.rowLabel}>Transações</Text>
+              </TouchableOpacity>
             </>
           )}
 

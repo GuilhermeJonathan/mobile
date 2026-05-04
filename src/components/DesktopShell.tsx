@@ -49,8 +49,9 @@ const EXTRA_ITEMS: NavItem[] = [
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 const ADMIN_ITEMS: NavItem[] = [
-  { routeName: 'AdminUsers', label: 'Usuários', icon: '👥' },
-  { routeName: 'Invites',    label: 'Convites',  icon: '🎟️' },
+  { routeName: 'AdminUsers',           label: 'Usuários',    icon: '👥' },
+  { routeName: 'Invites',              label: 'Convites',    icon: '🎟️' },
+  { routeName: 'PaymentTransactions',  label: 'Transações',  icon: '💳' },
 ];
 
 export interface DesktopShellProps {

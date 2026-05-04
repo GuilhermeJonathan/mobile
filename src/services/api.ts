@@ -394,3 +394,27 @@ export const inviteService = {
   list: () =>
     loginApi.get<InviteDto[]>('/invite').then(r => r.data),
 };
+
+// ─── Payment transactions ─────────────────────────────────────────────────────
+
+export interface PaymentTransactionDto {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  planType: string;        // "Monthly" | "Annual"
+  amount: number;
+  status: string;          // "authorized" | "cancelled"
+  mpPaymentId: string | null;
+  paidAt: string;          // ISO date
+}
+
+export interface PaymentTransactionsResult {
+  items: PaymentTransactionDto[];
+  total: number;
+}
+
+export const paymentService = {
+  getTransactions: (page = 1, pageSize = 50): Promise<PaymentTransactionsResult> =>
+    loginApi.get(`/payment/transactions?page=${page}&pageSize=${pageSize}`).then(r => r.data),
+};
