@@ -119,7 +119,10 @@ export default function LancamentosScreen({ navigation, route }: any) {
     } catch {}
   }, [mes, ano]);
 
-  useFocusEffect(useCallback(() => { loadPrevMonth(); }, [loadPrevMonth]));
+  useFocusEffect(useCallback(() => {
+    loadPrevMonth();
+    refetchLancamentos();
+  }, [loadPrevMonth, refetchLancamentos]));
 
   // Aplica filtro + mês vindo de navegação externa (ex: central de alertas / dashboard)
   useEffect(() => {
