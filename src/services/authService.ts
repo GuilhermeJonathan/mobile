@@ -174,7 +174,24 @@ export const authService = {
       const { data } = await loginApi.get('/user/me');
       await AsyncStorage.setItem(PHONE_KEY, data.cellphone ?? '');
       await AsyncStorage.setItem(DOCUMENT_KEY, data.document ?? '');
+      if (data.planInfo) {
+        await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo));
+      }
     } catch { /* silencioso */ }
+  },
+
+  /** Busca o planInfo atualizado da API e atualiza o cache local. Retorna o planInfo. */
+  async fetchPlanInfo(): Promise<PlanInfo | null> {
+    try {
+      const { data } = await loginApi.get<{ planInfo: PlanInfo }>('/user/me');
+      if (data.planInfo) {
+        await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo));
+        return data.planInfo;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   },
 
   /** Atualiza o avatar no backend e na cache local. */
@@ -225,5 +242,11 @@ export const authService = {
 
   async acceptTerms(): Promise<void> {
     await loginApi.post('/term/termos-de-uso/accept');
+  },
+
+  /** Cria uma assinatura no Mercado Pago e retorna a URL de checkout. */
+  async createCheckout(planId: 'mensal' | 'anual'): Promise<string> {
+    const { data } = await loginApi.post<{ checkoutUrl: string }>('/payment/checkout', { planId });
+    return data.checkoutUrl;
   },
 };
