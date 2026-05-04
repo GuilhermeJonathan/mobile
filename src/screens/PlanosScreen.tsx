@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, Modal, TextInput,
   StyleSheet, ActivityIndicator, Platform, Linking, Alert,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { darkColors } from '../theme/colors';
@@ -45,11 +46,14 @@ const PLANS = [
 ];
 
 export default function PlanosScreen() {
-  const [planInfo, setPlanInfo]         = useState<PlanInfo | null>(null);
-  const [loading, setLoading]           = useState(true);
-  const [checkingOut, setCheckingOut]   = useState<string | null>(null);
-  const [awaitingPayment, setAwaitingPayment] = useState(false); // mostra botão "Já paguei"
-  const [verifying, setVerifying]       = useState(false);
+  const [planInfo, setPlanInfo]               = useState<PlanInfo | null>(null);
+  const [loading, setLoading]                 = useState(true);
+  const [checkingOut, setCheckingOut]         = useState<string | null>(null);
+  const [awaitingPayment, setAwaitingPayment] = useState(false);
+  const [verifying, setVerifying]             = useState(false);
+  const [mpEmailModal, setMpEmailModal]       = useState(false);
+  const [mpEmail, setMpEmail]                 = useState('');
+  const [pendingPlanId, setPendingPlanId]     = useState<string | null>(null);
 
   async function loadPlanInfo() {
     // Sempre busca da API para garantir dados atualizados após pagamento
@@ -63,20 +67,31 @@ export default function PlanosScreen() {
     loadPlanInfo();
   }, []));
 
-  async function handleSelectPlan(planId: string) {
+  function handleSelectPlan(planId: string) {
     if (checkingOut) return;
-    setCheckingOut(planId);
+    setPendingPlanId(planId);
+    setMpEmail('');
+    setMpEmailModal(true);
+  }
+
+  async function confirmCheckout() {
+    if (!pendingPlanId) return;
+    const email = mpEmail.trim();
+    if (!email || !email.includes('@')) {
+      Alert.alert('E-mail inválido', 'Digite um e-mail válido da sua conta Mercado Pago.');
+      return;
+    }
+    setMpEmailModal(false);
+    setCheckingOut(pendingPlanId);
     try {
-      const url = await authService.createCheckout(planId as 'mensal' | 'anual');
+      const url = await authService.createCheckout(pendingPlanId as 'mensal' | 'anual', email);
       await Linking.openURL(url);
-      setAwaitingPayment(true); // mostra botão "Já paguei" após abrir o checkout
+      setAwaitingPayment(true);
     } catch {
-      Alert.alert(
-        'Erro ao abrir checkout',
-        'Não foi possível iniciar o pagamento. Tente novamente.',
-      );
+      Alert.alert('Erro ao abrir checkout', 'Não foi possível iniciar o pagamento. Tente novamente.');
     } finally {
       setCheckingOut(null);
+      setPendingPlanId(null);
     }
   }
 
@@ -109,9 +124,42 @@ export default function PlanosScreen() {
         ? 'Anual' : 'Mensal')
     : '—';
 
+  // ── Modal de e-mail MP ───────────────────────────────────────────────────
+  const mpEmailModalEl = (
+    <Modal visible={mpEmailModal} transparent animationType="fade" onRequestClose={() => setMpEmailModal(false)}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalTitle}>E-mail do Mercado Pago</Text>
+          <Text style={styles.modalSub}>
+            Digite o e-mail da sua conta no Mercado Pago para finalizar a assinatura.
+          </Text>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="seu@email.com"
+            placeholderTextColor={C.textTertiary}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={mpEmail}
+            onChangeText={setMpEmail}
+            onSubmitEditing={confirmCheckout}
+          />
+          <TouchableOpacity style={styles.modalBtn} onPress={confirmCheckout} activeOpacity={0.85}>
+            <Text style={styles.modalBtnText}>Continuar para pagamento →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setMpEmailModal(false)} style={{ marginTop: 12, alignItems: 'center' }}>
+            <Text style={{ color: C.textSecondary, fontSize: 13 }}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+
   // ── Tela de plano ativo ──────────────────────────────────────────────────
   if (isActive) {
     return (
+      <>
+      {mpEmailModalEl}
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -171,11 +219,14 @@ export default function PlanosScreen() {
           ))}
         </View>
       </ScrollView>
+      </>
     );
   }
 
   // ── Tela de seleção de plano (sem plano pago) ────────────────────────────
   return (
+    <>
+    {mpEmailModalEl}
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
@@ -285,6 +336,7 @@ export default function PlanosScreen() {
         </View>
       </View>
     </ScrollView>
+    </>
   );
 }
 
@@ -575,5 +627,56 @@ const styles = StyleSheet.create({
   },
   changePlanPriceHL: {
     color: C.green,
+  },
+  // Modal e-mail MP
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalBox: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: C.card,
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: 8,
+  },
+  modalSub: {
+    fontSize: 13,
+    color: C.textSecondary,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  modalInput: {
+    backgroundColor: C.background,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: C.text,
+    marginBottom: 14,
+  },
+  modalBtn: {
+    backgroundColor: C.green,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

@@ -491,7 +491,13 @@ export default function LandingScreen({ navigation }: any) {
 
   function openForm() {
     setShowForm(true);
-    setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 80);
+    setTimeout(() => {
+      if (Platform.OS === 'web') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+      }
+    }, 80);
   }
 
   // ── Handler das ações pós-cadastro ──
