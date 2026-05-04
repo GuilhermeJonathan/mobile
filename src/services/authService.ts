@@ -245,8 +245,8 @@ export const authService = {
   },
 
   /** Cria uma assinatura no Mercado Pago e retorna a URL de checkout. */
-  async createCheckout(planId: 'mensal' | 'anual', payerEmail?: string): Promise<string> {
-    const { data } = await loginApi.post<{ checkoutUrl: string }>('/payment/checkout', { planId, payerEmail });
+  async createCheckout(planId: 'mensal' | 'anual'): Promise<string> {
+    const { data } = await loginApi.post<{ checkoutUrl: string }>('/payment/checkout', { planId });
     return data.checkoutUrl;
   },
 };
