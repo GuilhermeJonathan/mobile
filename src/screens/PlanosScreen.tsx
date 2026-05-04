@@ -67,22 +67,17 @@ export default function PlanosScreen() {
     if (checkingOut) return;
     setCheckingOut(planId);
 
-    // No web, abre a janela ANTES do await para evitar bloqueio de popup
-    let webWin: Window | null = null;
-    if (Platform.OS === 'web') {
-      webWin = window.open('', '_blank');
-    }
-
     try {
       const url = await authService.createCheckout(planId as 'mensal' | 'anual');
-      if (Platform.OS === 'web' && webWin) {
-        webWin.location.href = url;
+      if (Platform.OS === 'web') {
+        // Redireciona na mesma aba — nunca bloqueado por popup blocker
+        // MP devolve para back_url (app.findog.com.br) após o pagamento
+        window.location.href = url;
       } else {
         await Linking.openURL(url);
       }
       setAwaitingPayment(true);
     } catch {
-      webWin?.close();
       Alert.alert('Erro ao abrir checkout', 'Não foi possível iniciar o pagamento. Tente novamente.');
     } finally {
       setCheckingOut(null);
