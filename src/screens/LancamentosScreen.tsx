@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, ScrollView, TextInput, Platform,
-  Animated, PanResponder, Dimensions,
+  Animated, PanResponder, Dimensions, LayoutAnimation,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, saldosService } from '../services/api';
@@ -69,34 +69,48 @@ type ListItem =
 type Filtro = 'todos' | 'receitas' | 'despesas';
 type FiltroSit = 'todos' | 'pendente' | 'vencido' | 'confirmado';
 
-// ── SwipeableRow — arrastar para esquerda exclui com animação ────────────────
-const SWIPE_THRESHOLD = 90; // px arrastado para disparar
+// ── SwipeableRow — estilo iOS Mail ───────────────────────────────────────────
+const DELETE_BTN_W  = 80;
+const SNAP_AT       = 40;   // px para travar mostrando o botão
+const AUTO_DELETE_W = Dimensions.get('window').width / 2; // arrastar até metade apaga
 
 function SwipeableRow({
   children,
   onDelete,
+  onLongPress,
 }: {
   children: React.ReactNode;
   onDelete: () => void;
+  onLongPress?: () => void;
 }) {
-  const translateX = useRef(new Animated.Value(0)).current;
-  const triggered  = useRef(false);
+  const translateX  = useRef(new Animated.Value(0)).current;
+  const snapped     = useRef(false);
+  const triggered   = useRef(false);
+  const onDeleteRef = useRef(onDelete);
+  onDeleteRef.current = onDelete;
 
-  const triggerDelete = useCallback(() => {
+  const snapOpen = useRef(() => {
+    Animated.spring(translateX, { toValue: -DELETE_BTN_W, useNativeDriver: true, friction: 8 }).start();
+    snapped.current = true;
+  });
+
+  const snapClose = useRef(() => {
+    Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
+    snapped.current = false;
+  });
+
+  const triggerDelete = useRef(() => {
     if (triggered.current) return;
     triggered.current = true;
     Animated.timing(translateX, {
       toValue: -(Dimensions.get('window').width + 60),
       duration: 220,
       useNativeDriver: true,
-    }).start(() => onDelete());
-  }, [translateX, onDelete]);
-
-  const reset = useCallback(() => {
-    Animated.spring(translateX, {
-      toValue: 0, useNativeDriver: true, friction: 8, tension: 80,
-    }).start();
-  }, [translateX]);
+    }).start(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      onDeleteRef.current();
+    });
+  });
 
   const panResponder = useRef(
     PanResponder.create({
@@ -104,31 +118,71 @@ function SwipeableRow({
         Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
       onPanResponderMove: (_, gs) => {
         if (triggered.current) return;
-        translateX.setValue(Math.min(0, gs.dx));
+        const base = snapped.current ? -DELETE_BTN_W : 0;
+        translateX.setValue(Math.min(0, base + gs.dx));
       },
       onPanResponderRelease: (_, gs) => {
         if (triggered.current) return;
-        if (gs.dx < -SWIPE_THRESHOLD || gs.vx < -0.8) {
-          triggerDelete();
-        } else {
-          reset();
-        }
+        const base = snapped.current ? -DELETE_BTN_W : 0;
+        const pos  = base + gs.dx;
+        if (pos < -AUTO_DELETE_W)   triggerDelete.current();
+        else if (pos < -SNAP_AT)    snapOpen.current();
+        else                        snapClose.current();
       },
       onPanResponderTerminate: () => {
-        if (!triggered.current) reset();
+        if (!triggered.current) snapClose.current();
       },
     }),
   ).current;
 
   return (
-    <Animated.View
-      {...panResponder.panHandlers}
-      style={{ transform: [{ translateX }] }}
-    >
-      {children}
-    </Animated.View>
+    <View>
+      {/* Fundo vermelho com lixeira — aparece à medida que o card desliza */}
+      <View style={srStyles.back}>
+        <TouchableOpacity
+          style={srStyles.deleteBtn}
+          onPress={() => triggerDelete.current()}
+          activeOpacity={0.85}
+        >
+          <Text style={srStyles.deleteIcon}>🗑</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Card deslizável */}
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={{ transform: [{ translateX }] }}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onLongPress={onLongPress}
+          delayLongPress={450}
+          onPress={() => { if (snapped.current) snapClose.current(); }}
+        >
+          {children}
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
   );
 }
+
+const srStyles = StyleSheet.create({
+  back: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'stretch',
+  },
+  deleteBtn: {
+    width: DELETE_BTN_W,
+    backgroundColor: '#e53935',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginTop: 8, marginBottom: 0, marginRight: 12,
+  },
+  deleteIcon: { fontSize: 22 },
+});
 
 export default function LancamentosScreen({ navigation, route }: any) {
   const { colors } = useTheme();
@@ -148,6 +202,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [prevCredito, setPrevCredito] = useState<number | null>(null);
   const [prevDebito,  setPrevDebito]  = useState<number | null>(null);
+  const [contextItem, setContextItem] = useState<Lancamento | null>(null);
 
   // Modal de seleção de conta (lançamentos normais)
   const [contas, setContas] = useState<SaldoConta[]>([]);
@@ -552,6 +607,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
         <SwipeableRow
           key={item.id}
           onDelete={() => handleDelete(item)}
+          onLongPress={() => setContextItem(item)}
         >
           {rowContent}
         </SwipeableRow>
@@ -991,6 +1047,58 @@ export default function LancamentosScreen({ navigation, route }: any) {
         </View>
       </Modal>
 
+      {/* ── Menu de contexto (long press) ── */}
+      <Modal
+        visible={!!contextItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setContextItem(null)}
+      >
+        <TouchableOpacity
+          style={styles.ctxOverlay}
+          activeOpacity={1}
+          onPress={() => setContextItem(null)}
+        >
+          <View style={styles.ctxSheet}>
+            {contextItem && (
+              <Text style={styles.ctxTitle} numberOfLines={1}>
+                {contextItem.descricao}
+              </Text>
+            )}
+            <TouchableOpacity
+              style={styles.ctxOption}
+              onPress={() => {
+                const item = contextItem!;
+                setContextItem(null);
+                navStorePut('editLancamento', item);
+                navigation.navigate('EditLancamento', { lancamentoId: item.id });
+              }}
+            >
+              <Text style={styles.ctxOptionIcon}>✏️</Text>
+              <Text style={styles.ctxOptionText}>Editar</Text>
+            </TouchableOpacity>
+            <View style={styles.ctxDivider} />
+            <TouchableOpacity
+              style={styles.ctxOption}
+              onPress={() => {
+                const item = contextItem!;
+                setContextItem(null);
+                handleDelete(item);
+              }}
+            >
+              <Text style={styles.ctxOptionIcon}>🗑</Text>
+              <Text style={[styles.ctxOptionText, { color: '#e53935' }]}>Excluir</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.ctxOption, styles.ctxCancel]}
+              onPress={() => setContextItem(null)}
+            >
+              <Text style={[styles.ctxOptionText, styles.ctxCancelText]}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {/* ── Modal de pagamento de fatura ── */}
       <Modal
         visible={!!faturaModal}
@@ -1269,5 +1377,34 @@ function makeStyles(c: ColorScheme) {
       backgroundColor: c.redDim, alignItems: 'center',
     },
     contaCancelarBtnText: { fontSize: 14, color: c.red, fontWeight: '600' },
+
+    // ── Menu de contexto (long press) ────────────────────────────────────────
+    ctxOverlay: {
+      flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'flex-end',
+    },
+    ctxSheet: {
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 20, borderTopRightRadius: 20,
+      paddingTop: 8, paddingBottom: 36,
+      borderTopWidth: 1, borderTopColor: c.border,
+    },
+    ctxTitle: {
+      fontSize: 13, color: c.textTertiary, fontWeight: '500',
+      textAlign: 'center', paddingHorizontal: 20, paddingVertical: 12,
+      borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    ctxOption: {
+      flexDirection: 'row', alignItems: 'center', gap: 14,
+      paddingHorizontal: 24, paddingVertical: 16,
+    },
+    ctxOptionIcon: { fontSize: 20, width: 28, textAlign: 'center' },
+    ctxOptionText: { fontSize: 16, fontWeight: '500', color: c.text },
+    ctxDivider: { height: 1, backgroundColor: c.border, marginHorizontal: 24 },
+    ctxCancel: {
+      marginTop: 8, marginHorizontal: 12, borderRadius: 12,
+      backgroundColor: c.surfaceElevated, justifyContent: 'center',
+    },
+    ctxCancelText: { color: c.textSecondary, fontWeight: '600', textAlign: 'center' },
   });
 }
