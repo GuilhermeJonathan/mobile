@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
   ActivityIndicator, Modal, Platform, RefreshControl, Image, TextInput, ScrollView,
@@ -8,6 +8,7 @@ import { adminService, UserListItem, WhatsAppAdminVinculo } from '../services/ap
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 import WhatsAppIcon from '../components/WhatsAppIcon';
+import { PAGE_SIZE } from '../utils/constants';
 
 const USER_TYPE_LABEL: Record<number, string> = {
   1: 'Admin',
@@ -71,9 +72,14 @@ export default function AdminUsersScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
   const [q, setQ]                       = useState('');
   const [planFilter, setPlanFilter]     = useState<number | null>(null);
   const [wppFilter, setWppFilter]       = useState<boolean | null>(null);
+
+  // Toda vez que os filtros mudarem, volta ao início
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [q, planFilter, wppFilter]);
 
   const [selected,    setSelected]    = useState<UserListItem | null>(null);
   const [blocking,    setBlocking]    = useState(false);
@@ -282,10 +288,21 @@ export default function AdminUsersScreen({ navigation }: any) {
       )}
 
       <FlatList
-        data={filtered}
+        data={filtered.slice(0, visibleCount)}
         keyExtractor={u => u.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.green} />}
         contentContainerStyle={styles.list}
+        onEndReached={() => {
+          if (visibleCount < filtered.length) {
+            setVisibleCount(v => Math.min(v + PAGE_SIZE, filtered.length));
+          }
+        }}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={
+          visibleCount < filtered.length ? (
+            <ActivityIndicator size="small" color={colors.green} style={{ marginVertical: 16 }} />
+          ) : null
+        }
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} onPress={() => openPlanEditor(item)} activeOpacity={0.75}>
             {/* Avatar */}

@@ -8,6 +8,7 @@ import { paymentService, PaymentTransactionDto } from '../services/api';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 import { fmtBRL } from '../utils/currency';
+import { PAGE_SIZE } from '../utils/constants';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -135,26 +136,60 @@ function rowStyles(c: ColorScheme) {
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
+
 export default function PaymentTransactionsScreen({ navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const [items, setItems]         = useState<PaymentTransactionDto[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const [items, setItems]           = useState<PaymentTransactionDto[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError]         = useState('');
+  const [error, setError]           = useState('');
+  const [page, setPage]             = useState(1);
+  const [hasMore, setHasMore]       = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [total, setTotal]           = useState(0);
 
   async function load(isRefresh = false) {
-    if (isRefresh) setRefreshing(true); else setLoading(true);
+    if (isRefresh) {
+      setRefreshing(true);
+      setPage(1);
+      setHasMore(true);
+    } else {
+      setLoading(true);
+    }
     setError('');
     try {
-      const result = await paymentService.getTransactions();
+      const result = await paymentService.getTransactions(1, PAGE_SIZE);
       setItems(result.items ?? []);
+      setTotal(result.total);
+      setHasMore((result.items?.length ?? 0) < result.total);
+      setPage(2);
     } catch {
       setError('Não foi possível carregar as transações.');
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  }
+
+  async function loadMore() {
+    if (!hasMore || loadingMore || refreshing) return;
+    setLoadingMore(true);
+    try {
+      const result = await paymentService.getTransactions(page, PAGE_SIZE);
+      const newItems = result.items ?? [];
+      setItems(prev => {
+        const combined = [...prev, ...newItems];
+        setHasMore(combined.length < result.total);
+        return combined;
+      });
+      setPage(p => p + 1);
+      setTotal(result.total);
+    } catch {
+      // silently ignore — user can scroll again
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -166,8 +201,8 @@ export default function PaymentTransactionsScreen({ navigation }: any) {
   const monthlyCount = authorized.filter(i => i.planType === 'Monthly').length;
   const annualCount  = authorized.filter(i => i.planType === 'Annual').length;
 
-  // ── Loading state ──────────────────────────────────────────────────────────
-  if (loading) {
+  // ── Loading state (only while list is empty) ───────────────────────────────
+  if (loading && items.length === 0) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={colors.green} />
@@ -200,13 +235,20 @@ export default function PaymentTransactionsScreen({ navigation }: any) {
           <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.green} />
         }
         contentContainerStyle={styles.list}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator size="small" color={colors.green} style={{ marginVertical: 16 }} />
+          ) : null
+        }
         ListHeaderComponent={
           <>
             {/* Summary cards */}
             <View style={styles.summaryRow}>
               <SummaryCard
                 label="Total de transações"
-                value={String(items.length)}
+                value={String(total)}
                 colors={colors}
               />
               <SummaryCard
@@ -232,7 +274,7 @@ export default function PaymentTransactionsScreen({ navigation }: any) {
             </View>
 
             <Text style={styles.listHeader}>
-              Histórico ({items.length})
+              Histórico ({total})
             </Text>
           </>
         }
