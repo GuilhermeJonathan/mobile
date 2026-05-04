@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Modal, ScrollView, TextInput, Platform,
+  Animated, PanResponder,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, saldosService } from '../services/api';
@@ -68,6 +69,94 @@ type ListItem =
 type Filtro = 'todos' | 'receitas' | 'despesas';
 type FiltroSit = 'todos' | 'pendente' | 'vencido' | 'confirmado';
 
+// ── SwipeableRow — swipe esquerda + long press ───────────────────────────────
+const SWIPE_THRESHOLD = 50;
+const DELETE_WIDTH    = 80;
+
+function SwipeableRow({
+  children,
+  onDelete,
+  onLongPress,
+}: {
+  children: React.ReactNode;
+  onDelete: () => void;
+  onLongPress: () => void;
+}) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const swiped     = useRef(false);
+
+  const close = useCallback(() => {
+    Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
+    swiped.current = false;
+  }, [translateX]);
+
+  const open = useCallback(() => {
+    Animated.spring(translateX, { toValue: -DELETE_WIDTH, useNativeDriver: true, friction: 8 }).start();
+    swiped.current = true;
+  }, [translateX]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
+      onPanResponderMove: (_, gs) => {
+        const base = swiped.current ? -DELETE_WIDTH : 0;
+        const next = Math.min(0, Math.max(base + gs.dx, -DELETE_WIDTH));
+        translateX.setValue(next);
+      },
+      onPanResponderRelease: (_, gs) => {
+        const base = swiped.current ? -DELETE_WIDTH : 0;
+        const next = base + gs.dx;
+        if (next < -SWIPE_THRESHOLD) open(); else close();
+      },
+      onPanResponderTerminate: () => close(),
+    }),
+  ).current;
+
+  return (
+    <View style={{ overflow: 'hidden' }}>
+      {/* Botão excluir atrás */}
+      <View style={srStyles.deleteBack}>
+        <TouchableOpacity style={srStyles.deleteBtn} onPress={onDelete} activeOpacity={0.8}>
+          <Text style={srStyles.deleteIcon}>🗑️</Text>
+          <Text style={srStyles.deleteLabel}>Excluir</Text>
+        </TouchableOpacity>
+      </View>
+      {/* Conteúdo deslizável */}
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={{ transform: [{ translateX }] }}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onLongPress={onLongPress}
+          delayLongPress={450}
+          onPress={() => { if (swiped.current) { close(); } }}
+        >
+          {children}
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+}
+
+const srStyles = StyleSheet.create({
+  deleteBack: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  deleteBtn: {
+    width: DELETE_WIDTH,
+    backgroundColor: '#e53935',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+  },
+  deleteIcon:  { fontSize: 20 },
+  deleteLabel: { color: '#fff', fontSize: 11, fontWeight: '700' },
+});
+
 export default function LancamentosScreen({ navigation, route }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -86,6 +175,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [prevCredito, setPrevCredito] = useState<number | null>(null);
   const [prevDebito,  setPrevDebito]  = useState<number | null>(null);
+  const [contextItem, setContextItem] = useState<Lancamento | null>(null);
 
   // Modal de seleção de conta (lançamentos normais)
   const [contas, setContas] = useState<SaldoConta[]>([]);
@@ -174,6 +264,18 @@ export default function LancamentosScreen({ navigation, route }: any) {
   }
 
   // Toggle check
+  async function handleDelete(item: Lancamento) {
+    setContextItem(null);
+    try {
+      await lancamentosService.delete(item.id);
+      setLancamentos(prev => prev.filter(l => l.id !== item.id));
+      refreshBadge();
+    } catch {
+      // falha silenciosa — refetch recupera
+      refetchLancamentos();
+    }
+  }
+
   async function handleToggleCheck(item: Lancamento) {
     if (toggling.has(item.id)) return;
     const confirmando = !isConfirmado(item.situacao);
@@ -402,8 +504,8 @@ export default function LancamentosScreen({ navigation, route }: any) {
     const corSituacao = situacaoCor[item.situacao];
     const corValor = item.tipo === TipoLancamento.Credito ? '#4CAF50' : '#e53935';
 
-    return (
-      <View key={item.id} style={[
+    const rowContent = (
+      <View style={[
         styles.item,
         indented && styles.itemIndented,
         confirmado && styles.itemConfirmado,
@@ -472,6 +574,21 @@ export default function LancamentosScreen({ navigation, route }: any) {
         </TouchableOpacity>
       </View>
     );
+
+    // Sem swipe no desktop — apenas mobile web e nativo
+    if (Platform.OS !== 'web' || (typeof window !== 'undefined' && window.innerWidth < 768)) {
+      return (
+        <SwipeableRow
+          key={item.id}
+          onDelete={() => handleDelete(item)}
+          onLongPress={() => setContextItem(item)}
+        >
+          {rowContent}
+        </SwipeableRow>
+      );
+    }
+
+    return <View key={item.id}>{rowContent}</View>;
   };
 
   // ── Cabeçalho de agrupamento por data ────────────────────────────────────
