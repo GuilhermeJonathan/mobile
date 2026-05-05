@@ -11,6 +11,7 @@ import DatePickerField from '../components/DatePickerField';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 import { parseBRL } from '../utils/currency';
+import { navStoreGet } from '../utils/navStore';
 
 type Modo = 'avista' | 'parcelado' | 'recorrente';
 type Step = 'choose' | 'form';
@@ -68,7 +69,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const { mes, ano } = route.params;
+  const { mes, ano, duplicate } = route.params ?? {};
 
   const [descricao,   setDescricao]   = useState('');
   const [valor,       setValor]       = useState('');
@@ -86,6 +87,22 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
   const [error,       setError]       = useState('');
 
   const [step,         setStep]        = useState<Step>('choose');
+
+  useEffect(() => {
+    if (!duplicate) return;
+    const src = navStoreGet<any>('duplicateLancamento');
+    if (!src) return;
+    setDescricao(src.descricao ?? '');
+    const v = typeof src.valor === 'number' ? src.valor : 0;
+    // formata como "1.234,56"
+    const formatted = v.toFixed(2).replace('.', ',');
+    setValor(formatted);
+    setTipo(src.tipo ?? TipoLancamento.Debito);
+    setSituacao(src.situacao ?? SituacaoLancamento.AVencer);
+    if (src.categoriaId) setCategoriaId(src.categoriaId);
+    if (src.cartaoId) setCartaoId(src.cartaoId);
+    setStep('form');
+  }, [duplicate]);
 
   const [modalCatVisible,    setModalCatVisible]    = useState(false);
   const [novaCategoria,      setNovaCategoria]      = useState('');
@@ -379,7 +396,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
                 onPress={() => setCategoriaId(categoriaId === c.id ? undefined : c.id)}
               >
                 <Text style={[styles.chipText, categoriaId === c.id && styles.chipTextActive]}>
-                  {c.nome}
+                  {c.icone ? c.icone + ' ' : ''}{c.nome}
                 </Text>
               </TouchableOpacity>
             ))}

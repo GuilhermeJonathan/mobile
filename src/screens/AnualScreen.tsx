@@ -26,7 +26,7 @@ interface AnualData {
   totalDebitos: number;
   saldo: number;
   meses: MesData[];
-  topCategorias: { categoria: string; total: number }[];
+  topCategorias: { categoria: string; total: number; icone?: string; cor?: string }[];
 }
 
 // ── Gráfico de barras duplas (receitas × despesas) ────────────────────────────
@@ -197,7 +197,7 @@ export default function AnualScreen() {
   const mesMaisBarato = mesesComDesp.reduce<MesData | null>(
     (min, d) => !min || d.despesas < min.despesas ? d : min, null);
 
-  const topCats = (dados?.topCategorias ?? []).map(c => ({ cat: c.categoria, total: c.total }));
+  const topCats = dados?.topCategorias ?? [];
   const maxCat  = topCats[0]?.total ?? 1;
 
   const CAT_COLORS = [
@@ -305,16 +305,18 @@ export default function AnualScreen() {
         <View style={s.section}>
           <Text style={s.sectionTitle}>Top categorias do ano</Text>
           <View style={{ gap: 10, marginTop: 8 }}>
-            {topCats.map(({ cat, total }, i) => {
-              const pct = (total / maxCat) * 100;
-              const color = CAT_COLORS[i % CAT_COLORS.length];
+            {topCats.map((c, i) => {
+              const pct   = (c.total / maxCat) * 100;
+              const color = c.cor ?? CAT_COLORS[i % CAT_COLORS.length];
               return (
-                <View key={cat} style={s.catRow}>
-                  <Text style={s.catNome} numberOfLines={1}>{cat}</Text>
+                <View key={c.categoria} style={s.catRow}>
+                  <Text style={s.catNome} numberOfLines={1}>
+                    {c.icone ? `${c.icone} ` : ''}{c.categoria}
+                  </Text>
                   <View style={s.catBarWrap}>
                     <View style={[s.catBar, { width: `${pct}%` as any, backgroundColor: color }]} />
                   </View>
-                  <Text style={s.catValor}>{fmtBRLCompact(total)}</Text>
+                  <Text style={s.catValor}>{fmtBRLCompact(c.total)}</Text>
                 </View>
               );
             })}

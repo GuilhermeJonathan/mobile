@@ -25,6 +25,8 @@ interface Meta {
   capa?: string;
   corFundo?: string;
   criadoEm: string;
+  contribuicaoMensalValor?: number;
+  contribuicaoDia?: number;
 }
 
 const STATUS_LABEL: Record<number, string> = { 1: 'Ativa', 2: 'Concluída', 3: 'Pausada' };
@@ -175,6 +177,12 @@ function MetaCard({
         </Text>
       )}
 
+      {meta.contribuicaoMensalValor != null && (
+        <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>
+          💰 R$ {meta.contribuicaoMensalValor.toFixed(2).replace('.', ',')} /mês · dia {meta.contribuicaoDia}
+        </Text>
+      )}
+
       {/* Botão atualizar */}
       {!concluida && (
         <TouchableOpacity
@@ -215,6 +223,8 @@ export default function MetasScreen() {
   const [hasDataMeta, setHasDataMeta]       = useState(false); // true = campo de data visível
   const [capaSelected, setCapaSelected]     = useState('');
   const [corSelected, setCorSelected]       = useState(CORES[0]);
+  const [contribuicaoValor, setContribuicaoValor] = useState('');
+  const [contribuicaoDia, setContribuicaoDia]     = useState('');
   const [saving, setSaving]         = useState(false);
 
   // Modal atualizar valor
@@ -231,6 +241,7 @@ export default function MetasScreen() {
     setEditMeta(null);
     setTitulo(''); setDescricao(''); setValorMetaInput('');
     setDataMetaDate(null); setHasDataMeta(false); setCapaSelected(''); setCorSelected(CORES[0]);
+    setContribuicaoValor(''); setContribuicaoDia('');
     setModalMeta(true);
   }
 
@@ -244,6 +255,10 @@ export default function MetasScreen() {
     setHasDataMeta(!!existingDate);
     setCapaSelected(meta.capa ?? '');
     setCorSelected(meta.corFundo ?? CORES[0]);
+    setContribuicaoValor(meta.contribuicaoMensalValor != null
+      ? applyValorMask(String(Math.round(meta.contribuicaoMensalValor * 100)))
+      : '');
+    setContribuicaoDia(meta.contribuicaoDia != null ? String(meta.contribuicaoDia) : '');
     setModalMeta(true);
   }
 
@@ -253,6 +268,13 @@ export default function MetasScreen() {
     const dataMeta  = dataMetaDate ? dataMetaDate.toISOString() : null;
     setSaving(true);
     try {
+      const contribuicaoMensalValor = contribuicaoValor.trim()
+        ? maskToNumber(contribuicaoValor)
+        : null;
+      const contribuicaoDiaNum = contribuicaoDia.trim()
+        ? parseInt(contribuicaoDia, 10) || null
+        : null;
+
       const body = {
         titulo: titulo.trim(),
         descricao: descricao.trim() || null,
@@ -260,6 +282,8 @@ export default function MetasScreen() {
         dataMeta,
         capa: capaSelected || null,
         corFundo: corSelected,
+        contribuicaoMensalValor,
+        contribuicaoDia: contribuicaoDiaNum,
       };
       if (editMeta) {
         await metasService.update(editMeta.id, body);
@@ -420,7 +444,7 @@ export default function MetasScreen() {
 
             <Text style={s.fieldLabel}>Descrição</Text>
             <TextInput
-              style={[s.input, { height: 72, textAlignVertical: 'top' }]}
+              style={[s.input, { minHeight: 72, maxHeight: 160, textAlignVertical: 'top' }]}
               placeholder="Descreva sua meta..."
               placeholderTextColor={colors.inputPlaceholder}
               value={descricao}
@@ -495,7 +519,31 @@ export default function MetasScreen() {
               ))}
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 12 }}>
+            {/* ── Contribuição automática ─────────────────────────────── */}
+            <Text style={s.sectionLabel}>CONTRIBUIÇÃO AUTOMÁTICA (OPCIONAL)</Text>
+
+            <Text style={s.fieldLabel}>Valor mensal (R$)</Text>
+            <TextInput
+              style={s.input}
+              value={contribuicaoValor}
+              onChangeText={v => setContribuicaoValor(applyValorMask(v))}
+              placeholder="Ex: 300,00"
+              placeholderTextColor={colors.inputPlaceholder}
+              keyboardType="decimal-pad"
+            />
+
+            <Text style={s.fieldLabel}>Dia do mês (1-28)</Text>
+            <TextInput
+              style={s.input}
+              value={contribuicaoDia}
+              onChangeText={setContribuicaoDia}
+              placeholder="Ex: 5"
+              placeholderTextColor={colors.inputPlaceholder}
+              keyboardType="number-pad"
+              maxLength={2}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
               <TouchableOpacity style={s.btnCancel} onPress={() => setModalMeta(false)}>
                 <Text style={s.btnCancelText}>Cancelar</Text>
               </TouchableOpacity>
@@ -655,6 +703,7 @@ function styles(c: ColorScheme) {
     modalTitle: { fontSize: 18, fontWeight: 'bold', color: c.text, marginBottom: 4 },
     modalSub:   { fontSize: 13, color: c.textSecondary, marginBottom: 16 },
     fieldLabel: { fontSize: 11, fontWeight: '700', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6, marginTop: 12 },
+    sectionLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4, marginTop: 20, borderTopWidth: 1, borderTopColor: c.border, paddingTop: 16 },
     input: {
       backgroundColor: c.inputBg, borderRadius: 8, padding: 13,
       fontSize: 15, borderWidth: 1, borderColor: c.inputBorder, color: c.text,

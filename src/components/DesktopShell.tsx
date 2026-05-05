@@ -42,8 +42,10 @@ const EXTRA_ITEMS: NavItem[] = [
   { routeName: 'Anual',            label: 'Visão Anual',    icon: '📆', isRootStack: true },
   { routeName: 'Familia',          label: 'Família',        icon: '👨‍👩‍👧', isRootStack: true },
   { routeName: 'Metas',            label: 'Metas',          icon: '🎯', isRootStack: true },
-  { routeName: 'Transferencia',    label: 'Transferência',  icon: '↔️', isRootStack: true },
-  { routeName: 'ImportarExtrato',  label: 'Importar OFX',  icon: '📥', isRootStack: true },
+  { routeName: 'Assinaturas',      label: 'Assinaturas',    icon: '📦' },
+  { routeName: 'Categorias',       label: 'Categorias',     icon: '🏷️' },
+  { routeName: 'Transferencia',    label: 'Transferência',  icon: '↔️' },
+  { routeName: 'ImportarExtrato',  label: 'Importar OFX',  icon: '📥' },
   { routeName: 'BuscaLancamentos', label: 'Buscar',         icon: '🔍', isRootStack: true },
   { routeName: 'WhatsApp',         label: 'WhatsApp',       icon: '💬', isRootStack: true },
 ];

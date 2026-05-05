@@ -37,6 +37,8 @@ import PlanosScreen from '../screens/PlanosScreen';
 import PaymentTransactionsScreen from '../screens/PaymentTransactionsScreen';
 import TransferenciaScreen from '../screens/TransferenciaScreen';
 import ImportarExtratoScreen from '../screens/ImportarExtratoScreen';
+import AssinaturasScreen from '../screens/AssinaturasScreen';
+import CategoriasScreen from '../screens/CategoriasScreen';
 import PagamentoSucessoScreen from '../screens/PagamentoSucessoScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
@@ -327,6 +329,27 @@ function MainTabs() {
         name="WhatsApp"
         component={WhatsAppVincularScreen}
         options={{ headerShown: false, tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      {/* ── Ferramentas: hidden tab, open in content area on desktop ── */}
+      <Tab.Screen
+        name="Assinaturas"
+        component={AssinaturasScreen}
+        options={{ title: 'Assinaturas', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="Categorias"
+        component={CategoriasScreen}
+        options={{ title: 'Categorias', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="Transferencia"
+        component={TransferenciaScreen}
+        options={{ title: 'Transferência', headerShown: false, tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
+      <Tab.Screen
+        name="ImportarExtrato"
+        component={ImportarExtratoScreen}
+        options={{ title: 'Importar Extrato', headerShown: false, tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
       />
       {/* ── Admin screens — hidden tab, open in content area on desktop ── */}
       <Tab.Screen
@@ -657,6 +680,26 @@ export default function AppNavigator() {
           name="ImportarExtrato"
           component={ImportarExtratoScreen}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Assinaturas"
+          component={AssinaturasScreen}
+          options={{
+            headerShown: true,
+            title: 'Assinaturas',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
+          }}
+        />
+        <Stack.Screen
+          name="Categorias"
+          component={CategoriasScreen}
+          options={{
+            headerShown: true,
+            title: 'Categorias',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

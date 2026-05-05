@@ -101,6 +101,8 @@ export interface ResumoMes {
 export interface ResumoCatAnual {
   categoria: string;
   total: number;
+  icone?: string;
+  cor?: string;
 }
 
 export interface ResumoAnual {
@@ -123,6 +125,8 @@ export interface BuscaLancamentoItem {
   ano: number;
   categoriaId: string | null;
   categoriaNome: string | null;
+  categoriaIcone: string | null;
+  categoriaCor: string | null;
   cartaoId: string | null;
   cartaoNome: string | null;
   parcelaAtual: number | null;
@@ -214,6 +218,7 @@ export const vinculosService = {
 export const categoriasService = {
   getAll: () => api.get('/categorias').then(r => r.data?.items ?? r.data),
   create: (data: object) => api.post('/categorias', data).then(r => r.data),
+  update: (id: string, data: object) => api.put(`/categorias/${id}`, data),
   delete: (id: string) => api.delete(`/categorias/${id}`),
   atualizarLimite: (id: string, limiteMensal: number | null) =>
     api.patch(`/categorias/${id}/limite`, { limiteMensal }),
@@ -393,6 +398,59 @@ export const inviteService = {
 
   list: () =>
     loginApi.get<InviteDto[]>('/invite').then(r => r.data),
+};
+
+export interface AssinaturaDto {
+  grupoId: string;
+  descricao: string;
+  valorMensal: number;
+  categoriaNome: string | null;
+  categoriaIcone: string | null;
+  categoriaCor: string | null;
+  proximoVencimento: string | null;
+  totalLancamentos: number;
+  lancamentosPagos: number;
+}
+
+export const assinaturasService = {
+  getAll: (): Promise<AssinaturaDto[]> => api.get('/lancamentos/assinaturas').then(r => r.data),
+};
+
+// ─── Metas ────────────────────────────────────────────────────────────────────
+
+export interface MetaDto {
+  id: string;
+  titulo: string;
+  descricao?: string;
+  valorMeta: number;
+  valorAtual: number;
+  dataMeta?: string;
+  status: 1 | 2 | 3; // 1=Ativa 2=Concluida 3=Pausada
+  capa?: string;
+  corFundo?: string;
+  criadoEm: string;
+  contribuicaoMensalValor?: number;
+  contribuicaoDia?: number;
+}
+
+export interface CreateMetaBody {
+  titulo: string;
+  descricao?: string | null;
+  valorMeta: number;
+  dataMeta?: string | null;
+  capa?: string | null;
+  corFundo?: string;
+  contribuicaoMensalValor?: number | null;
+  contribuicaoDia?: number | null;
+}
+
+export const metasApiService = {
+  getAll: (): Promise<MetaDto[]> => api.get('/metas').then(r => r.data),
+  create: (data: CreateMetaBody) => api.post('/metas', data).then(r => r.data),
+  update: (id: string, data: CreateMetaBody) => api.put(`/metas/${id}`, data),
+  atualizarValor: (id: string, novoValor: number) =>
+    api.patch(`/metas/${id}/valor`, { novoValor }),
+  delete: (id: string) => api.delete(`/metas/${id}`),
 };
 
 export const transferenciaService = {

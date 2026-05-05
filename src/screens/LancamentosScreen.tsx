@@ -588,8 +588,17 @@ export default function LancamentosScreen({ navigation, route }: any) {
             <Text style={styles.itemDesc}>{item.descricao}</Text>
             <View style={styles.itemMetaRow}>
               {item.categoriaNome && (
-                <View style={styles.catBadge}>
-                  <Text style={styles.catBadgeText}>{item.categoriaNome}</Text>
+                <View style={[
+                  styles.catBadge,
+                  item.categoriaCor && { backgroundColor: item.categoriaCor + '22', borderColor: item.categoriaCor + '66' },
+                ]}>
+                  {item.categoriaIcone
+                    ? <Text style={{ fontSize: 11, marginRight: 3 }}>{item.categoriaIcone}</Text>
+                    : null}
+                  <Text style={[
+                    styles.catBadgeText,
+                    item.categoriaCor && { color: item.categoriaCor },
+                  ]}>{item.categoriaNome}</Text>
                 </View>
               )}
               {item.totalParcelas && item.totalParcelas > 1 && (
@@ -1122,6 +1131,23 @@ export default function LancamentosScreen({ navigation, route }: any) {
               onPress={() => {
                 const item = contextItem!;
                 setContextItem(null);
+                navStorePut('duplicateLancamento', item);
+                navigation.navigate('AddLancamento', {
+                  mes: item.mes,
+                  ano: item.ano,
+                  duplicate: true,
+                });
+              }}
+            >
+              <Text style={styles.ctxOptionIcon}>📋</Text>
+              <Text style={styles.ctxOptionText}>Duplicar</Text>
+            </TouchableOpacity>
+            <View style={styles.ctxDivider} />
+            <TouchableOpacity
+              style={styles.ctxOption}
+              onPress={() => {
+                const item = contextItem!;
+                setContextItem(null);
                 handleDelete(item);
               }}
             >
@@ -1353,6 +1379,7 @@ function makeStyles(c: ColorScheme) {
     dataBadgeTextVencido: { color: c.redBorder, fontWeight: '600' },
 
     catBadge: {
+      flexDirection: 'row', alignItems: 'center',
       backgroundColor: c.border, borderRadius: 10, borderWidth: 1, borderColor: c.inputBorder,
       paddingHorizontal: 8, paddingVertical: 2,
     },

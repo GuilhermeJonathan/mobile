@@ -114,7 +114,9 @@ export default function BuscaLancamentosScreen({ navigation }: any) {
               {MESES[item.mes - 1]}/{item.ano}
             </Text>
             {item.categoriaNome && (
-              <Text style={styles.itemMetaText}> · {item.categoriaNome}</Text>
+              <Text style={styles.itemMetaText}>
+                {' · '}{item.categoriaIcone ? `${item.categoriaIcone} ` : ''}{item.categoriaNome}
+              </Text>
             )}
             {item.cartaoNome && (
               <Text style={styles.itemMetaText}> · 💳 {item.cartaoNome}</Text>

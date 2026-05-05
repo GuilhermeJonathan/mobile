@@ -43,7 +43,7 @@ function VariacaoBadge({ valor, positiveIsGood }: { valor: number | null; positi
 
 // ─── Gráfico de barras horizontal para categorias ────────────────────────────
 function CategoryBarChart({ data, width, onPress }: {
-  data: { categoria: string; total: number }[];
+  data: { categoria: string; total: number; icone?: string; cor?: string }[];
   width: number;
   onPress: (categoria: string, color: string) => void;
 }) {
@@ -57,7 +57,7 @@ function CategoryBarChart({ data, width, onPress }: {
     <View style={{ width, gap: 6 }}>
       {data.map((item, i) => {
         const pct = Math.max((item.total / maxVal) * 100, 1);
-        const color = CATEGORY_COLORS[i % CATEGORY_COLORS.length];
+        const color = item.cor ?? CATEGORY_COLORS[i % CATEGORY_COLORS.length];
         return (
           <TouchableOpacity
             key={item.categoria}
@@ -67,7 +67,7 @@ function CategoryBarChart({ data, width, onPress }: {
           >
             {/* Label */}
             <Text style={{ width: labelW, fontSize: 11, color: colors.textSecondary }} numberOfLines={1}>
-              {item.categoria.length > 11 ? item.categoria.slice(0, 10) + '…' : item.categoria}
+              {item.icone ? `${item.icone} ` : ''}{item.categoria.length > 11 ? item.categoria.slice(0, 10) + '…' : item.categoria}
             </Text>
             {/* Barra */}
             <View style={{ width: chartW, height: 18, backgroundColor: colors.barBg, borderRadius: 5, overflow: 'hidden' }}>
@@ -162,7 +162,7 @@ function ReceitaDespesaDonut({ receitas, despesas }: { receitas: number; despesa
 
 // ─── Gráfico de pizza — despesas por categoria ───────────────────────────────
 function CategoryPieChart({ data, totalDespesas }: {
-  data: { categoria: string; total: number }[];
+  data: { categoria: string; total: number; icone?: string; cor?: string }[];
   totalDespesas: number;
 }) {
   const { colors } = useTheme();
@@ -198,7 +198,7 @@ function CategoryPieChart({ data, totalDespesas }: {
     const deg = totalDespesas > 0 ? (item.total / totalDespesas) * 360 : 360 / data.length;
     const start = cursor;
     cursor += deg;
-    return { ...item, start, end: cursor, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] };
+    return { ...item, start, end: cursor, color: item.cor ?? CATEGORY_COLORS[i % CATEGORY_COLORS.length] };
   });
 
   return (
@@ -839,7 +839,7 @@ export default function DashboardScreen() {
                   <View style={styles.legendRow}>
                     {resumo.map((r, i) => (
                       <View key={r.categoria} style={styles.legendItem}>
-                        <View style={[styles.legendDot, { backgroundColor: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }]} />
+                        <View style={[styles.legendDot, { backgroundColor: r.cor ?? CATEGORY_COLORS[i % CATEGORY_COLORS.length] }]} />
                         <Text style={styles.legendText}>
                           {r.categoria.length > 10 ? r.categoria.slice(0, 9) + '…' : r.categoria}
                           {' '}({totalDespesas > 0 ? ((r.total / totalDespesas) * 100).toFixed(0) : 0}%)

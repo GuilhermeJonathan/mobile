@@ -154,8 +154,8 @@ export default function ReceitasScreen() {
         tipo: eTipo,
         dia: diaNum,
         aplicarFuturos,
-        valor: eTipo === TipoReceita.Fixo ? parseFloat(eValor.replace(',', '.')) : undefined,
-        valorHora: eTipo === TipoReceita.Horista ? parseFloat(eValorHora.replace(',', '.')) : undefined,
+        valor: eTipo === TipoReceita.Fixo ? parseBRL(eValor) : undefined,
+        valorHora: eTipo === TipoReceita.Horista ? parseBRL(eValorHora) : undefined,
         quantidadeHoras: eTipo === TipoReceita.Horista ? parseFloat(eQtdHoras.replace(',', '.')) : undefined,
       });
       fecharEdicao();

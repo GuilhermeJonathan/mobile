@@ -193,8 +193,12 @@ export default function CartoesScreen({ navigation }: any) {
                   <Text style={styles.lancamentoDesc}>{l.descricao}</Text>
                   <View style={styles.lancamentoMetaRow}>
                     {l.categoriaNome ? (
-                      <View style={styles.catBadge}>
-                        <Text style={styles.catBadgeText}>{l.categoriaNome}</Text>
+                      <View style={[
+                        styles.catBadge,
+                        l.categoriaCor && { backgroundColor: l.categoriaCor + '22', borderColor: l.categoriaCor + '66' },
+                      ]}>
+                        {l.categoriaIcone ? <Text style={{ fontSize: 10, marginRight: 3 }}>{l.categoriaIcone}</Text> : null}
+                        <Text style={[styles.catBadgeText, l.categoriaCor && { color: l.categoriaCor }]}>{l.categoriaNome}</Text>
                       </View>
                     ) : null}
                     <Text style={styles.lancamentoMeta}>
@@ -336,7 +340,7 @@ function makeStyles(c: ColorScheme) {
     lancamentoDesc: { fontSize: 14, color: c.text },
     lancamentoMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' },
     lancamentoMeta: { fontSize: 12, color: c.textSecondary },
-    catBadge: { backgroundColor: c.surfaceElevated, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+    catBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surfaceElevated, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: c.border },
     catBadgeText: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
     lancamentoRight: { alignItems: 'flex-end' },
     lancamentoValor: { fontSize: 14, color: c.red, fontWeight: '600' },

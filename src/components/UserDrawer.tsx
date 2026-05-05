@@ -495,6 +495,17 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
           <View style={s.divider} />
 
+          {/* ── Assinaturas ────────────────────────────────────────── */}
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => { onClose(); navigationRef.current?.navigate('Assinaturas' as never); }}
+          >
+            <Text style={s.rowIcon}>📦</Text>
+            <Text style={s.rowLabel}>Assinaturas</Text>
+          </TouchableOpacity>
+
+          <View style={s.divider} />
+
           {/* ── Família ────────────────────────────────────────────── */}
           <TouchableOpacity
             style={s.row}
@@ -519,6 +530,14 @@ export default function UserDrawer({ visible, onClose }: Props) {
           <View style={s.divider} />
 
           {/* ── Ferramentas ─────────────────────────────────────────────── */}
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => { onClose(); navigationRef.current?.navigate('Categorias' as never); }}
+          >
+            <Text style={s.rowIcon}>🏷️</Text>
+            <Text style={s.rowLabel}>Categorias</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={s.row}
             onPress={() => { onClose(); navigationRef.current?.navigate('Transferencia' as never); }}

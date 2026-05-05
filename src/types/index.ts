@@ -23,6 +23,8 @@ export interface Lancamento {
   ano: number;
   categoriaId?: string;
   categoriaNome?: string;
+  categoriaIcone?: string;
+  categoriaCor?: string;
   cartaoId?: string;
   cartaoNome?: string;
   cartaoDiaVencimento?: number;
@@ -67,7 +69,7 @@ export interface Dashboard {
   totalCreditos: number;
   totalDebitos: number;
   saldo: number;
-  resumoDebitos: { categoria: string; total: number }[];
+  resumoDebitos: { categoria: string; total: number; icone?: string; cor?: string }[];
   variacaoCreditos: number | null;
   variacaoDebitos: number | null;
   variacaoSaldo: number | null;
@@ -88,6 +90,8 @@ export interface Categoria {
   id: string;
   nome: string;
   tipo: TipoLancamento;
+  icone?: string;
+  cor?: string;
 }
 
 export interface CartaoCredito {
@@ -107,6 +111,8 @@ export interface CartaoLancamento {
   parcelaAtual?: number;
   totalParcelas?: number;
   categoriaNome?: string;
+  categoriaIcone?: string;
+  categoriaCor?: string;
 }
 
 export interface HorasTrabalhadas {

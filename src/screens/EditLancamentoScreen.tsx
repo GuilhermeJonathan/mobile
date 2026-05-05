@@ -453,15 +453,30 @@ export default function EditLancamentoScreen({ route, navigation }: any) {
 
         <Text style={styles.label}>Categoria (opcional)</Text>
         <View style={styles.chips}>
-          {categoriasFiltradas.map(c => (
-            <TouchableOpacity
-              key={c.id}
-              style={[styles.chip, categoriaId === c.id && styles.chipActive]}
-              onPress={() => setCategoriaId(categoriaId === c.id ? undefined : c.id)}
-            >
-              <Text style={[styles.chipText, categoriaId === c.id && styles.chipTextActive]}>{c.nome}</Text>
-            </TouchableOpacity>
-          ))}
+          {categoriasFiltradas.map(c => {
+            const ativa = categoriaId === c.id;
+            const chipStyle = ativa
+              ? c.cor
+                ? { backgroundColor: c.cor + '28', borderColor: c.cor, borderWidth: 2 }
+                : styles.chipActive
+              : undefined;
+            const textStyle = ativa
+              ? c.cor
+                ? { color: c.cor, fontWeight: '600' as const }
+                : styles.chipTextActive
+              : undefined;
+            return (
+              <TouchableOpacity
+                key={c.id}
+                style={[styles.chip, chipStyle]}
+                onPress={() => setCategoriaId(ativa ? undefined : c.id)}
+              >
+                <Text style={[styles.chipText, textStyle]}>
+                  {c.icone ? `${c.icone} ` : ''}{c.nome}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
           <TouchableOpacity style={styles.chipAdd} onPress={() => setModalVisible(true)}>
             <Text style={styles.chipAddText}>+ Nova</Text>
           </TouchableOpacity>
