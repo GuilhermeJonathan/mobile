@@ -187,6 +187,8 @@ export interface OrcamentoItem {
   categoriaNome: string;
   limiteMensal: number | null;
   gastoAtual: number;
+  categoriaIcone: string | null;
+  categoriaCor: string | null;
 }
 
 export interface VinculoDto {

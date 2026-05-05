@@ -154,9 +154,11 @@ export default function OrcamentoScreen({ navigation }: any) {
                 const over   = item.gastoAtual > (item.limiteMensal ?? 0);
                 const cor    = over ? colors.red : pct >= 0.8 ? colors.orange : colors.green;
                 return (
-                  <TouchableOpacity key={item.categoriaId} style={styles.card} onPress={() => abrirModal(item)}>
+                  <TouchableOpacity key={item.categoriaId} style={[styles.card, item.categoriaCor && { borderLeftWidth: 3, borderLeftColor: item.categoriaCor }]} onPress={() => abrirModal(item)}>
                     <View style={styles.cardHeader}>
-                      <Text style={styles.cardNome}>{item.categoriaNome}</Text>
+                      <Text style={styles.cardNome}>
+                        {item.categoriaIcone ? `${item.categoriaIcone} ` : ''}{item.categoriaNome}
+                      </Text>
                       <Text style={[styles.cardPct, { color: cor }]}>
                         {(pct * 100).toFixed(0)}%
                       </Text>
@@ -177,9 +179,11 @@ export default function OrcamentoScreen({ navigation }: any) {
             <>
               <Text style={styles.secTitle}>Sem limite — toque para definir</Text>
               {semLimite.map(item => (
-                <TouchableOpacity key={item.categoriaId} style={[styles.card, styles.cardSemLimite]} onPress={() => abrirModal(item)}>
+                <TouchableOpacity key={item.categoriaId} style={[styles.card, styles.cardSemLimite, item.categoriaCor && { borderLeftWidth: 3, borderLeftColor: item.categoriaCor }]} onPress={() => abrirModal(item)}>
                   <View style={styles.cardHeader}>
-                    <Text style={styles.cardNome}>{item.categoriaNome}</Text>
+                    <Text style={styles.cardNome}>
+                      {item.categoriaIcone ? `${item.categoriaIcone} ` : ''}{item.categoriaNome}
+                    </Text>
                     <Text style={styles.cardDefinir}>+ Definir</Text>
                   </View>
                   <Text style={styles.cardGasto}>{fmtBRL(item.gastoAtual)} gastos este mês</Text>
@@ -201,7 +205,9 @@ export default function OrcamentoScreen({ navigation }: any) {
       <Modal visible={!!modalItem} transparent animationType="fade" onRequestClose={() => setModalItem(null)}>
         <View style={styles.overlay}>
           <View style={styles.modal}>
-            <Text style={styles.modalTitle}>{modalItem?.categoriaNome}</Text>
+            <Text style={styles.modalTitle}>
+              {modalItem?.categoriaIcone ? `${modalItem.categoriaIcone} ` : ''}{modalItem?.categoriaNome}
+            </Text>
             <Text style={styles.modalSub}>
               Gasto atual: {fmtBRL(modalItem?.gastoAtual ?? 0)}
             </Text>

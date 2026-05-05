@@ -178,7 +178,17 @@ export default function ExtratoContaScreen({ route }: any) {
             <View style={{ flex: 1 }}>
               <Text style={styles.txDescricao} numberOfLines={1}>{l.descricao}</Text>
               {l.categoriaNome ? (
-                <Text style={styles.txCategoria}>{l.categoriaNome}</Text>
+                <View style={[
+                  styles.txCategoriaBadge,
+                  l.categoriaCor && { backgroundColor: l.categoriaCor + '22', borderColor: l.categoriaCor + '66' },
+                ]}>
+                  {l.categoriaIcone ? (
+                    <Text style={{ fontSize: 10, marginRight: 3 }}>{l.categoriaIcone}</Text>
+                  ) : null}
+                  <Text style={[styles.txCategoria, l.categoriaCor && { color: l.categoriaCor }]}>
+                    {l.categoriaNome}
+                  </Text>
+                </View>
               ) : null}
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -251,7 +261,13 @@ function makeStyles(c: ColorScheme) {
     },
     txBar:       { width: 3, height: 42, borderRadius: 2 },
     txDescricao: { fontSize: 14, fontWeight: '600', color: c.text },
-    txCategoria: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    txCategoriaBadge: {
+      flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+      backgroundColor: c.surfaceElevated, borderRadius: 5,
+      paddingHorizontal: 6, paddingVertical: 2, marginTop: 4,
+      borderWidth: 1, borderColor: c.border,
+    },
+    txCategoria: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
     txValor:     { fontSize: 15, fontWeight: '700', marginBottom: 4 },
     txBadge:     { borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
     txBadgeText: { fontSize: 11, fontWeight: '600' },
