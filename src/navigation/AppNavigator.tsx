@@ -35,6 +35,8 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 import PlanosScreen from '../screens/PlanosScreen';
 import PaymentTransactionsScreen from '../screens/PaymentTransactionsScreen';
+import TransferenciaScreen from '../screens/TransferenciaScreen';
+import ImportarExtratoScreen from '../screens/ImportarExtratoScreen';
 import PagamentoSucessoScreen from '../screens/PagamentoSucessoScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
@@ -644,6 +646,16 @@ export default function AppNavigator() {
         <Stack.Screen
           name="PagamentoSucesso"
           component={PagamentoSucessoScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Transferencia"
+          component={TransferenciaScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ImportarExtrato"
+          component={ImportarExtratoScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

@@ -518,6 +518,25 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
           <View style={s.divider} />
 
+          {/* ── Ferramentas ─────────────────────────────────────────────── */}
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => { onClose(); navigationRef.current?.navigate('Transferencia' as never); }}
+          >
+            <Text style={s.rowIcon}>↔️</Text>
+            <Text style={s.rowLabel}>Transferência entre contas</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => { onClose(); navigationRef.current?.navigate('ImportarExtrato' as never); }}
+          >
+            <Text style={s.rowIcon}>📥</Text>
+            <Text style={s.rowLabel}>Importar Extrato (OFX)</Text>
+          </TouchableOpacity>
+
+          <View style={s.divider} />
+
           {/* ── Contas e Orçamento (apenas mobile web) ───────────────────── */}
           {isMobileWeb && (
             <>

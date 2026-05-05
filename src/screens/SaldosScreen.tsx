@@ -116,12 +116,21 @@ export default function SaldosScreen({ navigation }: any) {
         keyExtractor={c => c.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
         ListHeaderComponent={(
-          <View style={styles.totalCard}>
-            <Text style={styles.totalLabel}>Patrimônio Total</Text>
-            <Text style={[styles.totalValue, { color: totalGeral >= 0 ? colors.green : colors.red }]}>
-              {fmtBRL(totalGeral)}
-            </Text>
-          </View>
+          <>
+            <View style={styles.totalCard}>
+              <Text style={styles.totalLabel}>Patrimônio Total</Text>
+              <Text style={[styles.totalValue, { color: totalGeral >= 0 ? colors.green : colors.red }]}>
+                {fmtBRL(totalGeral)}
+              </Text>
+              <TouchableOpacity
+                style={styles.transferenciaBtn}
+                onPress={() => navigation.navigate('Transferencia')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.transferenciaBtnText}>↔ Transferência</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
         ListEmptyComponent={(
           <EmptyState
@@ -254,6 +263,12 @@ function makeStyles(c: ColorScheme) {
     },
     totalLabel: { fontSize: 13, color: c.textSecondary, marginBottom: 4 },
     totalValue: { fontSize: 26, fontWeight: 'bold' },
+    transferenciaBtn: {
+      marginTop: 14, borderWidth: 1.5, borderColor: c.greenBorder,
+      borderRadius: 10, paddingVertical: 8, paddingHorizontal: 20,
+      backgroundColor: c.greenDim,
+    },
+    transferenciaBtnText: { color: c.green, fontWeight: '700', fontSize: 14 },
 
     card: {
       backgroundColor: c.surfaceElevated, borderRadius: 12, padding: 16,

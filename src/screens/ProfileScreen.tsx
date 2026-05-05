@@ -169,6 +169,19 @@ export default function ProfileScreen({ navigation }: any) {
         </View>
       </TouchableOpacity>
 
+      {/* Ferramentas */}
+      <Text style={styles.sectionLabel}>FERRAMENTAS</Text>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('ImportarExtrato')}
+        activeOpacity={0.7}
+      >
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>📥 Importar extrato bancário (OFX)</Text>
+          <Text style={[styles.rowValue, { color: colors.green, flex: 0 }]}>›</Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Admin section */}
       {isAdmin && (
         <>

@@ -38,12 +38,14 @@ const MAIN_ITEMS: NavItem[] = [
 ];
 
 const EXTRA_ITEMS: NavItem[] = [
-  { routeName: 'Dividas',          label: 'Dívidas',     icon: '📅', isRootStack: true },
-  { routeName: 'Anual',            label: 'Visão Anual', icon: '📆', isRootStack: true },
-  { routeName: 'Familia',          label: 'Família',     icon: '👨‍👩‍👧', isRootStack: true },
-  { routeName: 'Metas',            label: 'Metas',       icon: '🎯', isRootStack: true },
-  { routeName: 'BuscaLancamentos', label: 'Buscar',      icon: '🔍', isRootStack: true },
-  { routeName: 'WhatsApp',         label: 'WhatsApp',    icon: '💬', isRootStack: true },
+  { routeName: 'Dividas',          label: 'Dívidas',        icon: '📅', isRootStack: true },
+  { routeName: 'Anual',            label: 'Visão Anual',    icon: '📆', isRootStack: true },
+  { routeName: 'Familia',          label: 'Família',        icon: '👨‍👩‍👧', isRootStack: true },
+  { routeName: 'Metas',            label: 'Metas',          icon: '🎯', isRootStack: true },
+  { routeName: 'Transferencia',    label: 'Transferência',  icon: '↔️', isRootStack: true },
+  { routeName: 'ImportarExtrato',  label: 'Importar OFX',  icon: '📥', isRootStack: true },
+  { routeName: 'BuscaLancamentos', label: 'Buscar',         icon: '🔍', isRootStack: true },
+  { routeName: 'WhatsApp',         label: 'WhatsApp',       icon: '💬', isRootStack: true },
 ];
 
 // ─── Props ───────────────────────────────────────────────────────────────────

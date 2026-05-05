@@ -395,6 +395,42 @@ export const inviteService = {
     loginApi.get<InviteDto[]>('/invite').then(r => r.data),
 };
 
+export const transferenciaService = {
+  criar: (body: {
+    contaOrigemId: string;
+    contaDestinoId: string;
+    valor: number;
+    data: string;
+    descricao: string;
+  }) => api.post('/lancamentos/transferencia', body).then(r => r.data as { idDebito: string; idCredito: string }),
+};
+
+export interface ExtratoTransacaoPreview {
+  id: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  mes: number;
+  ano: number;
+  tipo: 'Credito' | 'Debito';
+  categoriaNome: string | null;
+}
+
+export const extratoService = {
+  parse: (file: File): Promise<ExtratoTransacaoPreview[]> => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/extrato/parse', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
+  },
+  importar: (items: Array<{
+    descricao: string; valor: number; data: string;
+    mes: number; ano: number; categoriaNome: string | null;
+    contaBancariaId: string | null;
+  }>) => api.post('/extrato/importar', { items }).then(r => r.data as { importados: number }),
+};
+
 // ─── Payment transactions ─────────────────────────────────────────────────────
 
 export interface PaymentTransactionDto {
