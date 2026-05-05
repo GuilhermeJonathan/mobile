@@ -164,7 +164,7 @@ export default function ImportarExtratoScreen({ navigation }: any) {
         </TouchableOpacity>
         <TouchableOpacity
           style={[s.btnSecondary, { width: '100%' }]}
-          onPress={() => navigation.navigate('Lançamentos')}
+          onPress={() => navigation.navigate('Main' as never, { screen: 'Lançamentos' } as never)}
         >
           <Text style={s.btnSecondaryText}>Ver lançamentos</Text>
         </TouchableOpacity>
