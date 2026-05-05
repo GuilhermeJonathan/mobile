@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   Image, ActivityIndicator, Platform, useWindowDimensions,
-  Modal, TextInput, KeyboardAvoidingView,
+  Modal, TextInput, KeyboardAvoidingView, PanResponder,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -67,13 +67,35 @@ function Lightbox({
   const sorted = [...fotos].sort((a, b) => a.ordem - b.ordem);
   const current = sorted[index] ?? sorted[0];
 
+  // Refs para evitar closure stale dentro do PanResponder
+  const indexRef = useRef(index);
+  const totalRef = useRef(sorted.length);
+  indexRef.current = index;
+  totalRef.current = sorted.length;
+
+  const swipe = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8,
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -50 && indexRef.current < totalRef.current - 1)
+          onChangeIndex(indexRef.current + 1);
+        else if (g.dx > 50 && indexRef.current > 0)
+          onChangeIndex(indexRef.current - 1);
+      },
+    }),
+  ).current;
+
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       {/* Dark backdrop */}
-      <View style={{
-        flex: 1, backgroundColor: 'rgba(0,0,0,0.95)',
-        justifyContent: 'center', alignItems: 'center',
-      }}>
+      <View
+        style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.95)',
+          justifyContent: 'center', alignItems: 'center',
+        }}
+        {...swipe.panHandlers}
+      >
         {/* Close */}
         <TouchableOpacity
           onPress={onClose}
