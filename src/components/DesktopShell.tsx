@@ -58,6 +58,8 @@ const ADMIN_ITEMS: NavItem[] = [
   { routeName: 'PaymentTransactions',  label: 'Transações',  icon: '💳' },
 ];
 
+const IMOVEIS_ITEM: NavItem = { routeName: 'Imoveis', label: 'Imóveis', icon: '🏠' };
+
 export interface DesktopShellProps {
   activeRoute: string;
   onNavigate: (routeName: string, isRootStack?: boolean) => void;
@@ -65,6 +67,7 @@ export interface DesktopShellProps {
   avatarUrl: string | null;
   badge: number;
   isAdmin?: boolean;
+  podeVerImoveis?: boolean;
 }
 
 // ─── Nav row ─────────────────────────────────────────────────────────────────
@@ -132,6 +135,7 @@ export default function DesktopShell({
   avatarUrl,
   badge,
   isAdmin = false,
+  podeVerImoveis = false,
 }: DesktopShellProps) {
   const [collapsed,    setCollapsed]    = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
@@ -248,8 +252,8 @@ export default function DesktopShell({
             />
           ))}
         </View>
-        {/* ADMIN section — visible only for admins */}
-        {isAdmin && (
+        {/* ADMIN section — visible for admins; Imóveis also for podeVerImoveis users */}
+        {(isAdmin || podeVerImoveis) && (
           <>
             <View style={s.divider} />
             <View style={[s.section, collapsed && s.sectionCollapsed]}>
@@ -259,16 +263,28 @@ export default function DesktopShell({
                 collapsed={collapsed}
                 onToggle={() => setAdminOpen(o => !o)}
               />
-              {(adminOpen || collapsed) && ADMIN_ITEMS.map(item => (
-                <NavRow
-                  key={item.routeName}
-                  item={item}
-                  active={activeRoute === item.routeName}
-                  collapsed={collapsed}
-                  badge={0}
-                  onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
-                />
-              ))}
+              {(adminOpen || collapsed) && (
+                <>
+                  <NavRow
+                    key={IMOVEIS_ITEM.routeName}
+                    item={IMOVEIS_ITEM}
+                    active={activeRoute === IMOVEIS_ITEM.routeName}
+                    collapsed={collapsed}
+                    badge={0}
+                    onNavigate={() => onNavigate(IMOVEIS_ITEM.routeName, IMOVEIS_ITEM.isRootStack)}
+                  />
+                  {isAdmin && ADMIN_ITEMS.map(item => (
+                    <NavRow
+                      key={item.routeName}
+                      item={item}
+                      active={activeRoute === item.routeName}
+                      collapsed={collapsed}
+                      badge={0}
+                      onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
+                    />
+                  ))}
+                </>
+              )}
             </View>
           </>
         )}

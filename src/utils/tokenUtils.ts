@@ -5,6 +5,7 @@ export interface JwtPayload {
   unique_name?: string; // ClaimTypes.Name
   email?: string;    // ClaimTypes.Email
   userType?: string;
+  podeVerImoveis?: string;
   exp?: number;
   iss?: string;
 }

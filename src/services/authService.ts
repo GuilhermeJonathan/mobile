@@ -124,6 +124,14 @@ export const authService = {
     return payload?.userType === '1';
   },
 
+  async podeVerImoveis(): Promise<boolean> {
+    const token = await AsyncStorage.getItem('@cf_token');
+    if (!token) return false;
+    const payload = decodeToken(token);
+    // Admin (userType=1) ou usuário com permissão explícita
+    return payload?.userType === '1' || payload?.podeVerImoveis === 'true';
+  },
+
   async register(
     inviteToken: string,
     name: string,

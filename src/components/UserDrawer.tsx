@@ -87,6 +87,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
   const [user, setUser]           = useState<UserInfo | null>(null);
   const [isAdmin, setIsAdmin]     = useState(false);
+  const [podeVerImoveis, setPodeVerImoveis] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [meuVinculo, setMeuVinculo] = useState<MeuVinculoDto | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -120,6 +121,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
     if (visible) {
       authService.fetchMe().then(() => authService.getUserInfo().then(setUser));
       authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+      authService.podeVerImoveis().then(setPodeVerImoveis).catch(() => setPodeVerImoveis(false));
       vinculosService.meuVinculo().then(setMeuVinculo).catch(() => setMeuVinculo(null));
       authService.getPlanInfo().then(setPlanInfo).catch(() => setPlanInfo(null));
       Animated.parallel([
@@ -429,31 +431,42 @@ export default function UserDrawer({ visible, onClose }: Props) {
             />
           </View>
 
-          {isAdmin && !isDesktop && (
+          {(isAdmin || podeVerImoveis) && !isDesktop && (
             <>
               <View style={s.divider} />
               <Text style={s.sectionLabel}>ADMIN</Text>
               <TouchableOpacity
                 style={s.row}
-                onPress={() => { onClose(); navigationRef.current?.navigate('AdminUsers' as never); }}
+                onPress={() => { onClose(); navigationRef.current?.navigate('Imoveis' as never); }}
               >
-                <Text style={s.rowIcon}>👥</Text>
-                <Text style={s.rowLabel}>Usuários</Text>
+                <Text style={s.rowIcon}>🏠</Text>
+                <Text style={s.rowLabel}>Imóveis</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={s.row}
-                onPress={() => { onClose(); navigationRef.current?.navigate('Invites' as never); }}
-              >
-                <Text style={s.rowIcon}>🎟️</Text>
-                <Text style={s.rowLabel}>Convites</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={s.row}
-                onPress={() => { onClose(); navigationRef.current?.navigate('PaymentTransactions' as never); }}
-              >
-                <Text style={s.rowIcon}>💳</Text>
-                <Text style={s.rowLabel}>Transações</Text>
-              </TouchableOpacity>
+              {isAdmin && (
+                <>
+                  <TouchableOpacity
+                    style={s.row}
+                    onPress={() => { onClose(); navigationRef.current?.navigate('AdminUsers' as never); }}
+                  >
+                    <Text style={s.rowIcon}>👥</Text>
+                    <Text style={s.rowLabel}>Usuários</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={s.row}
+                    onPress={() => { onClose(); navigationRef.current?.navigate('Invites' as never); }}
+                  >
+                    <Text style={s.rowIcon}>🎟️</Text>
+                    <Text style={s.rowLabel}>Convites</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={s.row}
+                    onPress={() => { onClose(); navigationRef.current?.navigate('PaymentTransactions' as never); }}
+                  >
+                    <Text style={s.rowIcon}>💳</Text>
+                    <Text style={s.rowLabel}>Transações</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </>
           )}
 
