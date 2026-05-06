@@ -49,14 +49,12 @@ export const authService = {
       termName: null,
     });
     const token: string = data.accessToken;
-    await AsyncStorage.setItem('@cf_token', token);
-    if (data.refreshToken) {
-      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
-    }
-    await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
-    if (data.planInfo) {
-      await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo));
-    }
+    await Promise.all([
+      AsyncStorage.setItem('@cf_token', token),
+      data.refreshToken ? AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken) : Promise.resolve(),
+      AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? ''),
+      data.planInfo ? AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo)) : Promise.resolve(),
+    ]);
     return token;
   },
 
@@ -165,14 +163,12 @@ export const authService = {
       document: null,
     });
     const token: string = data.accessToken;
-    await AsyncStorage.setItem('@cf_token', token);
-    if (data.refreshToken) {
-      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
-    }
-    await AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? '');
-    if (data.planInfo) {
-      await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo));
-    }
+    await Promise.all([
+      AsyncStorage.setItem('@cf_token', token),
+      data.refreshToken ? AsyncStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken) : Promise.resolve(),
+      AsyncStorage.setItem(AVATAR_KEY, data.avatarUrl ?? ''),
+      data.planInfo ? AsyncStorage.setItem(PLAN_KEY, JSON.stringify(data.planInfo)) : Promise.resolve(),
+    ]);
     return token;
   },
 
