@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { assinaturasService, AssinaturaDto } from '../services/api';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
+import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -57,11 +58,11 @@ export default function AssinaturasScreen() {
 
   if (assinaturas.length === 0) return (
     <View style={s.container}>
-      <View style={s.center}>
-        <Text style={{ fontSize: 40 }}>📦</Text>
-        <Text style={s.emptyTitle}>Nenhuma assinatura recorrente encontrada</Text>
-        <Text style={s.emptySub}>Lançamentos recorrentes de despesa aparecerão aqui.</Text>
-      </View>
+      <EmptyState
+        title="Nenhuma assinatura recorrente"
+        subtitle={"Lançamentos recorrentes de despesa\naparecerão aqui automaticamente."}
+        dogSize={130}
+      />
     </View>
   );
 

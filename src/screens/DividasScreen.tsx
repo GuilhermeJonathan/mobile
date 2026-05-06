@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Modal, FlatList,
 } from 'react-native';
+import DogMascot from '../components/DogMascot';
 import Svg, { Path, G, Circle } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import { lancamentosService, ParceladoVigenteItem, DicaFinanceiraDto } from '../services/api';
@@ -175,8 +176,8 @@ export default function DividasScreen() {
 
   if (groups.length === 0) return (
     <View style={[s.container, { justifyContent: 'center', alignItems: 'center', gap: 12 }]}>
-      <Text style={{ fontSize: 48 }}>🎉</Text>
-      <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Sem dívidas vigentes!</Text>
+      <DogMascot size={160} color={colors.green} mood="happy" showFloating />
+      <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800', marginTop: 8 }}>Sem dívidas vigentes!</Text>
       <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Nenhuma parcela em aberto.</Text>
     </View>
   );

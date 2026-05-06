@@ -117,6 +117,9 @@ export default function UserDrawer({ visible, onClose }: Props) {
   const [deleting, setDeleting]       = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  // — Modal plano —
+  const [planModal, setPlanModal] = useState(false);
+
   useEffect(() => {
     if (visible) {
       authService.fetchMe().then(() => authService.getUserInfo().then(setUser));
@@ -351,19 +354,19 @@ export default function UserDrawer({ visible, onClose }: Props) {
             <Text style={s.email} numberOfLines={1}>{user?.email ?? '—'}</Text>
 
             {planInfo?.isTrialActive && planInfo.trialDaysRemaining !== null && (
-              <View style={[s.planBadge, s.planBadgeTrial]}>
+              <TouchableOpacity style={[s.planBadge, s.planBadgeTrial]} onPress={() => setPlanModal(true)} activeOpacity={0.75}>
                 <Text style={s.planBadgeText}>🎯 Trial · {planInfo.trialDaysRemaining}d restantes</Text>
-              </View>
+              </TouchableOpacity>
             )}
             {planInfo?.isTrialExpired && (
-              <View style={[s.planBadge, s.planBadgeExpired]}>
+              <TouchableOpacity style={[s.planBadge, s.planBadgeExpired]} onPress={() => setPlanModal(true)} activeOpacity={0.75}>
                 <Text style={s.planBadgeText}>⚠️ Trial expirado</Text>
-              </View>
+              </TouchableOpacity>
             )}
             {planInfo?.hasPaidPlan && (
-              <View style={[s.planBadge, s.planBadgePaid]}>
+              <TouchableOpacity style={[s.planBadge, s.planBadgePaid]} onPress={() => setPlanModal(true)} activeOpacity={0.75}>
                 <Text style={s.planBadgeText}>💳 Plano ativo</Text>
-              </View>
+              </TouchableOpacity>
             )}
 
             <View style={s.expiryRow}>
@@ -842,6 +845,129 @@ export default function UserDrawer({ visible, onClose }: Props) {
             </View>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Modal Plano ────────────────────────────────────────────── */}
+      <Modal visible={planModal} transparent animationType="fade" onRequestClose={() => setPlanModal(false)}>
+        <TouchableWithoutFeedback onPress={() => setPlanModal(false)}>
+          <View style={s.dadosOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[s.dadosCard, { maxWidth: 360 }]}>
+
+                {/* Cabeçalho */}
+                <View style={s.dadosHeader}>
+                  <Text style={s.dadosTitle}>Meu Plano</Text>
+                  <TouchableOpacity onPress={() => setPlanModal(false)} style={s.dadosCloseBtn}>
+                    <Text style={s.dadosCloseIcon}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {planInfo ? (() => {
+                  const accentColor = planInfo.hasPaidPlan ? '#4caf50' : planInfo.isTrialExpired ? '#e53935' : '#FF9800';
+                  const expiresDate = planInfo.hasPaidPlan && planInfo.planExpiresAt
+                    ? new Date(planInfo.planExpiresAt)
+                    : planInfo.trialEndsAt ? new Date(planInfo.trialEndsAt) : null;
+                  const daysLeft = expiresDate
+                    ? Math.max(0, Math.ceil((expiresDate.getTime() - Date.now()) / 86400000))
+                    : null;
+                  // Deriva tipo: >180 dias → Anual, caso contrário → Mensal
+                  const planTipo = planInfo.hasPaidPlan
+                    ? (daysLeft !== null && daysLeft > 180 ? 'Plano Anual' : 'Plano Mensal')
+                    : null;
+                  // Barra de progresso: mostra quanto do período atual já passou
+                  const totalDays = planInfo.hasPaidPlan ? (planTipo === 'Plano Anual' ? 365 : 30) : 30;
+                  const progress = daysLeft !== null ? Math.max(0, Math.min(1, daysLeft / totalDays)) : 0;
+
+                  return (
+                    <>
+                      {/* Status card */}
+                      <View style={{
+                        borderRadius: 12, padding: 16, marginBottom: 16, alignItems: 'center',
+                        backgroundColor: accentColor + '18', borderWidth: 1, borderColor: accentColor,
+                      }}>
+                        <Text style={{ fontSize: 32, marginBottom: 6 }}>
+                          {planInfo.hasPaidPlan ? '💳' : planInfo.isTrialExpired ? '⚠️' : '🎯'}
+                        </Text>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>
+                          {planInfo.hasPaidPlan ? planTipo : planInfo.isTrialExpired ? 'Trial Expirado' : 'Período de Trial'}
+                        </Text>
+                        {daysLeft !== null && !planInfo.isTrialExpired && (
+                          <Text style={{ fontSize: 13, color: accentColor, marginTop: 4, fontWeight: '600' }}>
+                            {daysLeft} dia{daysLeft !== 1 ? 's' : ''} restante{daysLeft !== 1 ? 's' : ''}
+                          </Text>
+                        )}
+                      </View>
+
+                      {/* Barra de progresso */}
+                      {daysLeft !== null && !planInfo.isTrialExpired && (
+                        <View style={{ marginBottom: 16 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                            <Text style={s.dadosLabel}>Período restante</Text>
+                            <Text style={{ fontSize: 11, color: accentColor, fontWeight: '700' }}>
+                              {Math.round(progress * 100)}%
+                            </Text>
+                          </View>
+                          <View style={{ height: 6, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' }}>
+                            <View style={{ height: 6, borderRadius: 4, backgroundColor: accentColor, width: `${Math.round(progress * 100)}%` as any }} />
+                          </View>
+                        </View>
+                      )}
+
+                      {/* Linha de detalhes */}
+                      <View style={{ gap: 12, marginBottom: 4 }}>
+                        {expiresDate && (
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={s.dadosLabel}>
+                              {planInfo.hasPaidPlan ? 'Válido até' : 'Trial encerra em'}
+                            </Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
+                              {expiresDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </Text>
+                          </View>
+                        )}
+                        {planInfo.hasPaidPlan && planTipo && (
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={s.dadosLabel}>Tipo</Text>
+                            <View style={{ backgroundColor: accentColor + '22', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: accentColor + '55' }}>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: accentColor }}>{planTipo}</Text>
+                            </View>
+                          </View>
+                        )}
+                        {planInfo.isTrialActive && planInfo.trialDaysRemaining !== null && (
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={s.dadosLabel}>Dias de trial</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>30 dias grátis</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Divisor */}
+                      <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 16 }} />
+
+                      {/* Ação */}
+                      <TouchableOpacity
+                        style={[
+                          s.dadosSaveBtn,
+                          planInfo.hasPaidPlan && { backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border },
+                        ]}
+                        onPress={() => { setPlanModal(false); navigationRef.current?.navigate('Planos' as never); }}
+                      >
+                        <Text style={[s.dadosSaveBtnText, planInfo.hasPaidPlan && { color: colors.text }]}>
+                          {planInfo.isTrialExpired ? '🚀 Assinar agora' : planInfo.hasPaidPlan ? 'Gerenciar assinatura →' : '🚀 Ver planos disponíveis'}
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  );
+                })() : (
+                  <Text style={{ color: colors.textSecondary, textAlign: 'center', marginVertical: 16 }}>
+                    Carregando informações do plano...
+                  </Text>
+                )}
+
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </Modal>
   );
