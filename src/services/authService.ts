@@ -62,6 +62,10 @@ export const authService = {
     const token = await AsyncStorage.getItem('@cf_token');
     if (!token) return null;
     if (isTokenExpired(token)) {
+      // Tenta renovar silenciosamente antes de deslogar
+      const refreshed = await authService.refreshAccessToken();
+      if (refreshed) return refreshed;
+      // Refresh também falhou — limpa e força novo login
       await AsyncStorage.removeItem('@cf_token');
       return null;
     }

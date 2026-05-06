@@ -225,13 +225,36 @@ function MainTabs() {
         headerTitleStyle: { fontWeight: 'bold' },
         headerRight: isDesktop
           ? () => (
-            // Desktop: search only (user is in sidebar)
-            <TouchableOpacity
-              onPress={() => navigationRef.current?.navigate('BuscaLancamentos' as never)}
-              style={{ padding: 6, marginRight: 8 }}
-            >
-              <Text style={{ fontSize: 20 }}>🔍</Text>
-            </TouchableOpacity>
+            // Desktop: search + alert bell (user/drawer is in sidebar)
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginRight: 8 }}>
+              <TouchableOpacity
+                onPress={() => navigationRef.current?.navigate('BuscaLancamentos' as never)}
+                style={{ padding: 6 }}
+              >
+                <Text style={{ fontSize: 20 }}>🔍</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setDrawerOpen(true)}
+                style={{ padding: 6 }}
+              >
+                <View>
+                  <Text style={{ fontSize: 20 }}>🔔</Text>
+                  {badge > 0 && (
+                    <View style={{
+                      position: 'absolute', top: -2, right: -2,
+                      backgroundColor: darkColors.red, borderRadius: 8,
+                      minWidth: 16, height: 16,
+                      justifyContent: 'center', alignItems: 'center',
+                      paddingHorizontal: 3,
+                    }}>
+                      <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>
+                        {badge > 99 ? '99+' : badge}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
           )
           : () => (
             // Mobile: search + avatar with badge
