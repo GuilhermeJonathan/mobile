@@ -3,16 +3,24 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, Modal, Platform, ScrollView,
 } from 'react-native';
+import axios from 'axios';
 import { authService } from '../services/authService';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorScheme } from '../theme/colors';
 import DogMascot from '../components/DogMascot';
+
+const LOGIN_API_URL = process.env.EXPO_PUBLIC_LOGIN_URL ?? 'https://localhost:7228';
 
 
 // ─── Tela ─────────────────────────────────────────────────────────────────────
 export default function LoginScreen({ navigation }: any) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  // Pré-aquece a API assim que a tela abre — evita cold start no clique de login
+  useEffect(() => {
+    axios.get(`${LOGIN_API_URL}/health`, { timeout: 30000 }).catch(() => {});
+  }, []);
 
   // Fallback web: se a URL já contém ?invite= ou ?inviteToken=, vai direto para o cadastro
   useEffect(() => {
