@@ -449,6 +449,13 @@ export default function UserDrawer({ visible, onClose }: Props) {
                 <>
                   <TouchableOpacity
                     style={s.row}
+                    onPress={() => { onClose(); navigationRef.current?.navigate('Vendas' as never); }}
+                  >
+                    <Text style={s.rowIcon}>🛒</Text>
+                    <Text style={s.rowLabel}>Vendas</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={s.row}
                     onPress={() => { onClose(); navigationRef.current?.navigate('AdminUsers' as never); }}
                   >
                     <Text style={s.rowIcon}>👥</Text>

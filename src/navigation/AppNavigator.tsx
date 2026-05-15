@@ -41,6 +41,7 @@ import AssinaturasScreen from '../screens/AssinaturasScreen';
 import CategoriasScreen from '../screens/CategoriasScreen';
 import ImoveisScreen from '../screens/ImoveisScreen';
 import ImovelDetailScreen from '../screens/ImovelDetailScreen';
+import VendasScreen from '../screens/VendasScreen';
 import PagamentoSucessoScreen from '../screens/PagamentoSucessoScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
@@ -379,6 +380,11 @@ function MainTabs() {
         options={{ title: 'Importar Extrato', headerShown: false, tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
       />
       {/* ── Admin screens — hidden tab, open in content area on desktop ── */}
+      <Tab.Screen
+        name="Vendas"
+        component={VendasScreen}
+        options={{ title: 'Vendas', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
+      />
       <Tab.Screen
         name="Imoveis"
         component={ImoveisScreen}
@@ -743,6 +749,16 @@ export default function AppNavigator() {
             headerStyle: { backgroundColor: darkColors.surface },
             headerTintColor: darkColors.text,
           })}
+        />
+        <Stack.Screen
+          name="Vendas"
+          component={VendasScreen}
+          options={{
+            headerShown: true,
+            title: 'Vendas',
+            headerStyle: { backgroundColor: darkColors.surface },
+            headerTintColor: darkColors.text,
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -514,3 +514,58 @@ export const paymentService = {
   getTransactions: (page = 1, pageSize = 50): Promise<PaymentTransactionsResult> =>
     loginApi.get(`/payment/transactions?page=${page}&pageSize=${pageSize}`).then(r => r.data),
 };
+
+// ── Produtos ──────────────────────────────────────────────────────────────────
+
+export interface ProdutoDto {
+  id: string;
+  nome: string;
+  precoDefault: number | null;
+  ativo: boolean;
+  criadoEm: string;
+}
+
+export interface VendaDto {
+  id: string;
+  produtoId: string | null;
+  produtoNome: string | null;
+  descricao: string;
+  valor: number;
+  data: string;
+  status: 0 | 1; // 0=Pendente, 1=Recebido
+  origem: 0 | 1; // 0=Manual, 1=WhatsApp
+  criadoEm: string;
+  criadoPorNome: string;
+}
+
+export interface ResumoVendasDto {
+  totalHoje: number;
+  totalSemana: number;
+  totalMes: number;
+  qtdHoje: number;
+  qtdSemana: number;
+  qtdMes: number;
+}
+
+export const produtosService = {
+  getAll: (): Promise<ProdutoDto[]> => api.get('/produtos').then(r => r.data),
+  create: (data: { nome: string; precoDefault: number | null }) =>
+    api.post('/produtos', data).then(r => r.data),
+  update: (id: string, data: { nome: string; precoDefault: number | null }) =>
+    api.put(`/produtos/${id}`, data),
+  delete: (id: string) => api.delete(`/produtos/${id}`),
+};
+
+export const vendasService = {
+  getAll: (params?: { de?: string; ate?: string; produtoId?: string; status?: number }): Promise<VendaDto[]> =>
+    api.get('/vendas', { params }).then(r => r.data),
+  getResumo: (): Promise<ResumoVendasDto> =>
+    api.get('/vendas/resumo').then(r => r.data),
+  create: (data: { produtoId?: string | null; descricao: string; valor: number; data: string; origem?: number }) =>
+    api.post('/vendas', data).then(r => r.data),
+  update: (id: string, data: { produtoId?: string | null; descricao: string; valor: number; data: string }) =>
+    api.put(`/vendas/${id}`, data),
+  atualizarStatus: (id: string, status: number) =>
+    api.patch(`/vendas/${id}/status`, { status }),
+  delete: (id: string) => api.delete(`/vendas/${id}`),
+};

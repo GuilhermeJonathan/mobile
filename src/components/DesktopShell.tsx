@@ -53,6 +53,7 @@ const EXTRA_ITEMS: NavItem[] = [
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 const ADMIN_ITEMS: NavItem[] = [
+  { routeName: 'Vendas',               label: 'Vendas',      icon: '🛒' },
   { routeName: 'AdminUsers',           label: 'Usuários',    icon: '👥' },
   { routeName: 'Invites',              label: 'Convites',    icon: '🎟️' },
   { routeName: 'PaymentTransactions',  label: 'Transações',  icon: '💳' },
