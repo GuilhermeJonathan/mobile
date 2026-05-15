@@ -178,9 +178,9 @@ export default function VendasScreen() {
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [filtroStatus, setFiltroStatus]     = useState<number | undefined>(undefined);
-  const [filtroPeriodo, setFiltroPeriodo]   = useState<FiltroPeriodo>('30d');
-  const [filtroProdutoId, setFiltroProdutoId] = useState<string | undefined>(undefined);
+  const [filtroStatus, setFiltroStatus]   = useState<number | undefined>(undefined);
+  const [filtroPeriodo, setFiltroPeriodo] = useState<FiltroPeriodo>('30d');
+  const [filtroProduto, setFiltroProduto] = useState('');
 
   // ── Modal nova/editar venda ───────────────────────────────────────────────
   const [modalVenda, setModalVenda]   = useState(false);
@@ -214,7 +214,6 @@ export default function VendasScreen() {
       const range = periodoRange(filtroPeriodo);
       const params: Record<string, any> = { ...range };
       if (filtroStatus !== undefined) params.status = filtroStatus;
-      if (filtroProdutoId !== undefined) params.produtoId = filtroProdutoId;
       const [v, r, p] = await Promise.all([
         vendasService.getAll(params),
         vendasService.getResumo(),
@@ -229,7 +228,7 @@ export default function VendasScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filtroPeriodo, filtroStatus, filtroProdutoId]);
+  }, [filtroPeriodo, filtroStatus]);
 
   useFocusEffect(useCallback(() => {
     carregar();
@@ -476,34 +475,13 @@ export default function VendasScreen() {
         </View>
 
         {/* ── Filtro por produto ───────────────────────────────────────── */}
-        {produtos.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 12 }}
-            contentContainerStyle={{ alignItems: 'center', paddingRight: 8 }}
-          >
-            <TouchableOpacity
-              style={[s.sitChip, filtroProdutoId === undefined && s.sitChipActive, { marginRight: 6 }]}
-              onPress={() => setFiltroProdutoId(undefined)}
-            >
-              <Text style={[s.sitChipText, filtroProdutoId === undefined && s.sitChipTextActive]}>
-                Todos
-              </Text>
-            </TouchableOpacity>
-            {produtos.map(p => (
-              <TouchableOpacity
-                key={p.id}
-                style={[s.sitChip, filtroProdutoId === p.id && s.sitChipActive, { marginRight: 6 }]}
-                onPress={() => setFiltroProdutoId(p.id)}
-              >
-                <Text style={[s.sitChipText, filtroProdutoId === p.id && s.sitChipTextActive]}>
-                  {p.nome}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
+        <TextInput
+          style={[s.input, { marginBottom: 12 }]}
+          value={filtroProduto}
+          onChangeText={setFiltroProduto}
+          placeholder="Filtrar por produto..."
+          placeholderTextColor={colors.inputPlaceholder}
+        />
 
         {/* ── Botões de ação ───────────────────────────────────────────── */}
         <View style={s.actionRow}>
@@ -516,14 +494,19 @@ export default function VendasScreen() {
         </View>
 
         {/* ── Lista de vendas ──────────────────────────────────────────── */}
-        {vendas.length === 0 ? (
-          <EmptyState
-            title="Nenhuma venda registrada"
-            subtitle="Adicione uma venda ou envie via WhatsApp"
-            dogSize={120}
-          />
-        ) : (
-          vendas.map(venda => (
+        {(() => {
+          const term = filtroProduto.trim().toLowerCase();
+          const lista = term
+            ? vendas.filter(v => v.descricao.toLowerCase().includes(term))
+            : vendas;
+          if (lista.length === 0) return (
+            <EmptyState
+              title="Nenhuma venda encontrada"
+              subtitle={term ? `Nenhuma venda com "${filtroProduto}"` : 'Adicione uma venda ou envie via WhatsApp'}
+              dogSize={120}
+            />
+          );
+          return lista.map(venda => (
             <VendaCard
               key={venda.id}
               venda={venda}
@@ -532,8 +515,8 @@ export default function VendasScreen() {
               onExcluir={() => confirmarExcluirVenda(venda)}
               onToggleStatus={() => toggleStatus(venda)}
             />
-          ))
-        )}
+          ));
+        })()}
       </ScrollView>
 
       {/* ── Modal nova/editar venda ──────────────────────────────────── */}
