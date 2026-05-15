@@ -178,8 +178,9 @@ export default function VendasScreen() {
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [filtroStatus, setFiltroStatus]   = useState<number | undefined>(undefined);
-  const [filtroPeriodo, setFiltroPeriodo] = useState<FiltroPeriodo>('30d');
+  const [filtroStatus, setFiltroStatus]     = useState<number | undefined>(undefined);
+  const [filtroPeriodo, setFiltroPeriodo]   = useState<FiltroPeriodo>('30d');
+  const [filtroProdutoId, setFiltroProdutoId] = useState<string | undefined>(undefined);
 
   // ── Modal nova/editar venda ───────────────────────────────────────────────
   const [modalVenda, setModalVenda]   = useState(false);
@@ -213,6 +214,7 @@ export default function VendasScreen() {
       const range = periodoRange(filtroPeriodo);
       const params: Record<string, any> = { ...range };
       if (filtroStatus !== undefined) params.status = filtroStatus;
+      if (filtroProdutoId !== undefined) params.produtoId = filtroProdutoId;
       const [v, r, p] = await Promise.all([
         vendasService.getAll(params),
         vendasService.getResumo(),
@@ -227,7 +229,7 @@ export default function VendasScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filtroPeriodo, filtroStatus]);
+  }, [filtroPeriodo, filtroStatus, filtroProdutoId]);
 
   useFocusEffect(useCallback(() => {
     carregar();
@@ -472,6 +474,36 @@ export default function VendasScreen() {
             ))}
           </View>
         </View>
+
+        {/* ── Filtro por produto ───────────────────────────────────────── */}
+        {produtos.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginBottom: 12 }}
+            contentContainerStyle={{ alignItems: 'center', paddingRight: 8 }}
+          >
+            <TouchableOpacity
+              style={[s.sitChip, filtroProdutoId === undefined && s.sitChipActive, { marginRight: 6 }]}
+              onPress={() => setFiltroProdutoId(undefined)}
+            >
+              <Text style={[s.sitChipText, filtroProdutoId === undefined && s.sitChipTextActive]}>
+                Todos
+              </Text>
+            </TouchableOpacity>
+            {produtos.map(p => (
+              <TouchableOpacity
+                key={p.id}
+                style={[s.sitChip, filtroProdutoId === p.id && s.sitChipActive, { marginRight: 6 }]}
+                onPress={() => setFiltroProdutoId(p.id)}
+              >
+                <Text style={[s.sitChipText, filtroProdutoId === p.id && s.sitChipTextActive]}>
+                  {p.nome}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         {/* ── Botões de ação ───────────────────────────────────────────── */}
         <View style={s.actionRow}>
