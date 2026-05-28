@@ -604,12 +604,7 @@ export default function AppNavigator() {
         <Stack.Screen
           name="ImportarFatura"
           component={ImportarFaturaScreen}
-          options={{
-            headerShown: true,
-            title: 'Importar Fatura',
-            headerStyle: { backgroundColor: '#1a1a2e' },
-            headerTintColor: '#fff',
-          }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Metas"

@@ -169,27 +169,53 @@ export default function ImportarFaturaScreen({ navigation }: any) {
     }
   }
 
+  // ── Header fixo (igual à tela de Cartões) ────────────────────────────────
+  function HeaderBar() {
+    return (
+      <View>
+        <View style={s.screenHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+            <Text style={s.backBtnText}>←</Text>
+          </TouchableOpacity>
+          <Text style={s.screenHeaderTitle}>Importar Fatura</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={s.mesNavBar}>
+          <TouchableOpacity onPress={() => navMes(-1)}><Text style={s.mesBtnText}>◀</Text></TouchableOpacity>
+          <Text style={s.mesLabel}>{MESES[mesFatura - 1]}/{anoFatura}</Text>
+          <TouchableOpacity onPress={() => navMes(1)}><Text style={s.mesBtnText}>▶</Text></TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) return (
-    <View style={[s.container, { justifyContent: 'center', alignItems: 'center', gap: 16 }]}>
-      <ActivityIndicator size="large" color={colors.green} />
-      <Text style={{ color: colors.textSecondary }}>{loadingMsg}</Text>
+    <View style={s.container}>
+      <HeaderBar />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+        <ActivityIndicator size="large" color={colors.green} />
+        <Text style={{ color: colors.textSecondary }}>{loadingMsg}</Text>
+      </View>
     </View>
   );
 
   // ── Concluído ─────────────────────────────────────────────────────────────
   if (fase === 'done') return (
-    <View style={[s.container, { justifyContent: 'center', alignItems: 'center', gap: 20, padding: 32 }]}>
-      <Text style={{ fontSize: 56 }}>✅</Text>
-      <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text, textAlign: 'center' }}>
-        Importação concluída!
-      </Text>
-      <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
-        Lançamentos já aparecem em {MESES[mesFatura - 1]}/{anoFatura}.
-      </Text>
-      <TouchableOpacity style={s.btnPrimary} onPress={() => navigation.goBack()}>
-        <Text style={s.btnPrimaryText}>Voltar</Text>
-      </TouchableOpacity>
+    <View style={s.container}>
+      <HeaderBar />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20, padding: 32 }}>
+        <Text style={{ fontSize: 56 }}>✅</Text>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text, textAlign: 'center' }}>
+          Importação concluída!
+        </Text>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
+          Lançamentos já aparecem em {MESES[mesFatura - 1]}/{anoFatura}.
+        </Text>
+        <TouchableOpacity style={s.btnPrimary} onPress={() => navigation.goBack()}>
+          <Text style={s.btnPrimaryText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -201,6 +227,7 @@ export default function ImportarFaturaScreen({ navigation }: any) {
 
     return (
       <View style={s.container}>
+        <HeaderBar />
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 130 }}>
           {grupos.map(grupo => {
             const parcelados = grupo.items.filter(isParcelado);
@@ -300,22 +327,9 @@ export default function ImportarFaturaScreen({ navigation }: any) {
 
   // ── Upload ────────────────────────────────────────────────────────────────
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 40 }}>
-      <Text style={s.pageTitle}>📊 Importar Fatura</Text>
-      <Text style={s.pageSub}>Importe lançamentos de cartão a partir de um arquivo Excel.</Text>
-
-      <View style={s.section}>
-        <Text style={s.sectionLabel}>Mês da fatura</Text>
-        <View style={s.mesRow}>
-          <TouchableOpacity onPress={() => navMes(-1)} style={s.mesBtn}>
-            <Text style={s.mesBtnText}>◀</Text>
-          </TouchableOpacity>
-          <Text style={s.mesLabel}>{MESES[mesFatura - 1]}/{anoFatura}</Text>
-          <TouchableOpacity onPress={() => navMes(1)} style={s.mesBtn}>
-            <Text style={s.mesBtnText}>▶</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={s.container}>
+      <HeaderBar />
+      <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 40 }}>
 
       <View style={s.section}>
         <Text style={s.sectionLabel}>Arquivo Excel (.xlsx)</Text>
@@ -333,7 +347,8 @@ export default function ImportarFaturaScreen({ navigation }: any) {
       {erro ? <Text style={s.erroText}>{erro}</Text> : null}
 
       <ExemploFormato colors={colors} s={s} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -485,13 +500,16 @@ function SubGrupo({ titulo, chave, itens, expandido, onToggleExpand, onToggleGru
 // ── Styles ────────────────────────────────────────────────────────────────────
 function styles(c: ReturnType<typeof import('../theme/ThemeContext').useTheme>['colors']) {
   return StyleSheet.create({
-    container:    { flex: 1, backgroundColor: c.background },
-    pageTitle:    { fontSize: 22, fontWeight: 'bold', color: c.text },
-    pageSub:      { fontSize: 14, color: c.textSecondary, marginTop: -12 },
+    container:        { flex: 1, backgroundColor: c.background },
+    // ── Header customizado (igual ao Cartões) ──
+    screenHeader:     { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, paddingHorizontal: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
+    screenHeaderTitle:{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: c.text },
+    backBtn:          { width: 40, padding: 8 },
+    backBtnText:      { fontSize: 22, color: c.text },
+    mesNavBar:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 32, paddingVertical: 12, backgroundColor: c.background, borderBottomWidth: 1, borderBottomColor: c.border },
+    // ──────────────────────────────────────────
     section:      { backgroundColor: c.surface, borderRadius: 12, padding: 16, gap: 10 },
     sectionLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4 },
-    mesRow:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24 },
-    mesBtn:       { padding: 8 },
     mesBtnText:   { fontSize: 20, color: c.green },
     mesLabel:     { fontSize: 18, fontWeight: 'bold', color: c.text, minWidth: 100, textAlign: 'center' },
     uploadBox:    { borderWidth: 2, borderColor: c.border, borderStyle: 'dashed', borderRadius: 12, padding: 32, alignItems: 'center', gap: 8 },

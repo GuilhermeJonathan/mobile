@@ -1027,6 +1027,13 @@ export default function LancamentosScreen({ navigation, route }: any) {
         contentContainerStyle={[{ paddingBottom: 80 }, listItems.length === 0 && { flexGrow: 1 }]}
       />
 
+      <TouchableOpacity
+        style={[styles.fab, { bottom: 88, backgroundColor: '#1565C0' }]}
+        onPress={() => navigation.navigate('ImportarFatura')}
+      >
+        <Text style={{ fontSize: 20 }}>📄</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddLancamento', { mes, ano })}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
