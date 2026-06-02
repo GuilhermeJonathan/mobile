@@ -67,7 +67,12 @@ type ListItem =
   | { kind: 'date-header'; dateKey: string; label: string; totalCredito: number; totalDebito: number };
 
 type Filtro = 'todos' | 'receitas' | 'despesas';
-type FiltroSit = 'todos' | 'pendente' | 'vencido' | 'confirmado';
+type FiltroSit = 'todos' | 'pendente' | 'vencido' | 'confirmado' | 'parcelado' | 'assinatura';
+function isAssCategoria(cat?: string) {
+  if (!cat) return false;
+  const n = cat.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return /assina|servic|stream|recorr/.test(n);
+}
 
 // ── SwipeableRow — estilo iOS Mail ───────────────────────────────────────────
 const DELETE_BTN_W  = 80;
@@ -441,9 +446,11 @@ export default function LancamentosScreen({ navigation, route }: any) {
     }).filter(l => {
       if (buscaLower && !l.descricao.toLowerCase().includes(buscaLower) &&
           !(l.categoriaNome ?? '').toLowerCase().includes(buscaLower)) return false;
-      if (filtroSit === 'pendente') return l.situacao === SituacaoLancamento.AVencer || l.situacao === SituacaoLancamento.AReceber;
-      if (filtroSit === 'vencido')  return l.situacao === SituacaoLancamento.Vencido;
-      if (filtroSit === 'confirmado') return isConfirmado(l.situacao);
+      if (filtroSit === 'pendente')    return l.situacao === SituacaoLancamento.AVencer || l.situacao === SituacaoLancamento.AReceber;
+      if (filtroSit === 'vencido')     return l.situacao === SituacaoLancamento.Vencido;
+      if (filtroSit === 'confirmado')  return isConfirmado(l.situacao);
+      if (filtroSit === 'parcelado')   return l.totalParcelas != null && l.totalParcelas > 1;
+      if (filtroSit === 'assinatura')  return isAssCategoria(l.categoriaNome);
       return true;
     });
     // Cartões ficam ocultos quando há filtro de situação ativo
@@ -990,10 +997,12 @@ export default function LancamentosScreen({ navigation, route }: any) {
       {/* ── Filtros por situação ── */}
       <View style={styles.sitBar}>
         {([
-          { key: 'todos',      label: 'Todos'       },
-          { key: 'pendente',   label: '🟠 Pendente'  },
-          { key: 'vencido',    label: '🔴 Vencido'   },
-          { key: 'confirmado', label: '✓ Confirmado' },
+          { key: 'todos',      label: 'Todos'        },
+          { key: 'pendente',   label: '🟠 Pendente'   },
+          { key: 'vencido',    label: '🔴 Vencido'    },
+          { key: 'confirmado', label: '✓ Confirmado'  },
+          { key: 'parcelado',  label: '🔄 Parcelado'  },
+          { key: 'assinatura', label: '🔁 Assinatura' },
         ] as { key: FiltroSit; label: string }[]).map(opt => (
           <TouchableOpacity
             key={opt.key}
