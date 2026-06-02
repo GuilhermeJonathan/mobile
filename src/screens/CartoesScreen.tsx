@@ -182,9 +182,9 @@ export default function CartoesScreen({ navigation }: any) {
           const outros      = lancPos.filter((l: CartaoLancamento) => !assIds.has(l.id) && !parcIds.has(l.id));
           const soma        = (arr: CartaoLancamento[]) => arr.reduce((s, l) => s + l.valor, 0);
           const resumo = [
-            { label: 'Parcelamentos', emoji: '🔄', valor: soma(parcelados), cor: '#FF9800' },
-            { label: 'Assinaturas',   emoji: '🔁', valor: soma(assinaturas), cor: '#2196F3' },
-            { label: 'Outros',        emoji: '📦', valor: soma(outros),      cor: '#9E9E9E' },
+            { label: 'Parcelamentos', emoji: '🔄', valor: soma(parcelados), cor: '#FF9800', filtro: 'parcelado'  },
+            { label: 'Assinaturas',   emoji: '🔁', valor: soma(assinaturas), cor: '#2196F3', filtro: 'assinatura' },
+            { label: 'Outros',        emoji: '📦', valor: soma(outros),      cor: '#9E9E9E', filtro: null         },
           ].filter(b => b.valor > 0);
           return (
           <View style={styles.card}>
@@ -212,17 +212,25 @@ export default function CartoesScreen({ navigation }: any) {
             {resumo.length > 0 && (
               <View style={styles.resumo}>
                 {resumo.map(b => (
-                  <View key={b.label} style={styles.resumoRow}>
+                  <TouchableOpacity
+                    key={b.label}
+                    style={styles.resumoRow}
+                    activeOpacity={b.filtro ? 0.6 : 1}
+                    onPress={() => {
+                      if (b.filtro)
+                        navigation.navigate('Lançamentos', { filtroSit: b.filtro, mes, ano });
+                    }}
+                  >
                     <Text style={styles.resumoEmoji}>{b.emoji}</Text>
-                    <Text style={styles.resumoLabel}>{b.label}</Text>
+                    <Text style={[styles.resumoLabel, b.filtro && { color: b.cor }]}>{b.label}</Text>
                     <View style={styles.resumoBarBg}>
                       <View style={[styles.resumoBarFill, {
                         width: `${totalPos > 0 ? Math.round((b.valor / totalPos) * 100) : 0}%` as any,
                         backgroundColor: b.cor,
                       }]} />
                     </View>
-                    <Text style={styles.resumoValor}>{fmtBRL(b.valor)}</Text>
-                  </View>
+                    <Text style={[styles.resumoValor, b.filtro && { color: b.cor }]}>{fmtBRL(b.valor)}</Text>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}

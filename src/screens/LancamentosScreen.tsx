@@ -453,12 +453,17 @@ export default function LancamentosScreen({ navigation, route }: any) {
       if (filtroSit === 'assinatura')  return isAssCategoria(l.categoriaNome);
       return true;
     });
-    // Cartões ficam ocultos quando há filtro de situação ativo
-    const com_cartao = filtro === 'receitas' || filtroSit !== 'todos' ? [] : lancamentos.filter(l => !!l.cartaoId).filter(l => {
-      if (buscaLower && !l.descricao.toLowerCase().includes(buscaLower) &&
-          !(l.cartaoNome ?? '').toLowerCase().includes(buscaLower)) return false;
-      return true;
-    });
+    // Filtros de situação ocultam cartões (situação é por item, não por grupo);
+    // 'parcelado' e 'assinatura' filtram dentro do grupo normalmente.
+    const sitFiltrosOcultamCartao: FiltroSit[] = ['pendente', 'vencido', 'confirmado'];
+    const com_cartao = filtro === 'receitas' || sitFiltrosOcultamCartao.includes(filtroSit) ? [] :
+      lancamentos.filter(l => !!l.cartaoId).filter(l => {
+        if (buscaLower && !l.descricao.toLowerCase().includes(buscaLower) &&
+            !(l.cartaoNome ?? '').toLowerCase().includes(buscaLower)) return false;
+        if (filtroSit === 'parcelado')  return l.totalParcelas != null && l.totalParcelas > 1;
+        if (filtroSit === 'assinatura') return isAssCategoria(l.categoriaNome);
+        return true;
+      });
 
     // ── Agrupa cartões ────────────────────────────────────────────────────────
     const grupos = new Map<string, { nome: string; items: Lancamento[] }>();
