@@ -165,15 +165,22 @@ export default function CartoesScreen({ navigation }: any) {
           />
         }
         renderItem={({ item }) => {
-          const lancPos    = item.lancamentos.filter((l: CartaoLancamento) => l.valor > 0);
-          const totalPos   = lancPos.reduce((s: number, l: CartaoLancamento) => s + l.valor, 0);
-          const parcelados = lancPos.filter((l: CartaoLancamento) => l.totalParcelas && l.totalParcelas > 1);
-          const parcIds    = new Set(parcelados.map((l: CartaoLancamento) => l.id));
-          const assinaturas = lancPos.filter((l: CartaoLancamento) =>
-            !parcIds.has(l.id) && !!l.categoriaNome?.toLowerCase().match(/assina|servi[çc]/));
-          const assIds     = new Set(assinaturas.map((l: CartaoLancamento) => l.id));
-          const outros     = lancPos.filter((l: CartaoLancamento) => !parcIds.has(l.id) && !assIds.has(l.id));
-          const soma       = (arr: CartaoLancamento[]) => arr.reduce((s, l) => s + l.valor, 0);
+          const lancPos  = item.lancamentos.filter((l: CartaoLancamento) => l.valor > 0);
+          const totalPos = lancPos.reduce((s: number, l: CartaoLancamento) => s + l.valor, 0);
+          const isAss    = (cat?: string) => {
+            if (!cat) return false;
+            const n = cat.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            return /assina|servic|stream|recorr/.test(n);
+          };
+          // Assinaturas têm prioridade (categoria decide, independente de parcelas)
+          const assinaturas = lancPos.filter((l: CartaoLancamento) => isAss(l.categoriaNome));
+          const assIds      = new Set(assinaturas.map((l: CartaoLancamento) => l.id));
+          // Parcelamentos: totalParcelas > 1 e não é assinatura
+          const parcelados  = lancPos.filter((l: CartaoLancamento) =>
+            !assIds.has(l.id) && l.totalParcelas != null && l.totalParcelas > 1);
+          const parcIds     = new Set(parcelados.map((l: CartaoLancamento) => l.id));
+          const outros      = lancPos.filter((l: CartaoLancamento) => !assIds.has(l.id) && !parcIds.has(l.id));
+          const soma        = (arr: CartaoLancamento[]) => arr.reduce((s, l) => s + l.valor, 0);
           const resumo = [
             { label: 'Parcelamentos', emoji: '🔄', valor: soma(parcelados), cor: '#FF9800' },
             { label: 'Assinaturas',   emoji: '🔁', valor: soma(assinaturas), cor: '#2196F3' },
