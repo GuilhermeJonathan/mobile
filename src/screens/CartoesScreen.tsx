@@ -164,7 +164,22 @@ export default function CartoesScreen({ navigation }: any) {
             action={{ label: '+ Adicionar cartão', onPress: () => { setError(''); setCriarVisible(true); } }}
           />
         }
-        renderItem={({ item }) => (
+        renderItem={({ item }) => {
+          const lancPos    = item.lancamentos.filter((l: CartaoLancamento) => l.valor > 0);
+          const totalPos   = lancPos.reduce((s: number, l: CartaoLancamento) => s + l.valor, 0);
+          const parcelados = lancPos.filter((l: CartaoLancamento) => l.totalParcelas && l.totalParcelas > 1);
+          const parcIds    = new Set(parcelados.map((l: CartaoLancamento) => l.id));
+          const assinaturas = lancPos.filter((l: CartaoLancamento) =>
+            !parcIds.has(l.id) && !!l.categoriaNome?.toLowerCase().match(/assina|servi[çc]/));
+          const assIds     = new Set(assinaturas.map((l: CartaoLancamento) => l.id));
+          const outros     = lancPos.filter((l: CartaoLancamento) => !parcIds.has(l.id) && !assIds.has(l.id));
+          const soma       = (arr: CartaoLancamento[]) => arr.reduce((s, l) => s + l.valor, 0);
+          const resumo = [
+            { label: 'Parcelamentos', emoji: '🔄', valor: soma(parcelados), cor: '#FF9800' },
+            { label: 'Assinaturas',   emoji: '🔁', valor: soma(assinaturas), cor: '#2196F3' },
+            { label: 'Outros',        emoji: '📦', valor: soma(outros),      cor: '#9E9E9E' },
+          ].filter(b => b.valor > 0);
+          return (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.cardHeaderLeft}>
@@ -186,6 +201,24 @@ export default function CartoesScreen({ navigation }: any) {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {resumo.length > 0 && (
+              <View style={styles.resumo}>
+                {resumo.map(b => (
+                  <View key={b.label} style={styles.resumoRow}>
+                    <Text style={styles.resumoEmoji}>{b.emoji}</Text>
+                    <Text style={styles.resumoLabel}>{b.label}</Text>
+                    <View style={styles.resumoBarBg}>
+                      <View style={[styles.resumoBarFill, {
+                        width: `${totalPos > 0 ? Math.round((b.valor / totalPos) * 100) : 0}%` as any,
+                        backgroundColor: b.cor,
+                      }]} />
+                    </View>
+                    <Text style={styles.resumoValor}>{fmtBRL(b.valor)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
 
             {item.lancamentos.map((l: CartaoLancamento) => (
               <View key={l.id} style={styles.lancamento}>
@@ -220,7 +253,8 @@ export default function CartoesScreen({ navigation }: any) {
               </View>
             ))}
           </View>
-        )}
+          );
+        }}
         contentContainerStyle={[{ padding: 12, paddingBottom: 80 }, cartoes.length === 0 && { flexGrow: 1 }]}
       />
 
@@ -345,6 +379,15 @@ function makeStyles(c: ColorScheme) {
     lancamentoRight: { alignItems: 'flex-end' },
     lancamentoValor: { fontSize: 14, color: c.red, fontWeight: '600' },
     lancamentoSituacao: { fontSize: 11, marginTop: 2 },
+    // ── Resumo por tipo ──────────────────────────────────────────
+    resumo:       { borderTopWidth: 1, borderTopColor: c.border, paddingVertical: 10, gap: 6 },
+    resumoRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    resumoEmoji:  { fontSize: 14, width: 22 },
+    resumoLabel:  { fontSize: 12, color: c.textSecondary, fontWeight: '600', width: 108 },
+    resumoBarBg:  { flex: 1, height: 4, backgroundColor: c.surfaceElevated, borderRadius: 2, overflow: 'hidden' },
+    resumoBarFill:{ height: 4, borderRadius: 2 },
+    resumoValor:  { fontSize: 12, color: c.text, fontWeight: '700', minWidth: 84, textAlign: 'right' },
+    // ─────────────────────────────────────────────────────────────
     empty: { textAlign: 'center', marginTop: 40, color: c.textSecondary, fontSize: 16, lineHeight: 24 },
     fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.blue, justifyContent: 'center', alignItems: 'center', elevation: 5 },
     fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
