@@ -10,6 +10,8 @@ export enum SituacaoLancamento {
   AReceber = 3,
   AVencer = 4,
   Vencido = 5,
+  /** Parcela recorrente excluída pelo usuário — nunca exibida na UI */
+  Cancelado = 6,
 }
 
 export interface Lancamento {
