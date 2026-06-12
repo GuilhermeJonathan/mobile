@@ -1,0 +1,518 @@
+<!--
+  ─────────────────────────────────────────────────────────────
+  SURPRESA · Dia dos Namorados
+  ─────────────────────────────────────────────────────────────
+  Tudo que você precisa editar está no bloco CONFIG logo abaixo.
+  Troque os textos, datas, fotos e a música. O resto se ajusta sozinho.
+  Como publicar (escolha um):
+    • Azure Static Web Apps  • Vercel  • GitHub Pages  • Netlify
+  Depois de publicar, copie o link e use o botão "Gerar QR Code"
+  (canto inferior) para criar o código que você entrega pra ela.
+  Lembre de remover esse botão antes, se quiser — veja o comentário
+  REMOVER-ANTES-DE-PUBLICAR mais abaixo.
+  ─────────────────────────────────────────────────────────────
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Para você ♥</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<script>
+/* ════════════════════════════════════════════════════════════
+   ►►►  EDITE AQUI  ◄◄◄
+   ════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  recipientName: "Andreia",             // pra quem é
+  eyebrow:       "ei, isso é pra você", // texto pequeno no topo
+  heroLine1:     "feliz dia",
+  heroLine2:     "dos namorados",
+  // A carta. Quebre em parágrafos com \n\n se quiser.
+  letter:
+    "Tudo começou num dia de dezembro de 2012. Eu não fazia ideia de que " +
+    "aquele começo ia virar a minha vida inteira.\n\n" +
+    "De lá pra cá a gente viveu de tudo — e ainda fez o Joaquim, o maior amor " +
+    "das nossas vidas. Se isso não é prova de que a gente dá certo junto, eu não " +
+    "sei o que é.\n\n" +
+    "Feliz Dia dos Namorados, Andreia. Fiz essa retrospectiva pra você — " +
+    "é só ir tocando.",
+  startDate: "2012-12-09",              // quando começaram (AAAA-MM-DD)
+  // Música: cole um link do Spotify OU um caminho .mp3. Deixe "" pra esconder.
+  // Ex. Spotify: "https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh"
+  // Ex. local:   "audio/nossa-musica.mp3"
+  musicUrl:   "https://open.spotify.com/intl-pt/track/59nm8mNBtNiGWZMgrhU7wx",
+  musicLabel: "bota a nossa música",
+  // Fotos (links de imagem). Deixe vazio que vira um espaço elegante.
+  photos: [
+    "img/imagem1.jpeg",  // [0] começo — 2012 (fundo slide)
+    "img/imagem2.jpeg",  // [1] galeria
+    "img/imagem3.jpeg",  // [2] só nós dois (slide)
+    "img/imagem4.jpeg",  // [3] galeria
+    "img/imagem5.jpeg",  // [4] grávidos — foto 1 (slide duplo)
+    "img/imagem6.jpeg",  // [5] grávidos — foto 2 (slide duplo)
+    "img/imagem7.jpeg",  // [6] o Joaquim (slide)
+    "img/imagem9.jpeg",  // [7] nós 3 (slide)
+  ],
+  slides: [
+    // ← toque esquerdo = voltar  |  toque direito = avançar →
+    { kicker: "a nossa trilha sonora", type: "music",  dur: 10000,                                    sub: "essa foi a nossa música favorita" },
+    { kicker: "dezembro de 2012",      type: "text",   photo: 0,  big: "Tudo começou ali.", sub: "e nunca mais parou" },
+    { kicker: "desde aquele dia",      type: "stat",              big: "{DIAS}",            sub: "dias do seu lado (e contando)" },
+    { kicker: "a gente assim",         type: "photo",  photo: 2,                            sub: "meu lugar preferido é do seu lado" },
+    { kicker: "quando soubemos",       type: "photo2", photo: 4,  photo2: 5,                sub: "a melhor notícia das nossas vidas" },
+    { kicker: "chegou o Joaquim",      type: "photo",  photo: 6,                            sub: "o amor maior que a gente já sentiu" },
+    { kicker: "a nossa família",       type: "photo",  photo: 7,                            sub: "tudo que eu mais amo numa foto só" },
+    { kicker: "a verdade",             type: "text",              big: "Eu te escolheria de novo. Sempre.", sub: "obrigado por essa vida com você" },
+  ],
+  closing:    "E a melhor parte é que ainda é só o começo.",
+  signature:  "— seu, sempre",          // assinatura final ("" pra esconder)
+};
+/* ════════════════════════════════════════════════════════════
+   FIM DA EDIÇÃO. Daqui pra baixo é a mágica.
+   ════════════════════════════════════════════════════════════ */
+</script>
+<style>
+  :root{
+    --paper:  #FFF3EA;   /* creme quente */
+    --ink:    #3A2622;   /* marrom espresso (quente) */
+    --wine:   #D6336C;   /* framboesa vibrante (acento) */
+    --blush:  #FF9E7A;   /* pêssego */
+    --gold:   #F0A93B;   /* dourado solar */
+    --hair:   rgba(58,38,34,.12);
+    --warm:   linear-gradient(155deg,#F0556B,#C9277A); /* gradiente vivo */
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; scrollbar-width:none; }
+  html::-webkit-scrollbar{ display:none; }
+  body{
+    background:var(--paper);
+    background-image:
+      radial-gradient(120% 80% at 50% -10%, rgba(255,158,122,.28), transparent 60%),
+      radial-gradient(90% 60% at 100% 100%, rgba(214,51,108,.10), transparent 55%);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:"Jost",system-ui,sans-serif; font-weight:300;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .serif{ font-family:"Cormorant Garamond",Georgia,serif; }
+  .eyebrow{
+    font-size:.78rem; text-transform:lowercase; letter-spacing:.04em;
+    color:var(--wine); font-weight:400; font-style:italic;
+    font-family:"Cormorant Garamond",serif; font-size:1.05rem;
+  }
+  .wrap{ max-width:760px; margin-inline:auto; padding-inline:28px; }
+  /* ── reveal on scroll ── */
+  .reveal{ opacity:0; transform:translateY(22px); transition:opacity 1.1s ease, transform 1.1s ease; }
+  .reveal.in{ opacity:1; transform:none; }
+  /* ── HERO ── */
+  .hero{
+    min-height:100svh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    position:relative; padding:40px 28px;
+  }
+  .hero .eyebrow{ margin-bottom:30px; opacity:0; animation:fade 1.4s .2s ease forwards; }
+  .hero h1{
+    font-family:"Cormorant Garamond",serif; font-weight:300;
+    font-size:clamp(3.4rem,13vw,7rem); line-height:.96; letter-spacing:-.01em;
+  }
+  .hero h1 span{ display:block; opacity:0; transform:translateY(30px); }
+  .hero h1 .l1{ animation:rise 1.3s .35s cubic-bezier(.2,.7,.2,1) forwards; }
+  .hero h1 .l2{ font-style:italic; color:var(--wine); animation:rise 1.3s .55s cubic-bezier(.2,.7,.2,1) forwards; }
+  .hero .name{
+    margin-top:34px; font-size:1.4rem; letter-spacing:.01em; text-transform:none;
+    font-family:"Cormorant Garamond",serif; font-style:italic;
+    color:var(--ink); opacity:0; animation:fade 1.4s 1s ease forwards;
+  }
+  .hero .name b{ color:var(--wine); font-weight:500; font-style:normal; }
+  .scrollcue{
+    position:absolute; bottom:34px; left:50%; transform:translateX(-50%);
+    font-size:.95rem; letter-spacing:.02em; text-transform:none; font-style:italic;
+    font-family:"Cormorant Garamond",serif; color:var(--gold);
+    opacity:0; animation:fade 1.4s 1.6s ease forwards;
+  }
+  .scrollcue::after{ content:""; display:block; width:1px; height:38px; margin:12px auto 0;
+    background:linear-gradient(var(--gold),transparent); animation:pulse 2.4s ease-in-out infinite; }
+  /* ── LETTER ── */
+  .letter{ padding:14vh 0; text-align:center; }
+  .letter .body{
+    font-family:"Cormorant Garamond",serif; font-weight:300;
+    font-size:clamp(1.5rem,4.4vw,2.15rem); line-height:1.5; color:var(--ink);
+  }
+  .letter .body p + p{ margin-top:1em; }
+  .rule{ width:54px; height:1px; background:var(--gold); margin:0 auto 38px; }
+  /* ── RETROSPECTIVE (signature) ── */
+  .retro{ padding:6vh 0 14vh; text-align:center; }
+  .retro-head{ margin-bottom:42px; }
+  .retro-head .t{ font-family:"Cormorant Garamond",serif; font-style:italic;
+    font-size:clamp(2rem,7vw,3rem); font-weight:400; margin-top:8px; }
+  .player{
+    position:relative; width:100%; max-width:460px; margin-inline:auto;
+    aspect-ratio:9/14; border:1px solid var(--hair); border-radius:18px;
+    background:#fff; overflow:hidden; cursor:pointer; user-select:none;
+    box-shadow:0 30px 60px -40px rgba(43,36,34,.5);
+  }
+  .bars{ position:absolute; inset:14px 14px auto; display:flex; gap:6px; z-index:5; }
+  .bar{ flex:1; height:2.5px; border-radius:2px; background:rgba(255,255,255,.4); overflow:hidden; }
+  .bar i{ display:block; height:100%; width:0; background:#fff; }
+  .bar.done i{ width:100%; }
+  .bar.active i{ animation:grow var(--dur,4s) linear forwards; }
+  .slide{
+    position:absolute; inset:0; display:none; flex-direction:column;
+    align-items:center; justify-content:center; gap:14px; padding:54px 34px 46px;
+    color:#fff; background:var(--warm);
+    text-align:center;
+  }
+  .slide .k,.slide .big,.slide .s{ text-shadow:0 1px 16px rgba(120,20,55,.35); }
+  .slide.show{ display:flex; }
+  .slide .k{ font-size:.72rem; letter-spacing:.3em; text-transform:uppercase; color:#FFE9DE; }
+  .slide .big{ font-family:"Cormorant Garamond",serif; font-weight:400;
+    font-size:clamp(1.9rem,7vw,2.7rem); line-height:1.15; }
+  .slide .big.num{ font-size:clamp(4.5rem,22vw,7rem); font-weight:400; letter-spacing:-.02em; line-height:.9; }
+  .slide .s{ font-size:.96rem; letter-spacing:.02em; color:rgba(255,255,255,.92); }
+  .slide.photo{ background:#3a1422; padding:0; }
+  .slide.haspic{ background:#3a1422; }
+  .slide .ph{ position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; }
+  .slide .scrim{ position:absolute; inset:0; z-index:1;
+    background:linear-gradient(rgba(36,8,22,.42),rgba(120,20,55,.62)); }
+  .slide.haspic .k,.slide.haspic .big,.slide.haspic .s{ position:relative; z-index:2; }
+  .slide.photo .grad{ position:absolute; inset:0; z-index:1; background:linear-gradient(transparent 38%,rgba(90,18,52,.85)); }
+  .slide.photo .cap{ position:relative; z-index:2; margin-top:auto; padding-bottom:42px; }
+  .slide .placeholder{ position:absolute; inset:0; z-index:2; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:12px; color:rgba(255,255,255,.95); }
+  .slide .pic-ico{ font-size:2.6rem; }
+  .slide .ph-hint{ font-size:.74rem; letter-spacing:.05em; line-height:1.55; text-align:center; }
+  .slide .ph-hint code{ font-family:ui-monospace,SFMono-Regular,monospace; background:rgba(255,255,255,.2);
+    padding:1px 7px; border-radius:5px; }
+  .slide .reveal-anim{ opacity:0; transform:translateY(16px) scale(.98); animation:rise 1s .15s cubic-bezier(.2,.7,.2,1) forwards; }
+  .start-veil{ position:absolute; inset:0; z-index:6; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px; background:var(--warm); color:#fff; }
+  .start-veil .play{ width:64px; height:64px; border:1px solid rgba(255,255,255,.5); border-radius:50%;
+    display:grid; place-items:center; transition:transform .3s ease, background .3s ease; }
+  .start-veil:hover .play{ transform:scale(1.08); background:rgba(255,255,255,.1); }
+  .start-veil .play::after{ content:""; border-left:16px solid #fff; border-top:10px solid transparent;
+    border-bottom:10px solid transparent; margin-left:4px; }
+  .start-veil small{ font-size:.7rem; letter-spacing:.32em; text-transform:uppercase; color:#FFE9DE; }
+  .tap-hint{ position:absolute; bottom:16px; left:0; right:0; text-align:center; z-index:5;
+    font-size:.62rem; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,255,255,.45); }
+  /* ── GALLERY ── */
+  .gallery{ padding:6vh 0 12vh; }
+  .gallery .eyebrow{ display:block; text-align:center; margin-bottom:34px; }
+  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .cell{ aspect-ratio:3/4; border-radius:10px; overflow:hidden; background:#FCE0D0;
+    position:relative; border:1px solid var(--hair); }
+  .cell img{ width:100%; height:100%; object-fit:cover; display:block;
+    transition:transform .8s cubic-bezier(.2,.7,.2,1); }
+  .cell:hover img{ transform:scale(1.05); }
+  .cell .empty{ position:absolute; inset:0; display:grid; place-items:center; text-align:center;
+    color:#E06A8E; font-size:.62rem; letter-spacing:.22em; text-transform:uppercase;
+    background:repeating-linear-gradient(45deg,#FFE4D2,#FFE4D2 10px,#FFD9C2 10px,#FFD9C2 20px); }
+  @media(max-width:520px){ .grid{ grid-template-columns:repeat(2,1fr); } }
+  /* ── CLOSING ── */
+  .closing{ padding:12vh 0 16vh; text-align:center; }
+  .closing .big{ font-family:"Cormorant Garamond",serif; font-style:italic; font-weight:300;
+    font-size:clamp(2rem,7vw,3.2rem); line-height:1.25; color:var(--wine); }
+  .closing .sig{ margin-top:34px; font-size:.82rem; letter-spacing:.26em; text-transform:uppercase; color:var(--ink); }
+  .heart{ display:inline-block; color:var(--wine); animation:beat 1.8s ease-in-out infinite; }
+  /* ── MUSIC BUTTON (mp3) ── */
+  .music{ position:fixed; top:18px; right:18px; z-index:40;
+    display:none; align-items:center; gap:9px; padding:9px 16px 9px 12px;
+    background:rgba(246,241,236,.86); backdrop-filter:blur(8px);
+    border:1px solid var(--hair); border-radius:40px; cursor:pointer;
+    font-size:.64rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); }
+  .music.on .ico .b{ animation:eq .9s ease-in-out infinite; }
+  .music .ico{ display:flex; align-items:flex-end; gap:2px; height:13px; }
+  .music .ico .b{ width:2.5px; background:var(--wine); height:5px; border-radius:2px; }
+  .music .ico .b:nth-child(2){ animation-delay:.2s; } .music .ico .b:nth-child(3){ animation-delay:.4s; }
+  /* ── SPOTIFY EMBED ── */
+  .spotify-wrap{ position:fixed; bottom:18px; right:18px; z-index:40;
+    display:none; border-radius:12px; overflow:hidden;
+    box-shadow:0 8px 32px -8px rgba(43,36,34,.4); width:300px; }
+  /* ── QR TOOLKIT  (REMOVER-ANTES-DE-PUBLICAR se quiser) ── */
+  .qrbtn{ position:fixed; bottom:18px; left:18px; z-index:40; padding:10px 16px;
+    background:var(--ink); color:var(--paper); border:none; border-radius:40px; cursor:pointer;
+    font-family:"Jost",sans-serif; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; }
+  .qrpanel{ position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+    background:rgba(43,36,34,.55); backdrop-filter:blur(4px); padding:24px; }
+  .qrpanel.open{ display:flex; }
+  .qrcard{ background:#fff; border-radius:16px; padding:30px; width:100%; max-width:360px; text-align:center; }
+  .qrcard h3{ font-family:"Cormorant Garamond",serif; font-weight:400; font-size:1.5rem; margin-bottom:4px; }
+  .qrcard p{ font-size:.78rem; color:#7a6f6a; margin-bottom:18px; }
+  .qrcard input{ width:100%; padding:11px 13px; border:1px solid var(--hair); border-radius:8px;
+    font-family:"Jost",sans-serif; font-size:.85rem; margin-bottom:12px; }
+  .qrcard .row{ display:flex; gap:8px; }
+  .qrcard button{ flex:1; padding:11px; border:1px solid var(--ink); background:var(--ink); color:#fff;
+    border-radius:8px; cursor:pointer; font-family:"Jost",sans-serif; font-size:.72rem;
+    letter-spacing:.12em; text-transform:uppercase; }
+  .qrcard button.ghost{ background:transparent; color:var(--ink); }
+  #qrout{ margin:18px auto 0; display:flex; justify-content:center; }
+  #qrout img,#qrout canvas{ border-radius:8px; }
+  /* ── keyframes ── */
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+  @keyframes fade{ to{ opacity:1; } }
+  @keyframes grow{ to{ width:100%; } }
+  @keyframes pulse{ 0%,100%{ opacity:.3; } 50%{ opacity:1; } }
+  @keyframes beat{ 0%,100%{ transform:scale(1); } 14%{ transform:scale(1.22); } 28%{ transform:scale(1); } 42%{ transform:scale(1.18); } }
+  @keyframes eq{ 0%,100%{ height:5px; } 50%{ height:13px; } }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+    .reveal{ opacity:1; transform:none; }
+    .hero h1 span,.hero .eyebrow,.hero .name,.scrollcue{ opacity:1; transform:none; }
+  }
+  :focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+</style>
+<!-- MÚSICA (mp3) -->
+<div class="music" id="music" role="button" tabindex="0" aria-label="Tocar música">
+  <span class="ico"><span class="b"></span><span class="b"></span><span class="b"></span></span>
+  <span id="musicLabel"></span>
+</div>
+<audio id="audio" loop></audio>
+<!-- MÚSICA (Spotify) -->
+<div class="spotify-wrap" id="spotifyWrap"></div>
+<!-- HERO -->
+<header class="hero">
+  <p class="eyebrow" id="eyebrow"></p>
+  <h1><span class="l1" id="h1"></span><span class="l2 serif" id="h2"></span></h1>
+  <p class="name">para <b id="name"></b></p>
+  <p class="scrollcue">role para baixo</p>
+</header>
+<!-- CARTA -->
+<section class="letter wrap reveal">
+  <div class="rule"></div>
+  <div class="body serif" id="letter"></div>
+</section>
+<!-- RETROSPECTIVA -->
+<section class="retro wrap reveal">
+  <div class="retro-head">
+    <span class="eyebrow">a nossa retrospectiva</span>
+    <div class="t serif">um toque de cada vez</div>
+  </div>
+  <div class="player" id="player" tabindex="0" aria-label="Retrospectiva, toque para avançar">
+    <div class="bars" id="bars"></div>
+    <div id="stage"></div>
+    <div class="start-veil" id="veil">
+      <div class="play" aria-hidden="true"></div>
+      <small>toque para começar</small>
+    </div>
+    <div class="tap-hint" id="tapHint" style="display:none">← voltar &nbsp;&nbsp; avançar →</div>
+  </div>
+</section>
+<!-- GALERIA -->
+<section class="gallery wrap reveal">
+  <span class="eyebrow">alguns instantes</span>
+  <div class="grid" id="grid"></div>
+</section>
+<!-- FECHAMENTO -->
+<section class="closing wrap reveal">
+  <div class="big serif"><span id="closing"></span> <span class="heart">♥</span></div>
+  <div class="sig" id="sig"></div>
+</section>
+<!-- QR TOOLKIT (REMOVER-ANTES-DE-PUBLICAR se preferir) -->
+<button class="qrbtn" id="qrbtn">⬡ Gerar QR Code</button>
+<div class="qrpanel" id="qrpanel">
+  <div class="qrcard">
+    <h3>Gerar QR Code</h3>
+    <p>Cole o link onde você publicou a página. Imprima o QR e entregue pra ela.</p>
+    <input id="qrurl" type="url" placeholder="https://suapagina.com" />
+    <div class="row">
+      <button id="qrgen">Gerar</button>
+      <button id="qrdl" class="ghost">Baixar</button>
+    </div>
+    <div id="qrout"></div>
+    <div class="row" style="margin-top:14px">
+      <button id="qrclose" class="ghost">Fechar</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  /* ---- preencher textos ---- */
+  $("#eyebrow").textContent = CONFIG.eyebrow;
+  $("#h1").textContent = CONFIG.heroLine1;
+  $("#h2").textContent = CONFIG.heroLine2;
+  $("#name").textContent = CONFIG.recipientName;
+  $("#closing").textContent = CONFIG.closing;
+  $("#sig").textContent = CONFIG.signature || "";
+  $("#letter").innerHTML = CONFIG.letter.split("\n\n").map(p=>`<p>${p}</p>`).join("");
+  /* ---- contador de dias ---- */
+  function daysTogether(){
+    const start = new Date(CONFIG.startDate + "T00:00:00");
+    if (isNaN(start)) return "—";
+    const d = Math.floor((Date.now() - start) / 86400000);
+    return d.toLocaleString("pt-BR");
+  }
+  /* ---- galeria ---- */
+  const grid = $("#grid");
+  CONFIG.photos.forEach((src,i)=>{
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.innerHTML = src
+      ? `<img src="${src}" alt="memória ${i+1}" loading="lazy">`
+      : `<span class="empty">foto ${i+1}</span>`;
+    grid.appendChild(cell);
+  });
+  /* ---- música (mp3 apenas — Spotify é embutido no slide) ---- */
+  if (CONFIG.musicUrl && !CONFIG.musicUrl.includes("spotify.com")){
+    const m = $("#music"), a = $("#audio");
+    a.src = CONFIG.musicUrl;
+    $("#musicLabel").textContent = CONFIG.musicLabel;
+    m.style.display = "flex";
+    const toggle = ()=>{ if(a.paused){ a.play(); m.classList.add("on"); } else { a.pause(); m.classList.remove("on"); } };
+    m.addEventListener("click", toggle);
+    m.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggle(); }});
+  }
+  /* ---- reveal on scroll ---- */
+  const io = new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }),{threshold:.18});
+  document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+  /* ---- RETROSPECTIVA (stories) ---- */
+  const slides = CONFIG.slides, DUR = 4200;
+  const bars = $("#bars"), stage = $("#stage"), veil = $("#veil"),
+        player = $("#player"), tapHint = $("#tapHint");
+  let idx = -1, timer = null;
+  slides.forEach(()=>{ const b=document.createElement("div"); b.className="bar"; b.innerHTML="<i></i>"; bars.appendChild(b); });
+  const barEls = [...bars.children];
+  function buildSlide(s){
+    const src = (s.photo != null) ? (CONFIG.photos[s.photo] || "") : "";
+    // slide só-foto (com legenda)
+    if (s.type === "photo"){
+      if (src){
+        return `<div class="slide photo show">
+          <div class="ph" style="background-image:url('${src}')"></div><div class="grad"></div>
+          <div class="cap reveal-anim"><div class="k">${s.kicker||""}</div>
+          <div class="s" style="margin-top:6px">${s.sub||""}</div></div></div>`;
+      }
+      // ainda sem foto: mostra o espaço e qual índice preencher
+      return `<div class="slide photo show">
+        <div class="ph" style="background:linear-gradient(155deg,#F0556B,#C9277A)"></div>
+        <div class="placeholder reveal-anim"><div class="pic-ico">📷</div>
+          <div class="ph-hint">coloque a foto <b>${s.photo}</b> em<br><code>CONFIG.photos</code></div></div>
+        <div class="grad"></div>
+        <div class="cap reveal-anim"><div class="k">${s.kicker||""}</div>
+        <div class="s" style="margin-top:6px">${s.sub||""}</div></div></div>`;
+    }
+    // slide de dois fotos lado a lado
+    if (s.type === "photo2"){
+      const s1 = CONFIG.photos[s.photo]  || "";
+      const s2 = CONFIG.photos[s.photo2] || "";
+      return `<div class="slide photo show" style="padding:0">
+        <div style="position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;gap:2px">
+          <div style="background-image:url('${s1}');background-size:cover;background-position:center top"></div>
+          <div style="background-image:url('${s2}');background-size:cover;background-position:center top"></div>
+        </div>
+        <div class="grad"></div>
+        <div class="cap reveal-anim"><div class="k">${s.kicker||""}</div>
+        <div class="s" style="margin-top:6px">${s.sub||""}</div></div>
+      </div>`;
+    }
+    // slide de música — o iframe vive em #spotifyWrap e é movido pra cá (sem recriar)
+    if (s.type === "music" && CONFIG.musicUrl && CONFIG.musicUrl.includes("spotify.com")) {
+      return `<div class="slide show" style="flex-direction:column;gap:20px">
+        <div class="k reveal-anim">${s.kicker||""}</div>
+        <div id="musicSlot" style="width:calc(100% - 40px);max-width:300px;height:152px;border-radius:12px;overflow:hidden;flex-shrink:0"></div>
+        <div class="s reveal-anim">${s.sub||""}</div>
+      </div>`;
+    }
+    // slide de texto/número — com foto de fundo opcional
+    const big = (s.big||"").replace("{DIAS}", daysTogether());
+    const cls = s.type === "stat" ? "big num" : "big";
+    const pic = src ? `<div class="ph" style="background-image:url('${src}')"></div><div class="scrim"></div>` : "";
+    return `<div class="slide ${src?'haspic':''} show">
+      ${pic}
+      <div class="k reveal-anim">${s.kicker||""}</div>
+      <div class="${cls} serif reveal-anim">${big}</div>
+      ${s.sub?`<div class="s reveal-anim">${s.sub}</div>`:""}</div>`;
+  }
+  const spotifyWrap = $("#spotifyWrap");
+  function _rescueIframe(){
+    // Se o iframe estiver dentro do slide (slot), salva no wrap antes de destruir o DOM
+    const slot = document.getElementById("musicSlot");
+    if (slot){
+      const fr = slot.querySelector("iframe");
+      if (fr) spotifyWrap.appendChild(fr);
+    }
+  }
+  function _placeIframe(isMusic){
+    const fr = spotifyWrap.querySelector("iframe");
+    if (!fr) return;
+    if (isMusic){
+      const slot = document.getElementById("musicSlot");
+      if (slot){ slot.appendChild(fr); spotifyWrap.style.display = "none"; }
+    } else {
+      spotifyWrap.style.display = "block";
+    }
+  }
+  function go(i){
+    if (i >= slides.length){ finish(); return; }
+    _rescueIframe();
+    idx = i;
+    stage.innerHTML = buildSlide(slides[i]);
+    _placeIframe(slides[i].type === "music");
+    barEls.forEach((b,k)=>{ b.classList.remove("active","done"); if(k<i) b.classList.add("done"); });
+    const dur = slides[i].dur || DUR;
+    const ab = barEls[i]; ab.classList.add("active"); ab.style.setProperty("--dur", dur+"ms");
+    clearTimeout(timer); timer = setTimeout(()=>go(i+1), dur);
+  }
+  function finish(){
+    clearTimeout(timer);
+    _rescueIframe();
+    spotifyWrap.style.display = "block";
+    barEls.forEach(b=>{ b.classList.remove("active"); b.classList.add("done"); });
+    stage.innerHTML = `<div class="slide show"><div class="big serif reveal-anim">${(CONFIG.closing||"♥")} <span style="color:var(--blush)">♥</span></div>
+      <div class="s reveal-anim" style="margin-top:10px">toque para rever</div></div>`;
+    idx = -2;
+  }
+  function start(){
+    veil.style.display="none"; tapHint.style.display="block";
+    // Cria o iframe UMA VEZ dentro do gesto do usuário (autoplay funciona).
+    // spotifyWrap precisa estar display:block no momento da criação — browsers bloqueiam
+    // autoplay em iframes dentro de elementos invisíveis.
+    if (CONFIG.musicUrl && CONFIG.musicUrl.includes("spotify.com") && !spotifyWrap.querySelector("iframe")){
+      const clean = CONFIG.musicUrl.replace(/\/intl-[a-z]{2,5}\//,"/");
+      const embed = clean.replace("open.spotify.com/","open.spotify.com/embed/").split("?")[0]
+                    + "?utm_source=generator&theme=0&autoplay=1";
+      spotifyWrap.style.display = "block"; // visível antes de inserir o iframe
+      spotifyWrap.innerHTML = `<iframe src="${embed}" width="300" height="152" frameborder="0"
+        scrolling="no"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        style="border-radius:12px;display:block;overflow:hidden"></iframe>`;
+    }
+    go(0); // go(0) é o slide de música → _placeIframe move o iframe pro slot imediatamente
+  }
+  function next(){
+    if (idx === -2){ go(0); return; }
+    go(idx + 1);
+  }
+  function prev(){
+    if (idx <= 0) return;
+    go(idx - 1);
+  }
+  veil.addEventListener("click", e=>{ e.stopPropagation(); start(); });
+  player.addEventListener("click", e=>{
+    if (idx === -1) return; // veil cuida do início
+    if (idx === -2){ go(0); return; }
+    const x = e.clientX - player.getBoundingClientRect().left;
+    if (x < player.offsetWidth * 0.3) prev(); else next();
+  });
+  player.addEventListener("keydown", e=>{
+    if(e.key==="ArrowLeft"){ e.preventDefault(); prev(); }
+    else if(e.key==="ArrowRight"||e.key==="Enter"||e.key===" "){ e.preventDefault(); next(); }
+  });
+  /* ---- QR Code ---- */
+  const panel=$("#qrpanel"), out=$("#qrout");
+  $("#qrbtn").addEventListener("click", ()=>panel.classList.add("open"));
+  $("#qrclose").addEventListener("click", ()=>panel.classList.remove("open"));
+  panel.addEventListener("click", e=>{ if(e.target===panel) panel.classList.remove("open"); });
+  $("#qrgen").addEventListener("click", ()=>{
+    const url = $("#qrurl").value.trim(); out.innerHTML="";
+    if(!url){ out.innerHTML='<p style="color:#b23">Cole um link primeiro.</p>'; return; }
+    if(typeof QRCode==="undefined"){ out.innerHTML='<p style="color:#b23">Biblioteca não carregou (sem internet?).</p>'; return; }
+    new QRCode(out, { text:url, width:200, height:200, colorDark:"#2B2422", colorLight:"#ffffff" });
+  });
+  $("#qrdl").addEventListener("click", ()=>{
+    const cv = out.querySelector("canvas"); if(!cv) return;
+    const a=document.createElement("a"); a.download="qrcode-surpresa.png"; a.href=cv.toDataURL("image/png"); a.click();
+  });
+})();
+</script>
