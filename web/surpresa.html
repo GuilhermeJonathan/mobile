@@ -472,11 +472,18 @@ const CONFIG = {
       const clean = CONFIG.musicUrl.replace(/\/intl-[a-z]{2,5}\//,"/");
       const embed = clean.replace("open.spotify.com/","open.spotify.com/embed/").split("?")[0]
                     + "?utm_source=generator&theme=0&autoplay=1";
-      spotifyWrap.style.display = "block"; // visível antes de inserir o iframe
+      spotifyWrap.style.display = "block";
       spotifyWrap.innerHTML = `<iframe src="${embed}" width="300" height="152" frameborder="0"
         scrolling="no"
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         style="border-radius:12px;display:block;overflow:hidden"></iframe>`;
+      // Fallback: postMessage play após o iframe carregar (API oficial do embed Spotify)
+      const _fr = spotifyWrap.querySelector("iframe");
+      _fr.addEventListener("load", function(){
+        setTimeout(function(){
+          try { _fr.contentWindow.postMessage({command:"play"}, "*"); } catch(e){}
+        }, 300);
+      });
     }
     go(0); // go(0) é o slide de música → _placeIframe move o iframe pro slot imediatamente
   }
