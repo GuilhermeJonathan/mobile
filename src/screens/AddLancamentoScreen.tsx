@@ -181,7 +181,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
       await lancamentosService.create({
         descricao: descricao.trim(),
         data: data.toISOString(),
-        valor: valorNum,
+        valor: modo === 'parcelado' ? valorNum * parcelasNum : valorNum,
         tipo,
         situacao,
         mes: mesInicio,
@@ -261,7 +261,7 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
           />
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={styles.label}>Valor (R$)</Text>
+              <Text style={styles.label}>{modo === 'parcelado' ? 'Valor da parcela (R$)' : 'Valor (R$)'}</Text>
               <TextInput
                 style={[styles.input, valorNum < 0 && { color: colors.red }]}
                 placeholder="0,00" placeholderTextColor={colors.inputPlaceholder}
@@ -365,10 +365,10 @@ export default function AddLancamentoScreen({ route, navigation }: any) {
                   <Text style={styles.previewLine}>
                     {parcelasNum}x de{' '}
                     <Text style={styles.previewValor}>
-                      R$ {(valorNum / parcelasNum).toFixed(2)}
+                      R$ {valorNum.toFixed(2)}
                     </Text>
                   </Text>
-                  <Text style={styles.previewHint}>Total: R$ {valorNum.toFixed(2)}</Text>
+                  <Text style={styles.previewHint}>Total: R$ {(valorNum * parcelasNum).toFixed(2)}</Text>
                 </View>
               )}
             </View>
