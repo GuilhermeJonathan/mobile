@@ -253,8 +253,7 @@ export default function DesktopShell({
             />
           ))}
         </View>
-        {/* ADMIN section — visible for admins; Imóveis also for podeVerImoveis users */}
-        {(isAdmin || podeVerImoveis) && (
+        {isAdmin && (
           <>
             <View style={s.divider} />
             <View style={[s.section, collapsed && s.sectionCollapsed]}>
@@ -266,14 +265,6 @@ export default function DesktopShell({
               />
               {(adminOpen || collapsed) && (
                 <>
-                  <NavRow
-                    key={IMOVEIS_ITEM.routeName}
-                    item={IMOVEIS_ITEM}
-                    active={activeRoute === IMOVEIS_ITEM.routeName}
-                    collapsed={collapsed}
-                    badge={0}
-                    onNavigate={() => onNavigate(IMOVEIS_ITEM.routeName, IMOVEIS_ITEM.isRootStack)}
-                  />
                   {isAdmin && ADMIN_ITEMS.map(item => (
                     <NavRow
                       key={item.routeName}

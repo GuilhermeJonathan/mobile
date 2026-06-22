@@ -434,17 +434,10 @@ export default function UserDrawer({ visible, onClose }: Props) {
             />
           </View>
 
-          {(isAdmin || podeVerImoveis) && !isDesktop && (
+          {isAdmin && !isDesktop && (
             <>
               <View style={s.divider} />
               <Text style={s.sectionLabel}>ADMIN</Text>
-              <TouchableOpacity
-                style={s.row}
-                onPress={() => { onClose(); navigationRef.current?.navigate('Imoveis' as never); }}
-              >
-                <Text style={s.rowIcon}>🏠</Text>
-                <Text style={s.rowLabel}>Imóveis</Text>
-              </TouchableOpacity>
               {isAdmin && (
                 <>
                   <TouchableOpacity
