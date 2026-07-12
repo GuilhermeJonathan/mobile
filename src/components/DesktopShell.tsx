@@ -59,8 +59,6 @@ const ADMIN_ITEMS: NavItem[] = [
   { routeName: 'PaymentTransactions',  label: 'Transações',  icon: '💳' },
 ];
 
-const IMOVEIS_ITEM: NavItem = { routeName: 'Imoveis', label: 'Imóveis', icon: '🏠' };
-
 export interface DesktopShellProps {
   activeRoute: string;
   onNavigate: (routeName: string, isRootStack?: boolean) => void;
@@ -68,7 +66,6 @@ export interface DesktopShellProps {
   avatarUrl: string | null;
   badge: number;
   isAdmin?: boolean;
-  podeVerImoveis?: boolean;
 }
 
 // ─── Nav row ─────────────────────────────────────────────────────────────────
@@ -136,7 +133,6 @@ export default function DesktopShell({
   avatarUrl,
   badge,
   isAdmin = false,
-  podeVerImoveis = false,
 }: DesktopShellProps) {
   const [collapsed,    setCollapsed]    = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);

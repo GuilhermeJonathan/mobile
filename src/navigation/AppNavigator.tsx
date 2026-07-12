@@ -39,8 +39,6 @@ import TransferenciaScreen from '../screens/TransferenciaScreen';
 import ImportarExtratoScreen from '../screens/ImportarExtratoScreen';
 import AssinaturasScreen from '../screens/AssinaturasScreen';
 import CategoriasScreen from '../screens/CategoriasScreen';
-import ImoveisScreen from '../screens/ImoveisScreen';
-import ImovelDetailScreen from '../screens/ImovelDetailScreen';
 import VendasScreen from '../screens/VendasScreen';
 import PagamentoSucessoScreen from '../screens/PagamentoSucessoScreen';
 import UserDrawer from '../components/UserDrawer';
@@ -116,7 +114,6 @@ function MainTabs() {
   const [drawerOpen, setDrawerOpen]       = useState(false);
   const [avatarUrl, setAvatarUrl]         = useState<string | null>(null);
   const [isAdmin, setIsAdmin]             = useState(false);
-  const [podeVerImoveis, setPodeVerImoveis] = useState(false);
   const [trialModal, setTrialModal]       = useState(false);
   const [trialDays, setTrialDays]         = useState<number | null>(null);
   const [trialExpired, setTrialExpired]   = useState(false);
@@ -181,7 +178,6 @@ function MainTabs() {
   useEffect(() => {
     authService.getUserInfo().then(u => setAvatarUrl(u?.avatarUrl ?? null));
     authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
-    authService.podeVerImoveis().then(setPodeVerImoveis).catch(() => setPodeVerImoveis(false));
   }, [drawerOpen]);
 
   // ── Sidebar navigation handler ──────────────────────────────────────────
@@ -386,11 +382,6 @@ function MainTabs() {
         options={{ title: 'Vendas', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
       />
       <Tab.Screen
-        name="Imoveis"
-        component={ImoveisScreen}
-        options={{ title: 'Imóveis', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
-      />
-      <Tab.Screen
         name="AdminUsers"
         component={AdminUsersScreen}
         options={{ title: 'Usuários', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
@@ -428,7 +419,6 @@ function MainTabs() {
             avatarUrl={avatarUrl}
             badge={badge}
             isAdmin={isAdmin}
-            podeVerImoveis={podeVerImoveis}
           />
           <View style={{ flex: 1 }}>
             {!trialExpired && trialBannerDays !== null && (
@@ -734,16 +724,6 @@ export default function AppNavigator() {
             headerStyle: { backgroundColor: darkColors.surface },
             headerTintColor: darkColors.text,
           }}
-        />
-        <Stack.Screen
-          name="ImovelDetail"
-          component={ImovelDetailScreen}
-          options={({ route }: any) => ({
-            headerShown: true,
-            title: 'Detalhe do Imóvel',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
-          })}
         />
         <Stack.Screen
           name="Vendas"

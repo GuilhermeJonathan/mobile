@@ -87,7 +87,6 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
   const [user, setUser]           = useState<UserInfo | null>(null);
   const [isAdmin, setIsAdmin]     = useState(false);
-  const [podeVerImoveis, setPodeVerImoveis] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [meuVinculo, setMeuVinculo] = useState<MeuVinculoDto | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -124,7 +123,6 @@ export default function UserDrawer({ visible, onClose }: Props) {
     if (visible) {
       authService.fetchMe().then(() => authService.getUserInfo().then(setUser));
       authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
-      authService.podeVerImoveis().then(setPodeVerImoveis).catch(() => setPodeVerImoveis(false));
       vinculosService.meuVinculo().then(setMeuVinculo).catch(() => setMeuVinculo(null));
       authService.getPlanInfo().then(setPlanInfo).catch(() => setPlanInfo(null));
       Animated.parallel([
