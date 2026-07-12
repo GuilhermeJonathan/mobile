@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { AssessoriaProvider } from './src/contexts/AssessoriaContext';
 
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
 if (sentryDsn) {
@@ -38,7 +39,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <Root />
+          <AssessoriaProvider>
+            <Root />
+          </AssessoriaProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </QueryClientProvider>

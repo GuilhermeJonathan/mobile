@@ -48,6 +48,13 @@ const EXTRA_ITEMS: NavItem[] = [
   { routeName: 'ImportarExtrato',  label: 'Importar OFX',  icon: '📥' },
   { routeName: 'BuscaLancamentos', label: 'Buscar',         icon: '🔍', isRootStack: true },
   { routeName: 'WhatsApp',         label: 'WhatsApp',       icon: '💬', isRootStack: true },
+  { routeName: 'MeuAssessor',      label: 'Meu Assessor',   icon: '👔' },
+];
+
+const ASSESSOR_ITEMS: NavItem[] = [
+  { routeName: 'AssessorClientes',      label: 'Meus Clientes',    icon: '👔' },
+  { routeName: 'AssessorRecomendacoes', label: 'Recomendações',    icon: '💬' },
+  { routeName: 'AssessorConvite',       label: 'Convidar Cliente', icon: '🎟️' },
 ];
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -66,6 +73,11 @@ export interface DesktopShellProps {
   avatarUrl: string | null;
   badge: number;
   isAdmin?: boolean;
+  isAssessor?: boolean;
+  /** Assessor puro fora do view-as: sidebar mostra apenas a carteira de clientes */
+  assessorMode?: boolean;
+  /** Recomendações pendentes de resposta (badge no item "Meu Assessor") */
+  recPendentes?: number;
 }
 
 // ─── Nav row ─────────────────────────────────────────────────────────────────
@@ -133,6 +145,9 @@ export default function DesktopShell({
   avatarUrl,
   badge,
   isAdmin = false,
+  isAssessor = false,
+  assessorMode = false,
+  recPendentes = 0,
 }: DesktopShellProps) {
   const [collapsed,    setCollapsed]    = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
@@ -208,47 +223,70 @@ export default function DesktopShell({
         contentContainerStyle={{ paddingBottom: 8 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* MENU section */}
-        <View style={[s.section, collapsed && s.sectionCollapsed]}>
-          <SectionHeader
-            label="MENU"
-            open={menuOpen}
-            collapsed={collapsed}
-            onToggle={() => setMenuOpen(o => !o)}
-          />
-          {(menuOpen || collapsed) && MAIN_ITEMS.map(item => (
-            <NavRow
-              key={item.routeName}
-              item={item}
-              active={activeRoute === item.routeName}
-              collapsed={collapsed}
-              badge={item.routeName === 'Lançamentos' ? badge : 0}
-              onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
-            />
-          ))}
-        </View>
+        {/* Assessor puro fora do view-as: só a carteira. Menu completo aparece
+            ao visualizar um cliente (view-as) ou para os demais perfis. */}
+        {!assessorMode && (
+          <>
+            {/* MENU section */}
+            <View style={[s.section, collapsed && s.sectionCollapsed]}>
+              <SectionHeader
+                label="MENU"
+                open={menuOpen}
+                collapsed={collapsed}
+                onToggle={() => setMenuOpen(o => !o)}
+              />
+              {(menuOpen || collapsed) && MAIN_ITEMS.map(item => (
+                <NavRow
+                  key={item.routeName}
+                  item={item}
+                  active={activeRoute === item.routeName}
+                  collapsed={collapsed}
+                  badge={item.routeName === 'Lançamentos' ? badge : 0}
+                  onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
+                />
+              ))}
+            </View>
 
-        <View style={s.divider} />
+            <View style={s.divider} />
 
-        {/* MAIS section */}
-        <View style={[s.section, collapsed && s.sectionCollapsed]}>
-          <SectionHeader
-            label="MAIS"
-            open={maisOpen}
-            collapsed={collapsed}
-            onToggle={() => setMaisOpen(o => !o)}
-          />
-          {(maisOpen || collapsed) && EXTRA_ITEMS.map(item => (
-            <NavRow
-              key={item.routeName}
-              item={item}
-              active={activeRoute === item.routeName}
-              collapsed={collapsed}
-              badge={0}
-              onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
-            />
-          ))}
-        </View>
+            {/* MAIS section */}
+            <View style={[s.section, collapsed && s.sectionCollapsed]}>
+              <SectionHeader
+                label="MAIS"
+                open={maisOpen}
+                collapsed={collapsed}
+                onToggle={() => setMaisOpen(o => !o)}
+              />
+              {(maisOpen || collapsed) && EXTRA_ITEMS.map(item => (
+                <NavRow
+                  key={item.routeName}
+                  item={item}
+                  active={activeRoute === item.routeName}
+                  collapsed={collapsed}
+                  badge={item.routeName === 'MeuAssessor' ? recPendentes : 0}
+                  onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
+                />
+              ))}
+            </View>
+          </>
+        )}
+        {isAssessor && (
+          <>
+            <View style={s.divider} />
+            <View style={[s.section, collapsed && s.sectionCollapsed]}>
+              {ASSESSOR_ITEMS.map(item => (
+                <NavRow
+                  key={item.routeName}
+                  item={item}
+                  active={activeRoute === item.routeName}
+                  collapsed={collapsed}
+                  badge={0}
+                  onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
+                />
+              ))}
+            </View>
+          </>
+        )}
         {isAdmin && (
           <>
             <View style={s.divider} />
