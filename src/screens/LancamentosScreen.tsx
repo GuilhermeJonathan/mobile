@@ -457,14 +457,21 @@ export default function LancamentosScreen({ navigation, route }: any) {
     });
     // Filtros de situação ocultam cartões (situação é por item, não por grupo);
     // 'parcelado' e 'assinatura' filtram dentro do grupo normalmente.
+    // Situação é por item (não por grupo), então normalmente ocultamos os cartões
+    // nesses filtros. EXCEÇÃO: quando um cartão específico está selecionado, aplicamos
+    // a situação DENTRO do cartão para ver as pendências/itens daquele cartão.
     const sitFiltrosOcultamCartao: FiltroSit[] = ['pendente', 'vencido', 'confirmado'];
-    const com_cartao = filtro === 'receitas' || sitFiltrosOcultamCartao.includes(filtroSit) ? [] :
+    const ocultaCartao = sitFiltrosOcultamCartao.includes(filtroSit) && !filtroCartao;
+    const com_cartao = filtro === 'receitas' || ocultaCartao ? [] :
       lancamentos.filter(l => !!l.cartaoId).filter(l => {
         if (filtroCartao && l.cartaoId !== filtroCartao) return false;
         if (buscaLower && !l.descricao.toLowerCase().includes(buscaLower) &&
             !(l.cartaoNome ?? '').toLowerCase().includes(buscaLower)) return false;
-        if (filtroSit === 'parcelado')  return l.totalParcelas != null && l.totalParcelas > 1;
-        if (filtroSit === 'assinatura') return isAssCategoria(l.categoriaNome);
+        if (filtroSit === 'pendente')    return l.situacao === SituacaoLancamento.AVencer || l.situacao === SituacaoLancamento.AReceber;
+        if (filtroSit === 'vencido')     return l.situacao === SituacaoLancamento.Vencido;
+        if (filtroSit === 'confirmado')  return isConfirmado(l.situacao);
+        if (filtroSit === 'parcelado')   return l.totalParcelas != null && l.totalParcelas > 1;
+        if (filtroSit === 'assinatura')  return isAssCategoria(l.categoriaNome);
         return true;
       });
 
@@ -1009,8 +1016,13 @@ export default function LancamentosScreen({ navigation, route }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* ── Filtros por situação ── */}
-      <View style={styles.sitBar}>
+      {/* ── Filtros por situação + cartão (mesma linha, rolável) ── */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.sitBar}
+        contentContainerStyle={styles.sitBarContent}
+      >
         {([
           { key: 'todos',      label: 'Todos'        },
           { key: 'pendente',   label: '🟠 Pendente'   },
@@ -1029,37 +1041,33 @@ export default function LancamentosScreen({ navigation, route }: any) {
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
 
-      {/* ── Filtro por cartão ── */}
-      {cartoesDisponiveis.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.cartaoBar}
-          contentContainerStyle={styles.cartaoBarContent}
-        >
-          <TouchableOpacity
-            style={[styles.sitChip, filtroCartao === null && styles.sitChipActive]}
-            onPress={() => setFiltroCartao(null)}
-          >
-            <Text style={[styles.sitChipText, filtroCartao === null && styles.sitChipTextActive]}>
-              💳 Todos os cartões
-            </Text>
-          </TouchableOpacity>
-          {cartoesDisponiveis.map(c => (
+        {/* Filtro por cartão — logo após "Assinatura", separados por um divisor */}
+        {cartoesDisponiveis.length > 0 && (
+          <>
+            <View style={styles.sitDivider} />
             <TouchableOpacity
-              key={c.id}
-              style={[styles.sitChip, filtroCartao === c.id && styles.sitChipActive]}
-              onPress={() => setFiltroCartao(prev => prev === c.id ? null : c.id)}
+              style={[styles.sitChip, filtroCartao === null && styles.sitChipActive]}
+              onPress={() => setFiltroCartao(null)}
             >
-              <Text style={[styles.sitChipText, filtroCartao === c.id && styles.sitChipTextActive]}>
-                {c.nome}
+              <Text style={[styles.sitChipText, filtroCartao === null && styles.sitChipTextActive]}>
+                💳 Todos os cartões
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+            {cartoesDisponiveis.map(c => (
+              <TouchableOpacity
+                key={c.id}
+                style={[styles.sitChip, filtroCartao === c.id && styles.sitChipActive]}
+                onPress={() => setFiltroCartao(prev => prev === c.id ? null : c.id)}
+              >
+                <Text style={[styles.sitChipText, filtroCartao === c.id && styles.sitChipTextActive]}>
+                  {c.nome}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+      </ScrollView>
 
       <FlatList
         data={listItems}
@@ -1361,8 +1369,16 @@ function makeStyles(c: ColorScheme) {
     searchClear: { fontSize: 14, color: c.textTertiary, paddingHorizontal: 4 },
 
     sitBar: {
-      flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingVertical: 8,
       backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
+      flexGrow: 0,
+    },
+    sitBarContent: {
+      flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingVertical: 8,
+      alignItems: 'center',
+    },
+    sitDivider: {
+      width: 1, alignSelf: 'stretch', marginVertical: 4, marginHorizontal: 4,
+      backgroundColor: c.border,
     },
     sitChip: {
       paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16,
@@ -1372,11 +1388,6 @@ function makeStyles(c: ColorScheme) {
     sitChipText: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
     sitChipTextActive: { color: c.green },
 
-    cartaoBar: {
-      backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
-      flexGrow: 0,
-    },
-    cartaoBarContent: { flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingVertical: 8 },
 
     filterBar: {
       flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingVertical: 10,
