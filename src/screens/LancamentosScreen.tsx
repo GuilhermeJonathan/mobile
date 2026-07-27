@@ -1370,7 +1370,7 @@ function makeStyles(c: ColorScheme) {
 
     sitBar: {
       backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
-      flexGrow: 0,
+      flexGrow: 0, flexShrink: 0, maxHeight: 48,
     },
     sitBarContent: {
       flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingVertical: 8,
