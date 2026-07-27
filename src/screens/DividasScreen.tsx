@@ -13,9 +13,11 @@ import type { ColorScheme } from '../theme/colors';
 
 // ── Helpers de prazo ──────────────────────────────────────────────────────────
 function endDate(item: ParceladoVigenteItem): Date {
-  const d = new Date(item.primeiraData);
-  d.setMonth(d.getMonth() + item.totalParcelas - 1);
-  return d;
+  // Data real da última parcela em aberto (= quitação). Antes reconstruíamos o
+  // cronograma como primeiraData + totalParcelas - 1, mas primeiraData é a data da
+  // 1ª parcela AINDA EM ABERTO (parcelaMin), não a nº 1 — isso empurrava a quitação
+  // (parcelaMin - 1) meses pra frente. Agora usamos a data real vinda do backend.
+  return new Date(item.ultimaData);
 }
 function parcelasRestantes(item: ParceladoVigenteItem): number {
   return item.totalParcelas - item.parcelaMin + 1;

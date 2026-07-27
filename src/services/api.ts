@@ -86,6 +86,7 @@ export interface ParceladoVigenteItem {
   categoriaNome: string | null;
   cartaoNome: string | null;
   primeiraData: string;
+  ultimaData: string;
   parcelaMin: number;
   totalParcelas: number;
   valorParcela: number;

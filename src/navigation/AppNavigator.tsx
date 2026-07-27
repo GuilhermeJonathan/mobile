@@ -607,6 +607,27 @@ export default function AppNavigator() {
     }
   }
 
+  // Mantém a URL do navegador em sincronia com a aba/rota ativa.
+  // O linking do React Navigation não estava reescrevendo a URL ao navegar entre
+  // abas via sidebar (a rota ficava como a home), então sincronizamos manualmente.
+  function handleStateChange() {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const route = navigationRef.current?.getCurrentRoute();
+    if (!route) return;
+    const routeToPath: Record<string, string> = {
+      Dashboard:     '/dashboard',
+      'Lançamentos': '/lancamentos',
+      Receitas:      '/receitas',
+      'Cartões':     '/cartoes',
+      Contas:        '/contas',
+      Planos:        '/planos',
+    };
+    const target = routeToPath[route.name];
+    if (target && window.location.pathname.replace(/\/$/, '') !== target) {
+      window.history.replaceState(window.history.state, '', target);
+    }
+  }
+
   return (
     <VencimentosProvider>
     <View style={{ flex: 1 }}>
@@ -615,6 +636,7 @@ export default function AppNavigator() {
       ref={navigationRef}
       linking={linking}
       onReady={handleNavReady}
+      onStateChange={handleStateChange}
       documentTitle={{ formatter: () => 'Meu FinDog · seu assistente financeiro' }}
     >
       <Stack.Navigator

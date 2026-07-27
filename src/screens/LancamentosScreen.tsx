@@ -242,6 +242,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const [expandedCartoes, setExpandedCartoes] = useState<Set<string>>(new Set());
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [filtroSit, setFiltroSit] = useState<FiltroSit>('todos');
+  const [filtroCartao, setFiltroCartao] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [prevCredito, setPrevCredito] = useState<number | null>(null);
@@ -440,6 +441,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
     const buscaLower = busca.trim().toLowerCase();
     const sem_cartao = lancamentos.filter(l => {
       if (l.cartaoId) return false;
+      if (filtroCartao) return false;   // filtrando por cartão → oculta itens sem cartão
       if (filtro === 'receitas') return l.tipo === TipoLancamento.Credito;
       if (filtro === 'despesas') return l.tipo !== TipoLancamento.Credito;
       return true;
@@ -458,6 +460,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
     const sitFiltrosOcultamCartao: FiltroSit[] = ['pendente', 'vencido', 'confirmado'];
     const com_cartao = filtro === 'receitas' || sitFiltrosOcultamCartao.includes(filtroSit) ? [] :
       lancamentos.filter(l => !!l.cartaoId).filter(l => {
+        if (filtroCartao && l.cartaoId !== filtroCartao) return false;
         if (buscaLower && !l.descricao.toLowerCase().includes(buscaLower) &&
             !(l.cartaoNome ?? '').toLowerCase().includes(buscaLower)) return false;
         if (filtroSit === 'parcelado')  return l.totalParcelas != null && l.totalParcelas > 1;
@@ -536,6 +539,13 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const totalReceitas = lancamentos.filter(l => !l.cartaoId && l.tipo === TipoLancamento.Credito).length;
   const totalDespesas = lancamentos.filter(l => !l.cartaoId && l.tipo !== TipoLancamento.Credito).length;
   const totalCartoes  = new Set(lancamentos.filter(l => !!l.cartaoId).map(l => l.cartaoId)).size;
+
+  // Cartões presentes no mês (para o filtro por cartão)
+  const cartoesDisponiveis = (() => {
+    const m = new Map<string, string>();
+    for (const l of lancamentos) if (l.cartaoId) m.set(l.cartaoId, l.cartaoNome ?? 'Cartão');
+    return [...m.entries()].map(([id, nome]) => ({ id, nome }));
+  })();
 
   // ── Alertas de vencimento (hooks ANTES do early return) ───────────────────
   const hoje    = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
@@ -876,7 +886,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
     if (item.kind === 'date-header') return renderDateHeader(item);
     if (item.kind === 'lancamento') return renderLancamento(item.data);
 
-    const expanded = expandedCartoes.has(item.cartaoId);
+    const expanded = expandedCartoes.has(item.cartaoId) || filtroCartao === item.cartaoId;
     const todosConfirmados = item.items.every(l => isConfirmado(l.situacao));
     const algumConfirmado = item.items.some(l => isConfirmado(l.situacao));
 
@@ -1020,6 +1030,36 @@ export default function LancamentosScreen({ navigation, route }: any) {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* ── Filtro por cartão ── */}
+      {cartoesDisponiveis.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.cartaoBar}
+          contentContainerStyle={styles.cartaoBarContent}
+        >
+          <TouchableOpacity
+            style={[styles.sitChip, filtroCartao === null && styles.sitChipActive]}
+            onPress={() => setFiltroCartao(null)}
+          >
+            <Text style={[styles.sitChipText, filtroCartao === null && styles.sitChipTextActive]}>
+              💳 Todos os cartões
+            </Text>
+          </TouchableOpacity>
+          {cartoesDisponiveis.map(c => (
+            <TouchableOpacity
+              key={c.id}
+              style={[styles.sitChip, filtroCartao === c.id && styles.sitChipActive]}
+              onPress={() => setFiltroCartao(prev => prev === c.id ? null : c.id)}
+            >
+              <Text style={[styles.sitChipText, filtroCartao === c.id && styles.sitChipTextActive]}>
+                {c.nome}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       <FlatList
         data={listItems}
@@ -1331,6 +1371,12 @@ function makeStyles(c: ColorScheme) {
     sitChipActive: { backgroundColor: c.surfaceElevated, borderColor: c.green },
     sitChipText: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
     sitChipTextActive: { color: c.green },
+
+    cartaoBar: {
+      backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
+      flexGrow: 0,
+    },
+    cartaoBarContent: { flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingVertical: 8 },
 
     filterBar: {
       flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingVertical: 10,
