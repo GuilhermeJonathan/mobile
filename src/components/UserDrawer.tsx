@@ -17,7 +17,7 @@ import { useVencimentos } from '../contexts/VencimentosContext';
 import { useAssessoria } from '../contexts/AssessoriaContext';
 import { fmtBRL } from '../utils/currency';
 import WhatsAppIcon from './WhatsAppIcon';
-import { vinculosService, MeuVinculoDto, whatsappService, assessoriaService } from '../services/api';
+import { vinculosService, MeuVinculoDto, whatsappService } from '../services/api';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
@@ -89,9 +89,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
   const [user, setUser]           = useState<UserInfo | null>(null);
   const [isAdmin, setIsAdmin]     = useState(false);
-  const [isAssessor, setIsAssessor] = useState(false);
   const [isAssessorStrict, setIsAssessorStrict] = useState(false);
-  const [recPendentes, setRecPendentes] = useState(0);
   const { viewAs } = useAssessoria();
   // Assessor puro fora do view-as: drawer esconde as funcionalidades de finanças
   const assessorMode = isAssessorStrict && !viewAs;
@@ -131,11 +129,7 @@ export default function UserDrawer({ visible, onClose }: Props) {
     if (visible) {
       authService.fetchMe().then(() => authService.getUserInfo().then(setUser));
       authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
-      authService.isAssessor().then(setIsAssessor).catch(() => setIsAssessor(false));
       authService.isAssessorStrict().then(setIsAssessorStrict).catch(() => setIsAssessorStrict(false));
-      assessoriaService.minhasRecomendacoes()
-        .then(rs => setRecPendentes(rs.filter(r => r.status === 1).length))
-        .catch(() => setRecPendentes(0));
       vinculosService.meuVinculo().then(setMeuVinculo).catch(() => setMeuVinculo(null));
       authService.getPlanInfo().then(setPlanInfo).catch(() => setPlanInfo(null));
       Animated.parallel([
@@ -438,40 +432,6 @@ export default function UserDrawer({ visible, onClose }: Props) {
           )}
 
           <View style={s.divider} />
-
-          {/* ── Assessoria ─────────────────────────────────────────── */}
-          {!isDesktop && (
-            <TouchableOpacity
-              style={s.row}
-              onPress={() => { onClose(); navigationRef.current?.navigate('Main' as never, { screen: isAssessor ? 'AssessorClientes' : 'MeuAssessor' } as never); }}
-            >
-              <Text style={s.rowIcon}>👔</Text>
-              <Text style={s.rowLabel}>{isAssessor ? 'Meus Clientes' : 'Meu Assessor'}</Text>
-              {!isAssessor && recPendentes > 0 && (
-                <View style={{ backgroundColor: '#7c3aed', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 5 }}>
-                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{recPendentes}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
-          {isAssessor && !isDesktop && (
-            <>
-              <TouchableOpacity
-                style={s.row}
-                onPress={() => { onClose(); navigationRef.current?.navigate('Main' as never, { screen: 'AssessorRecomendacoes' } as never); }}
-              >
-                <Text style={s.rowIcon}>💬</Text>
-                <Text style={s.rowLabel}>Recomendações</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={s.row}
-                onPress={() => { onClose(); navigationRef.current?.navigate('Main' as never, { screen: 'AssessorConvite' } as never); }}
-              >
-                <Text style={s.rowIcon}>🎟️</Text>
-                <Text style={s.rowLabel}>Convidar Cliente</Text>
-              </TouchableOpacity>
-            </>
-          )}
 
           {/* ── Tema ───────────────────────────────────────────────── */}
           <View style={s.row}>

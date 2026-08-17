@@ -48,13 +48,6 @@ const EXTRA_ITEMS: NavItem[] = [
   { routeName: 'ImportarExtrato',  label: 'Importar OFX',  icon: '📥' },
   { routeName: 'BuscaLancamentos', label: 'Buscar',         icon: '🔍', isRootStack: true },
   { routeName: 'WhatsApp',         label: 'WhatsApp',       icon: '💬', isRootStack: true },
-  { routeName: 'MeuAssessor',      label: 'Meu Assessor',   icon: '👔' },
-];
-
-const ASSESSOR_ITEMS: NavItem[] = [
-  { routeName: 'AssessorClientes',      label: 'Meus Clientes',    icon: '👔' },
-  { routeName: 'AssessorRecomendacoes', label: 'Recomendações',    icon: '💬' },
-  { routeName: 'AssessorConvite',       label: 'Convidar Cliente', icon: '🎟️' },
 ];
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -258,23 +251,6 @@ export default function DesktopShell({
                 onToggle={() => setMaisOpen(o => !o)}
               />
               {(maisOpen || collapsed) && EXTRA_ITEMS.map(item => (
-                <NavRow
-                  key={item.routeName}
-                  item={item}
-                  active={activeRoute === item.routeName}
-                  collapsed={collapsed}
-                  badge={item.routeName === 'MeuAssessor' ? recPendentes : 0}
-                  onNavigate={() => onNavigate(item.routeName, item.isRootStack)}
-                />
-              ))}
-            </View>
-          </>
-        )}
-        {isAssessor && (
-          <>
-            <View style={s.divider} />
-            <View style={[s.section, collapsed && s.sectionCollapsed]}>
-              {ASSESSOR_ITEMS.map(item => (
                 <NavRow
                   key={item.routeName}
                   item={item}
