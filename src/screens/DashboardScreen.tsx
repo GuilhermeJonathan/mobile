@@ -529,19 +529,15 @@ export default function DashboardScreen() {
   }, []);
 
   // Quando os dados chegarem: se for 2ª sessão+ e não houver dados, abre o modal.
-  // Assessor puro nunca vê este modal — o onboarding dele é o da carteira.
   useEffect(() => {
     if (isLoading || !dashboard || emptyModalChecked.current) return;
     emptyModalChecked.current = true;
     const isEmpty = (dashboard.totalCreditos ?? 0) === 0 && (dashboard.totalDebitos ?? 0) === 0;
     if (!isEmpty) return;
-    authService.isAssessorStrict().then(isAssessor => {
-      if (isAssessor) return;
-      AsyncStorage.getItem('@meufindog:openCount').then(val => {
-        const count = parseInt(val ?? '0', 10);
-        if (count >= 2 && !_modalDismissed) setShowEmptyModal(true);
-      });
-    }).catch(() => {});
+    AsyncStorage.getItem('@meufindog:openCount').then(val => {
+      const count = parseInt(val ?? '0', 10);
+      if (count >= 2 && !_modalDismissed) setShowEmptyModal(true);
+    });
   }, [isLoading, dashboard]);
 
   // Reseta dados lazy ao focar a tela (cobre troca de usuário sem mudança de mês)

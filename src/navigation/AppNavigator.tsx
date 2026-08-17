@@ -39,22 +39,14 @@ import TransferenciaScreen from '../screens/TransferenciaScreen';
 import ImportarExtratoScreen from '../screens/ImportarExtratoScreen';
 import AssinaturasScreen from '../screens/AssinaturasScreen';
 import CategoriasScreen from '../screens/CategoriasScreen';
-import MeuAssessorScreen from '../screens/MeuAssessorScreen';
-import AssessorClientesScreen from '../screens/AssessorClientesScreen';
-import AssessorConviteScreen from '../screens/AssessorConviteScreen';
-import AssessorRecomendacoesScreen from '../screens/AssessorRecomendacoesScreen';
 import VendasScreen from '../screens/VendasScreen';
 import PagamentoSucessoScreen from '../screens/PagamentoSucessoScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
-import AssessorOnboarding from '../components/AssessorOnboarding';
 import TrialExpiredModal from '../components/TrialExpiredModal';
 import TrialBanner from '../components/TrialBanner';
-import AssessoriaBanner from '../components/AssessoriaBanner';
 import TermsModal from '../components/TermsModal';
 import { VencimentosProvider, useVencimentos } from '../contexts/VencimentosContext';
-import { useAssessoria } from '../contexts/AssessoriaContext';
-import { assessoriaService } from '../services/api';
 import { OfflineBanner } from '../components/OfflineBanner';
 
 const Stack = createNativeStackNavigator();
@@ -122,12 +114,6 @@ function MainTabs() {
   const [drawerOpen, setDrawerOpen]       = useState(false);
   const [avatarUrl, setAvatarUrl]         = useState<string | null>(null);
   const [isAdmin, setIsAdmin]             = useState(false);
-  const [isAssessor, setIsAssessor]       = useState(false);
-  const [isAssessorStrict, setIsAssessorStrict] = useState(false);
-  const [recPendentes, setRecPendentes] = useState(0);
-  const { viewAs } = useAssessoria();
-  // Assessor puro fora do view-as: só enxerga a carteira de clientes
-  const assessorMode = isAssessorStrict && !viewAs;
   const [trialModal, setTrialModal]       = useState(false);
   const [trialDays, setTrialDays]         = useState<number | null>(null);
   const [trialExpired, setTrialExpired]   = useState(false);
@@ -192,21 +178,7 @@ function MainTabs() {
   useEffect(() => {
     authService.getUserInfo().then(u => setAvatarUrl(u?.avatarUrl ?? null));
     authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
-    authService.isAssessor().then(setIsAssessor).catch(() => setIsAssessor(false));
-    authService.isAssessorStrict().then(setIsAssessorStrict).catch(() => setIsAssessorStrict(false));
-    // Notificação: recomendações do assessor aguardando resposta do cliente
-    assessoriaService.minhasRecomendacoes()
-      .then(rs => setRecPendentes(rs.filter(r => r.status === 1).length))
-      .catch(() => setRecPendentes(0));
   }, [drawerOpen]);
-
-  // Assessor puro entra direto na carteira de clientes
-  useEffect(() => {
-    if (assessorMode) {
-      setActiveRoute('AssessorClientes');
-      navigationRef.current?.navigate('Main' as never, { screen: 'AssessorClientes' } as never);
-    }
-  }, [assessorMode]);
 
   // ── Sidebar navigation handler ──────────────────────────────────────────
   // No desktop a maioria dos itens abre dentro do Tab (área de conteúdo à direita).
@@ -237,8 +209,8 @@ function MainTabs() {
         },
         tabBarActiveTintColor: darkColors.green,
         tabBarInactiveTintColor: darkColors.textTertiary,
-        // Hide bottom bar on desktop (sidebar navega) e para assessor puro (só carteira)
-        tabBarStyle: (isDesktop || assessorMode) ? { display: 'none' } : {
+        // Hide bottom bar on desktop (sidebar navega)
+        tabBarStyle: isDesktop ? { display: 'none' } : {
           backgroundColor: darkColors.surface,
           borderTopColor: darkColors.border,
           paddingBottom: insets.bottom,
@@ -403,27 +375,6 @@ function MainTabs() {
         component={ImportarExtratoScreen}
         options={{ title: 'Importar Extrato', headerShown: false, tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
       />
-      {/* ── Assessoria ── */}
-      <Tab.Screen
-        name="MeuAssessor"
-        component={MeuAssessorScreen}
-        options={{ title: 'Meu Assessor', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
-      />
-      <Tab.Screen
-        name="AssessorClientes"
-        component={AssessorClientesScreen}
-        options={{ title: 'Meus Clientes', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
-      />
-      <Tab.Screen
-        name="AssessorConvite"
-        component={AssessorConviteScreen}
-        options={{ title: 'Convidar Cliente', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
-      />
-      <Tab.Screen
-        name="AssessorRecomendacoes"
-        component={AssessorRecomendacoesScreen}
-        options={{ title: 'Recomendações', tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }}
-      />
       {/* ── Admin screens — hidden tab, open in content area on desktop ── */}
       <Tab.Screen
         name="Vendas"
@@ -458,7 +409,7 @@ function MainTabs() {
           trialDaysRemaining={trialDays}
         />
         <TermsModal visible={termsModal} onAccept={handleAcceptTerms} />
-        {assessorMode ? <AssessorOnboarding /> : <OnboardingTour active sidebarWidth={240} />}
+        <OnboardingTour active sidebarWidth={240} />
         <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
         <View style={{ flex: 1, flexDirection: 'row', backgroundColor: darkColors.background }}>
           <DesktopShell
@@ -468,12 +419,8 @@ function MainTabs() {
             avatarUrl={avatarUrl}
             badge={badge}
             isAdmin={isAdmin}
-            isAssessor={isAssessor}
-            assessorMode={assessorMode}
-            recPendentes={recPendentes}
           />
           <View style={{ flex: 1 }}>
-            <AssessoriaBanner />
             {!trialExpired && trialBannerDays !== null && (
               <TrialBanner
                 daysRemaining={trialBannerDays}
@@ -496,12 +443,9 @@ function MainTabs() {
         trialDaysRemaining={trialDays}
       />
       <TermsModal visible={termsModal} onAccept={handleAcceptTerms} />
-      {assessorMode
-        ? <AssessorOnboarding />
-        : <OnboardingTour active onOpenDrawer={() => setDrawerOpen(true)} onCloseDrawer={() => setDrawerOpen(false)} />}
+      <OnboardingTour active onOpenDrawer={() => setDrawerOpen(true)} onCloseDrawer={() => setDrawerOpen(false)} />
       <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <View style={{ flex: 1 }}>
-        <AssessoriaBanner />
         {!trialExpired && trialBannerDays !== null && (
           <TrialBanner
             daysRemaining={trialBannerDays}

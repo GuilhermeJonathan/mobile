@@ -66,11 +66,6 @@ export interface DesktopShellProps {
   avatarUrl: string | null;
   badge: number;
   isAdmin?: boolean;
-  isAssessor?: boolean;
-  /** Assessor puro fora do view-as: sidebar mostra apenas a carteira de clientes */
-  assessorMode?: boolean;
-  /** Recomendações pendentes de resposta (badge no item "Meu Assessor") */
-  recPendentes?: number;
 }
 
 // ─── Nav row ─────────────────────────────────────────────────────────────────
@@ -138,9 +133,6 @@ export default function DesktopShell({
   avatarUrl,
   badge,
   isAdmin = false,
-  isAssessor = false,
-  assessorMode = false,
-  recPendentes = 0,
 }: DesktopShellProps) {
   const [collapsed,    setCollapsed]    = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
@@ -216,10 +208,6 @@ export default function DesktopShell({
         contentContainerStyle={{ paddingBottom: 8 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Assessor puro fora do view-as: só a carteira. Menu completo aparece
-            ao visualizar um cliente (view-as) ou para os demais perfis. */}
-        {!assessorMode && (
-          <>
             {/* MENU section */}
             <View style={[s.section, collapsed && s.sectionCollapsed]}>
               <SectionHeader
@@ -261,8 +249,6 @@ export default function DesktopShell({
                 />
               ))}
             </View>
-          </>
-        )}
         {isAdmin && (
           <>
             <View style={s.divider} />

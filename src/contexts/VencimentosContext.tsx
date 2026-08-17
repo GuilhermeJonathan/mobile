@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { lancamentosService, assessoriaService } from '../services/api';
+import { lancamentosService } from '../services/api';
 import { Lancamento, SituacaoLancamento } from '../types';
 
 export interface VencimentoAlerta {
@@ -8,11 +8,11 @@ export interface VencimentoAlerta {
   descricao: string;
   valor: number;
   data: string;
-  tipo: 'vencido' | 'hoje' | 'breve' | 'recomendacao';
+  tipo: 'vencido' | 'hoje' | 'breve';
 }
 
 interface VencimentosContextData {
-  /** Total de alertas (vencimentos + recomendações) — usado no sininho */
+  /** Total de alertas de vencimentos — usado no sininho */
   badge: number;
   /** Só vencimentos — usado no item "Lançamentos" do menu */
   badgeVencimentos: number;
@@ -66,30 +66,16 @@ export function VencimentosProvider({ children }: { children: React.ReactNode })
         }
       }
 
-      // Recomendações do assessor aguardando resposta também alertam no sininho
-      try {
-        const recs = await assessoriaService.minhasRecomendacoes();
-        for (const r of recs.filter(x => x.status === 1)) {
-          lista.push({
-            id: r.id,
-            descricao: 'Nova recomendação do seu assessor',
-            valor: 0,
-            data: r.criadoEm,
-            tipo: 'recomendacao',
-          });
-        }
-      } catch { /* sem assessor ou endpoint indisponível — ignora */ }
-
-      // Ordena: recomendações e vencidos primeiro, depois por data
+      // Ordena: vencidos primeiro, depois por data
       lista.sort((a, b) => {
-        const order = { recomendacao: 0, vencido: 1, hoje: 2, breve: 3 };
+        const order = { vencido: 0, hoje: 1, breve: 2 };
         if (order[a.tipo] !== order[b.tipo]) return order[a.tipo] - order[b.tipo];
         return new Date(a.data).getTime() - new Date(b.data).getTime();
       });
 
       setAlertas(lista);
       setBadge(lista.length);
-      setBadgeVencimentos(lista.filter(a => a.tipo !== 'recomendacao').length);
+      setBadgeVencimentos(lista.length);
     } catch {
       setAlertas([]);
       setBadge(0);

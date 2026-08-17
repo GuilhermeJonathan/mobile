@@ -11,24 +11,9 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ── Modo view-as (assessoria) ─────────────────────────────────────────────
-// Quando ativo, toda requisição leva o header X-Assessoria-Cliente e o backend
-// troca o contexto para o cliente (somente leitura, garantido pelo middleware).
-let assessoriaClienteId: string | null = null;
-export function setAssessoriaCliente(clienteId: string | null) {
-  assessoriaClienteId = clienteId;
-}
-export function getAssessoriaCliente(): string | null {
-  return assessoriaClienteId;
-}
-
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('@cf_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  // Não sobrescreve header explícito por requisição (ex: saudeCliente/analiseIa no painel)
-  if (assessoriaClienteId && !config.headers['X-Assessoria-Cliente']) {
-    config.headers['X-Assessoria-Cliente'] = assessoriaClienteId;
-  }
   return config;
 });
 
@@ -231,103 +216,6 @@ export const vinculosService = {
     api.get('/vinculos/meu').then(r => r.data),
   remover: (id: string) =>
     api.delete(`/vinculos/${id}`),
-};
-
-export interface ClienteAssessoriaDto {
-  vinculoId: string;
-  clienteId: string;
-  nomeCliente: string | null;
-  codigoConvite: string;
-  aceito: boolean;
-  ativo: boolean;
-  criadoEm: string;
-  aceitoEm: string | null;
-  avatarUrl: string | null;
-}
-
-export interface ConviteHistoricoDto {
-  vinculoId: string;
-  codigoConvite: string;
-  status: 'Pendente' | 'Aceito' | 'Revogado';
-  nomeCliente: string | null;
-  criadoEm: string;
-  aceitoEm: string | null;
-  revogadoEm: string | null;
-}
-
-export interface MeuAssessorDto {
-  temAssessor: boolean;
-  vinculoId: string | null;
-  nomeAssessor: string | null;
-  aceitoEm: string | null;
-}
-
-export interface PilarSaudeDto {
-  nome: string;
-  pontos: number;
-  maximo: number;
-  detalhe: string;
-}
-
-export interface SaudeFinanceiraDto {
-  scoreGeral: number;
-  classificacao: string;
-  pilares: PilarSaudeDto[];
-}
-
-export interface RecomendacaoDto {
-  id: string;
-  clienteId: string;
-  tipo: number;          // 1=AjusteCategoria, 2=Dica, 3=Alerta
-  categoriaId: string | null;
-  texto: string;
-  status: number;        // 1=Pendente, 2=Aceita, 3=Recusada
-  respostaCliente: string | null;
-  criadoEm: string;
-  respondidoEm: string | null;
-}
-
-export const assessoriaService = {
-  gerarConvite: (): Promise<{ codigo: string }> =>
-    api.post('/assessoria/convite').then(r => r.data),
-  enviarConviteEmail: (email: string): Promise<{ codigo: string }> =>
-    api.post('/assessoria/convite/email', { email }).then(r => r.data),
-  convitesHistorico: (): Promise<ConviteHistoricoDto[]> =>
-    api.get('/assessoria/convites/historico').then(r => r.data),
-  aceitarConvite: (codigo: string, nomeCliente: string) =>
-    api.post('/assessoria/aceitar', { codigo, nomeCliente }),
-  clientes: (): Promise<ClienteAssessoriaDto[]> =>
-    api.get('/assessoria/clientes').then(r => r.data),
-  meuAssessor: (): Promise<MeuAssessorDto> =>
-    api.get('/assessoria/meu-assessor').then(r => r.data),
-  revogar: (id: string) =>
-    api.delete(`/assessoria/${id}`),
-  // Saúde do usuário efetivo (o próprio, ou o cliente sob view-as)
-  saude: (mes: number, ano: number): Promise<SaudeFinanceiraDto> =>
-    api.get(`/assessoria/saude/${mes}/${ano}`).then(r => r.data),
-  // Saúde de um cliente específico sem entrar no modo view-as (para o painel)
-  saudeCliente: (clienteId: string, mes: number, ano: number): Promise<SaudeFinanceiraDto> =>
-    api.get(`/assessoria/saude/${mes}/${ano}`, {
-      headers: { 'X-Assessoria-Cliente': clienteId },
-    }).then(r => r.data),
-
-  // ── Recomendações (F3) ──
-  criarRecomendacao: (clienteId: string, tipo: number, texto: string, categoriaId?: string) =>
-    api.post('/assessoria/recomendacoes', { clienteId, tipo, texto, categoriaId: categoriaId ?? null }),
-  responderRecomendacao: (id: string, aceitar: boolean, comentario?: string) =>
-    api.patch(`/assessoria/recomendacoes/${id}/responder`, { aceitar, comentario: comentario ?? null }),
-  excluirRecomendacao: (id: string) =>
-    api.delete(`/assessoria/recomendacoes/${id}`),
-  minhasRecomendacoes: (): Promise<RecomendacaoDto[]> =>
-    api.get('/assessoria/recomendacoes').then(r => r.data),
-  recomendacoesDoCliente: (clienteId: string): Promise<RecomendacaoDto[]> =>
-    api.get(`/assessoria/recomendacoes/cliente/${clienteId}`).then(r => r.data),
-
-  // ── Análise com IA (F4) — rascunho para o assessor editar ──
-  analiseIa: (clienteId: string, mes: number, ano: number): Promise<{ rascunho: string }> =>
-    api.get(`/assessoria/analise-ia/${mes}/${ano}`, {
-      headers: { 'X-Assessoria-Cliente': clienteId },
-    }).then(r => r.data),
 };
 
 export const categoriasService = {

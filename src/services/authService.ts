@@ -126,23 +126,6 @@ export const authService = {
     return payload?.userType === '1';
   },
 
-  // Assessor (userType=3); admin também tem acesso ao painel de assessoria
-  async isAssessor(): Promise<boolean> {
-    const token = await AsyncStorage.getItem('@cf_token');
-    if (!token) return false;
-    const payload = decodeToken(token);
-    return payload?.userType === '3' || payload?.userType === '1';
-  },
-
-  // Assessor puro (userType=3): a UI mostra SÓ a carteira de clientes;
-  // as telas de finanças só aparecem no modo view-as. Admin mantém tudo.
-  async isAssessorStrict(): Promise<boolean> {
-    const token = await AsyncStorage.getItem('@cf_token');
-    if (!token) return false;
-    const payload = decodeToken(token);
-    return payload?.userType === '3';
-  },
-
   async register(
     inviteToken: string,
     name: string,

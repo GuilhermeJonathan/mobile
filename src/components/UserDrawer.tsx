@@ -14,7 +14,6 @@ import { resetToLogin } from '../navigation/navigationRef';
 import { useTheme } from '../theme/ThemeContext';
 import { navigationRef } from '../navigation/navigationRef';
 import { useVencimentos } from '../contexts/VencimentosContext';
-import { useAssessoria } from '../contexts/AssessoriaContext';
 import { fmtBRL } from '../utils/currency';
 import WhatsAppIcon from './WhatsAppIcon';
 import { vinculosService, MeuVinculoDto, whatsappService } from '../services/api';
@@ -30,7 +29,6 @@ const TIPO_CONFIG = {
   vencido:      { cor: '#e53935', label: 'Vencido',            icon: '🔴' },
   hoje:         { cor: '#FF9800', label: 'Vence hoje',         icon: '⚠️' },
   breve:        { cor: '#FF9800', label: 'Vence em breve',     icon: '🟠' },
-  recomendacao: { cor: '#7c3aed', label: 'Aguardando resposta', icon: '💬' },
 };
 
 function fmtData(iso: string): string {
@@ -89,10 +87,6 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
   const [user, setUser]           = useState<UserInfo | null>(null);
   const [isAdmin, setIsAdmin]     = useState(false);
-  const [isAssessorStrict, setIsAssessorStrict] = useState(false);
-  const { viewAs } = useAssessoria();
-  // Assessor puro fora do view-as: drawer esconde as funcionalidades de finanças
-  const assessorMode = isAssessorStrict && !viewAs;
   const [loggingOut, setLoggingOut] = useState(false);
   const [meuVinculo, setMeuVinculo] = useState<MeuVinculoDto | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -129,7 +123,6 @@ export default function UserDrawer({ visible, onClose }: Props) {
     if (visible) {
       authService.fetchMe().then(() => authService.getUserInfo().then(setUser));
       authService.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
-      authService.isAssessorStrict().then(setIsAssessorStrict).catch(() => setIsAssessorStrict(false));
       vinculosService.meuVinculo().then(setMeuVinculo).catch(() => setMeuVinculo(null));
       authService.getPlanInfo().then(setPlanInfo).catch(() => setPlanInfo(null));
       Animated.parallel([
@@ -401,10 +394,6 @@ export default function UserDrawer({ visible, onClose }: Props) {
                     style={s.alertItem}
                     onPress={() => {
                       onClose();
-                      if (a.tipo === 'recomendacao') {
-                        (navigationRef.current as any)?.navigate('Main', { screen: 'MeuAssessor' });
-                        return;
-                      }
                       const filtroSit = a.tipo === 'vencido' ? 'vencido' : 'pendente';
                       const now = new Date();
                       (navigationRef.current as any)?.navigate('Main', {
@@ -420,11 +409,9 @@ export default function UserDrawer({ visible, onClose }: Props) {
                         {cfg.label} · {fmtData(a.data)}
                       </Text>
                     </View>
-                    {a.tipo !== 'recomendacao' && (
-                      <Text style={[s.alertItemValor, { color: cfg.cor }]}>
-                        {fmtBRL(a.valor)}
-                      </Text>
-                    )}
+                    <Text style={[s.alertItemValor, { color: cfg.cor }]}>
+                      {fmtBRL(a.valor)}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
@@ -486,9 +473,6 @@ export default function UserDrawer({ visible, onClose }: Props) {
 
           <View style={s.divider} />
 
-          {/* ── Funcionalidades de finanças — ocultas para assessor puro ── */}
-          {!assessorMode && (
-          <>
           {/* ── Relatórios — ocultos no desktop (disponíveis no menu lateral) ── */}
           {!isDesktop && (
             <>
@@ -623,8 +607,6 @@ export default function UserDrawer({ visible, onClose }: Props) {
           </TouchableOpacity>
 
           <View style={s.divider} />
-          </>
-          )}
 
           {/* ── Meus Dados ─────────────────────────────────────────── */}
           <TouchableOpacity style={s.row} onPress={openDadosModal}>
