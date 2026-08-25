@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import DatePickerField from '../components/DatePickerField';
 import { useTheme } from '../theme/ThemeContext';
+import { FAB } from '../components/ui';
 import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 import { fmtBRL } from '../utils/currency';
@@ -423,9 +424,7 @@ export default function MetasScreen() {
       </ScrollView>
 
       {/* FAB nova meta */}
-      <TouchableOpacity style={s.fab} onPress={abrirNova}>
-        <Text style={s.fabText}>+</Text>
-      </TouchableOpacity>
+      <FAB accessibilityLabel="Nova meta" onPress={abrirNova} />
 
       {/* ── Modal nova/editar meta ────────────────────────────────────── */}
       <Modal visible={modalMeta} transparent animationType="slide" onRequestClose={() => setModalMeta(false)}>
@@ -680,14 +679,6 @@ function styles(c: ColorScheme) {
     emptySub:   { fontSize: 13, color: c.textSecondary, textAlign: 'center', lineHeight: 20 },
 
     // FAB
-    fab: {
-      position: 'absolute', bottom: 24, right: 24,
-      width: 56, height: 56, borderRadius: 28,
-      backgroundColor: c.green, justifyContent: 'center', alignItems: 'center',
-      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
-    },
-    fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
 
     // Modais
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },

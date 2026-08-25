@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { categoriasService } from '../services/api';
 import { Categoria, TipoLancamento } from '../types';
 import { useTheme } from '../theme/ThemeContext';
+import { FAB } from '../components/ui';
 import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 
@@ -202,9 +203,7 @@ export default function CategoriasScreen() {
 
       {/* FAB */}
       {categorias.length > 0 && (
-        <TouchableOpacity style={s.fab} onPress={abrirNova}>
-          <Text style={s.fabText}>+</Text>
-        </TouchableOpacity>
+        <FAB accessibilityLabel="Nova categoria" onPress={abrirNova} />
       )}
 
       {/* ── Modal confirmar exclusão ─────────────────────────────────────── */}
@@ -348,8 +347,6 @@ function makeStyles(c: ColorScheme) {
     btnAct:       { padding: 4 },
     btnActText:   { fontSize: 16 },
 
-    fab:          { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.green, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-    fabText:      { color: '#fff', fontSize: 28, lineHeight: 32 },
 
     overlay:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 20 },
     modal:        { backgroundColor: c.surfaceElevated, borderRadius: 16, padding: 24, width: '100%', maxWidth: 480, borderWidth: 1, borderColor: c.border },

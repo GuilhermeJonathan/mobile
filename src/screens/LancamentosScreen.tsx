@@ -10,6 +10,7 @@ import { Lancamento, SaldoConta, SituacaoLancamento, TipoLancamento, TipoConta, 
 import { authService } from '../services/authService';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
+import { FAB } from '../components/ui';
 import type { ColorScheme } from '../theme/colors';
 import { useVencimentos } from '../contexts/VencimentosContext';
 import EmptyState from '../components/EmptyState';
@@ -1089,16 +1090,15 @@ export default function LancamentosScreen({ navigation, route }: any) {
         contentContainerStyle={[{ paddingBottom: 80 }, listItems.length === 0 && { flexGrow: 1 }]}
       />
 
-      <TouchableOpacity
-        style={[styles.fab, { bottom: 88, backgroundColor: '#1565C0' }]}
+      <FAB
+        icon="download"
+        color={colors.blue}
+        bottom={88}
+        accessibilityLabel="Importar fatura"
         onPress={() => navigation.navigate('ImportarFatura')}
-      >
-        <Text style={{ fontSize: 20 }}>📄</Text>
-      </TouchableOpacity>
+      />
 
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddLancamento', { mes, ano })}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      <FAB accessibilityLabel="Novo lançamento" onPress={() => navigation.navigate('AddLancamento', { mes, ano })} />
 
       {/* ── Modal de seleção de conta bancária ── */}
       <Modal
@@ -1486,8 +1486,6 @@ function makeStyles(c: ColorScheme) {
     faturaPageText: { fontSize: 11, color: c.green, fontWeight: '600' },
 
     empty: { textAlign: 'center', marginTop: 40, color: c.textSecondary, fontSize: 16 },
-    fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.green, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-    fabText: { color: c.text, fontSize: 28, lineHeight: 32 },
 
     contaOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
     contaSheet: {

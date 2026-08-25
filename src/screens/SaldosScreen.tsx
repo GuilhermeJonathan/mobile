@@ -8,6 +8,7 @@ import { saldosService } from '../services/api';
 import { SaldoConta, TipoConta } from '../types';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
+import { FAB } from '../components/ui';
 import { ColorScheme } from '../theme/colors';
 import EmptyState from '../components/EmptyState';
 
@@ -178,9 +179,7 @@ export default function SaldosScreen({ navigation }: any) {
         contentContainerStyle={[styles.list, contas.length === 0 && { flexGrow: 1 }]}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={openCreate}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      <FAB accessibilityLabel="Nova conta" onPress={openCreate} />
 
       <Modal
         visible={modal.mode !== 'hidden'}
@@ -287,13 +286,6 @@ function makeStyles(c: ColorScheme) {
     deleteBtn:    { backgroundColor: c.redDim, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
     deleteBtnText: { color: c.red, fontSize: 12, fontWeight: '700' },
 
-    fab: {
-      position: 'absolute', bottom: 24, right: 24,
-      width: 56, height: 56, borderRadius: 28,
-      backgroundColor: c.green, justifyContent: 'center', alignItems: 'center',
-      elevation: 6,
-    },
-    fabText: { color: c.text, fontSize: 28, lineHeight: 32 },
 
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalBox: {

@@ -9,7 +9,7 @@ export type IconName =
   | 'dashboard' | 'wallet' | 'trending-up' | 'card' | 'bank' | 'clipboard'
   | 'calendar' | 'calendar-range' | 'users' | 'user' | 'target' | 'repeat'
   | 'tag' | 'transfer' | 'download' | 'search' | 'cart' | 'ticket'
-  | 'receipt' | 'bell' | 'chat';
+  | 'receipt' | 'bell' | 'chat' | 'plus';
 
 interface Props {
   name: IconName;
@@ -133,6 +133,10 @@ export default function Icon({ name, size = 22, color = '#111827', strokeWidth =
     </>),
     chat: (<>
       <Path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12z" />
+    </>),
+    plus: (<>
+      <Line x1={12} y1={5} x2={12} y2={19} />
+      <Line x1={5} y1={12} x2={19} y2={12} />
     </>),
   };
 

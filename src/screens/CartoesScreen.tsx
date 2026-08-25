@@ -8,6 +8,7 @@ import { cartoesService } from '../services/api';
 import { CartaoCredito, CartaoLancamento, SituacaoLancamento } from '../types';
 import { fmtBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
+import { FAB } from '../components/ui';
 import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 
@@ -274,20 +275,19 @@ export default function CartoesScreen({ navigation }: any) {
       />
 
       {/* FAB importar fatura */}
-      <TouchableOpacity
-        style={[styles.fab, { bottom: 88, backgroundColor: '#1565C0' }]}
+      <FAB
+        icon="download"
+        color={colors.blue}
+        bottom={88}
+        accessibilityLabel="Importar fatura"
         onPress={() => navigation.navigate('ImportarFatura', {
           cartaoId: cartoes[0]?.id ?? '',
           cartaoNome: cartoes[0]?.nome ?? '',
         })}
-      >
-        <Text style={{ fontSize: 20 }}>📄</Text>
-      </TouchableOpacity>
+      />
 
       {/* FAB adicionar cartão */}
-      <TouchableOpacity style={styles.fab} onPress={() => { setError(''); setCriarVisible(true); }}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      <FAB color={colors.blue} accessibilityLabel="Novo cartão" onPress={() => { setError(''); setCriarVisible(true); }} />
 
       {/* Modal criar */}
       <Modal visible={criarVisible} transparent animationType="fade" onRequestClose={() => setCriarVisible(false)}>
@@ -404,8 +404,6 @@ function makeStyles(c: ColorScheme) {
     resumoValor:  { fontSize: 12, color: c.text, fontWeight: '700', minWidth: 84, textAlign: 'right' },
     // ─────────────────────────────────────────────────────────────
     empty: { textAlign: 'center', marginTop: 40, color: c.textSecondary, fontSize: 16, lineHeight: 24 },
-    fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.blue, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-    fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
     errorBox: { backgroundColor: c.redDim, borderRadius: 8, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: c.redBorder },
     errorText: { color: c.redBorder, fontSize: 14, textAlign: 'center' },
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 24 },

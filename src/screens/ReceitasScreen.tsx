@@ -8,6 +8,7 @@ import { receitasRecorrentesService } from '../services/api';
 import { ReceitaRecorrente, TipoReceita } from '../types';
 import { fmtBRL, maskBRL, parseBRL } from '../utils/currency';
 import { useTheme } from '../theme/ThemeContext';
+import { FAB } from '../components/ui';
 import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 
@@ -255,9 +256,7 @@ export default function ReceitasScreen() {
         contentContainerStyle={[{ padding: 12, paddingBottom: 80 }, receitas.length === 0 && { flexGrow: 1 }]}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => { setError(''); setCriarVisible(true); }}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      <FAB accessibilityLabel="Nova receita" onPress={() => { setError(''); setCriarVisible(true); }} />
 
       {/* ── Modal Criar ─────────────────────────────────────────────────────── */}
       <Modal visible={criarVisible} transparent animationType="fade" onRequestClose={() => setCriarVisible(false)}>
@@ -531,8 +530,6 @@ function makeStyles(c: ColorScheme) {
     btnAction: { padding: 4 },
     btnActionText: { fontSize: 18 },
     empty: { textAlign: 'center', marginTop: 60, color: c.textSecondary, fontSize: 16, lineHeight: 26 },
-    fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.green, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-    fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
     errorBox: { backgroundColor: c.redDim, borderRadius: 8, padding: 12, marginTop: 8, borderWidth: 1, borderColor: c.redBorder },
     errorText: { color: c.redBorder, fontSize: 14, textAlign: 'center' },
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 24 },
