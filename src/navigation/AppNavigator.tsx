@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, ActivityIndicator, View, TouchableOpacity, Image, Platform, Dimensions, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { darkColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { authService } from '../services/authService';
 import { navigationRef } from './navigationRef';
 import DogMascot from '../components/DogMascot';
@@ -60,14 +60,15 @@ const DESKTOP_BREAKPOINT = 1024;
 
 // ─── Logo cachorro no header ─────────────────────────────────────────────────
 export function AppHeaderTitle() {
+  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <DogMascot size={56} color={darkColors.green} mood="happy" />
+      <DogMascot size={56} color={colors.green} mood="happy" />
       <View style={{ flexDirection: 'column' }}>
-        <Text style={{ color: darkColors.textSecondary, fontWeight: '700', fontSize: 13, lineHeight: 15 }}>
+        <Text style={{ color: colors.textSecondary, fontWeight: '700', fontSize: 13, lineHeight: 15 }}>
           Meu
         </Text>
-        <Text style={{ color: darkColors.text, fontWeight: '900', fontSize: 20, lineHeight: 22 }}>
+        <Text style={{ color: colors.text, fontWeight: '900', fontSize: 20, lineHeight: 22 }}>
           FinDog
         </Text>
       </View>
@@ -129,6 +130,7 @@ function MainTabs() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { badge, refresh } = useVencimentos();
+  const { colors } = useTheme();
 
   // Desktop web: sidebar layout; everything else: bottom tabs
   const isDesktop = Platform.OS === 'web' && width >= DESKTOP_BREAKPOINT;
@@ -207,18 +209,18 @@ function MainTabs() {
           };
           return <Text style={{ fontSize: size - 4 }}>{icons[route.name]}</Text>;
         },
-        tabBarActiveTintColor: darkColors.green,
-        tabBarInactiveTintColor: darkColors.textTertiary,
+        tabBarActiveTintColor: colors.green,
+        tabBarInactiveTintColor: colors.textTertiary,
         // Hide bottom bar on desktop (sidebar navega)
         tabBarStyle: isDesktop ? { display: 'none' } : {
-          backgroundColor: darkColors.surface,
-          borderTopColor: darkColors.border,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
           paddingBottom: insets.bottom,
           height: 60 + insets.bottom,
         },
         tabBarLabelStyle: { fontSize: 11 },
-        headerStyle: { backgroundColor: darkColors.surface },
-        headerTintColor: darkColors.text,
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: 'bold' },
         headerRight: isDesktop
           ? () => (
@@ -239,7 +241,7 @@ function MainTabs() {
                   {badge > 0 && (
                     <View style={{
                       position: 'absolute', top: -2, right: -2,
-                      backgroundColor: darkColors.red, borderRadius: 8,
+                      backgroundColor: colors.red, borderRadius: 8,
                       minWidth: 16, height: 16,
                       justifyContent: 'center', alignItems: 'center',
                       paddingHorizontal: 3,
@@ -269,7 +271,7 @@ function MainTabs() {
                       source={{ uri: avatarUrl }}
                       style={{
                         width: 32, height: 32, borderRadius: 16,
-                        borderWidth: 1.5, borderColor: darkColors.green,
+                        borderWidth: 1.5, borderColor: colors.green,
                       }}
                     />
                   ) : (
@@ -278,7 +280,7 @@ function MainTabs() {
                   {badge > 0 && (
                     <View style={{
                       position: 'absolute', top: -4, right: -4,
-                      backgroundColor: darkColors.red, borderRadius: 8,
+                      backgroundColor: colors.red, borderRadius: 8,
                       minWidth: 16, height: 16,
                       justifyContent: 'center', alignItems: 'center',
                       paddingHorizontal: 3,
@@ -299,7 +301,7 @@ function MainTabs() {
         component={DashboardScreen}
         options={isDesktop
           ? { title: 'Dashboard' }
-          : { headerTitle: () => <AppHeaderTitle />, headerStyle: { backgroundColor: darkColors.surface } }}
+          : { headerTitle: () => <AppHeaderTitle />, headerStyle: { backgroundColor: colors.surface } }}
       />
       <Tab.Screen
         name="Lançamentos"
@@ -411,7 +413,7 @@ function MainTabs() {
         <TermsModal visible={termsModal} onAccept={handleAcceptTerms} />
         <OnboardingTour active sidebarWidth={240} />
         <UserDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
-        <View style={{ flex: 1, flexDirection: 'row', backgroundColor: darkColors.background }}>
+        <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
           <DesktopShell
             activeRoute={activeRoute}
             onNavigate={handleDesktopNavigate}
@@ -459,6 +461,7 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
+  const { colors } = useTheme();
   const [checking, setChecking] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -477,8 +480,8 @@ export default function AppNavigator() {
 
   if (checking) {
     return (
-      <View style={{ flex: 1, backgroundColor: darkColors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={darkColors.green} />
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.green} />
       </View>
     );
   }
@@ -611,7 +614,7 @@ export default function AppNavigator() {
         <Stack.Screen
           name="EditLancamento"
           component={EditLancamentoScreen}
-          options={{ headerShown: true, title: 'Editar Lançamento', headerStyle: { backgroundColor: '#1a1a2e' }, headerTintColor: '#fff' }}
+          options={{ headerShown: true, title: 'Editar Lançamento', headerStyle: { backgroundColor: colors.surface }, headerTintColor: colors.text }}
         />
         <Stack.Screen
           name="ImportarFatura"
@@ -624,8 +627,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Metas',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -634,8 +637,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Família',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -644,8 +647,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Orçamento por Categoria',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -654,8 +657,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Buscar Lançamentos',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -664,8 +667,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Visão Anual',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -681,8 +684,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Dívidas Parceladas',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -691,8 +694,8 @@ export default function AppNavigator() {
           options={({ route }: any) => ({
             headerShown: true,
             title: `Extrato · ${route.params?.banco ?? 'Conta'}`,
-            headerStyle: { backgroundColor: '#1a1a2e' },
-            headerTintColor: '#fff',
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           })}
         />
         <Stack.Screen
@@ -701,8 +704,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Planos',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -733,8 +736,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Assinaturas',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -743,8 +746,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Categorias',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
         <Stack.Screen
@@ -753,8 +756,8 @@ export default function AppNavigator() {
           options={{
             headerShown: true,
             title: 'Vendas',
-            headerStyle: { backgroundColor: darkColors.surface },
-            headerTintColor: darkColors.text,
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
           }}
         />
       </Stack.Navigator>

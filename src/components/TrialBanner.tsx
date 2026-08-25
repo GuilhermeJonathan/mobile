@@ -1,8 +1,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { darkColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
-const C = darkColors;
 
 interface Props {
   daysRemaining: number | null;
@@ -10,6 +9,8 @@ interface Props {
 }
 
 export default function TrialBanner({ daysRemaining, onPress }: Props) {
+  const { colors: C } = useTheme();
+  const styles = makeStyles(C);
   if (daysRemaining === null) return null;
 
   // Urgência: <= 3 dias = laranja/vermelho, resto = sutil
@@ -37,7 +38,7 @@ export default function TrialBanner({ daysRemaining, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (C: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',

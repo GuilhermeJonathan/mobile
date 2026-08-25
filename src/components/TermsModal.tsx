@@ -3,10 +3,9 @@ import {
   View, Text, Modal, TouchableOpacity, StyleSheet,
   ScrollView, Linking, ActivityIndicator,
 } from 'react-native';
-import { darkColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import DogMascot from './DogMascot';
 
-const C = darkColors;
 
 interface Props {
   visible: boolean;
@@ -14,6 +13,8 @@ interface Props {
 }
 
 export default function TermsModal({ visible, onAccept }: Props) {
+  const { colors: C } = useTheme();
+  const styles = makeStyles(C);
   const [loading, setLoading] = useState(false);
 
   async function handleAccept() {
@@ -84,7 +85,7 @@ export default function TermsModal({ visible, onAccept }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (C: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.85)',
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    backgroundColor: C.card,
+    backgroundColor: C.surfaceElevated,
     borderRadius: 12,
     padding: 16,
     gap: 8,

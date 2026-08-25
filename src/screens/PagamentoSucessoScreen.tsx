@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { darkColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import DogMascot from '../components/DogMascot';
 import { authService } from '../services/authService';
 
 export default function PagamentoSucessoScreen({ navigation }: { navigation: any }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [refreshing, setRefreshing] = useState(true);
 
   useEffect(() => {
@@ -18,7 +20,7 @@ export default function PagamentoSucessoScreen({ navigation }: { navigation: any
 
   return (
     <View style={styles.container}>
-      <DogMascot mood="happy" size={96} color={darkColors.green} />
+      <DogMascot mood="happy" size={96} color={colors.green} />
 
       <Text style={styles.title}>Pagamento confirmado! 🎉</Text>
 
@@ -27,7 +29,7 @@ export default function PagamentoSucessoScreen({ navigation }: { navigation: any
       </Text>
 
       {refreshing ? (
-        <ActivityIndicator size="large" color={darkColors.green} style={styles.loader} />
+        <ActivityIndicator size="large" color={colors.green} style={styles.loader} />
       ) : (
         <TouchableOpacity style={styles.button} onPress={handleComecar} activeOpacity={0.8}>
           <Text style={styles.buttonText}>Começar a usar →</Text>
@@ -37,10 +39,10 @@ export default function PagamentoSucessoScreen({ navigation }: { navigation: any
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: darkColors.background,
+    backgroundColor: c.background,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
@@ -48,13 +50,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '700',
-    color: darkColors.text,
+    color: c.text,
     marginTop: 24,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,
-    color: darkColors.textSecondary,
+    color: c.textSecondary,
     marginTop: 12,
     textAlign: 'center',
     lineHeight: 22,
@@ -64,7 +66,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 36,
-    backgroundColor: darkColors.green,
+    backgroundColor: c.green,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 40,

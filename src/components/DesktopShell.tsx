@@ -7,7 +7,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import { darkColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { AppHeaderTitle } from '../navigation/AppNavigator';
 import DogMascot from './DogMascot';
 import WhatsAppIcon from './WhatsAppIcon';
@@ -79,6 +79,8 @@ function NavRow({
   badge: number;
   onNavigate: () => void;
 }) {
+  const { colors } = useTheme();
+  const s = makeStyles(colors);
   return (
     <TouchableOpacity
       style={[s.navItem, active && s.navItemActive, collapsed && s.navItemCollapsed]}
@@ -115,6 +117,8 @@ function SectionHeader({
   collapsed: boolean;
   onToggle: () => void;
 }) {
+  const { colors } = useTheme();
+  const s = makeStyles(colors);
   if (collapsed) return <View style={{ height: 8 }} />;
   return (
     <TouchableOpacity style={s.sectionHeader} onPress={onToggle} activeOpacity={0.6}>
@@ -134,6 +138,8 @@ export default function DesktopShell({
   badge,
   isAdmin = false,
 }: DesktopShellProps) {
+  const { colors } = useTheme();
+  const s = makeStyles(colors);
   const [collapsed,    setCollapsed]    = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
   const [menuOpen,     setMenuOpen]     = useState(true);
@@ -177,7 +183,7 @@ export default function DesktopShell({
       {collapsed ? (
         // Colapsado: dog menor centralizado + botão de expandir
         <View style={s.logoAreaCollapsed}>
-          <DogMascot size={48} color={darkColors.green} mood="happy" />
+          <DogMascot size={48} color={colors.green} mood="happy" />
           <TouchableOpacity
             style={s.collapseBtn}
             onPress={() => setCollapsed(false)}
@@ -319,11 +325,11 @@ export default function DesktopShell({
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
+const makeStyles = (c: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   sidebar: {
-    backgroundColor: darkColors.surface,
+    backgroundColor: c.surface,
     borderRightWidth: 1,
-    borderRightColor: darkColors.border,
+    borderRightColor: c.border,
     flexDirection: 'column',
     position: 'relative',
   } as any,
@@ -336,7 +342,7 @@ const s = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: darkColors.border,
+    borderBottomColor: c.border,
     gap: 4,
   },
   logoAreaCollapsed: {
@@ -345,7 +351,7 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     gap: 6,
     borderBottomWidth: 1,
-    borderBottomColor: darkColors.border,
+    borderBottomColor: c.border,
   },
   logoClip: {
     flex: 1,
@@ -355,15 +361,15 @@ const s = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 6,
-    backgroundColor: darkColors.surfaceElevated,
+    backgroundColor: c.surfaceElevated,
     borderWidth: 1,
-    borderColor: darkColors.border,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   collapseBtnText: {
-    color: darkColors.textSecondary,
+    color: c.textSecondary,
     fontSize: 14,
     lineHeight: 16,
     fontWeight: '700',
@@ -387,13 +393,13 @@ const s = StyleSheet.create({
     marginBottom: 2,
   },
   sectionLabel: {
-    color: darkColors.textTertiary,
+    color: c.textTertiary,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
   },
   sectionChevron: {
-    color: darkColors.textTertiary,
+    color: c.textTertiary,
     fontSize: 8,
   },
 
@@ -413,7 +419,7 @@ const s = StyleSheet.create({
     marginHorizontal: 4,
   },
   navItemActive: {
-    backgroundColor: darkColors.green + '1A',
+    backgroundColor: c.green + '1A',
   },
   navIcon: {
     fontSize: 16,
@@ -424,19 +430,19 @@ const s = StyleSheet.create({
     // emoji color can't be changed, but layout stays consistent
   },
   navLabel: {
-    color: darkColors.textSecondary,
+    color: c.textSecondary,
     fontSize: 13,
     fontWeight: '500',
     flex: 1,
   },
   navLabelActive: {
-    color: darkColors.green,
+    color: c.green,
     fontWeight: '700',
   },
 
   // ── Badges ──
   badge: {
-    backgroundColor: darkColors.red,
+    backgroundColor: c.red,
     borderRadius: 8,
     minWidth: 18,
     height: 18,
@@ -456,12 +462,12 @@ const s = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: darkColors.red,
+    backgroundColor: c.red,
   } as any,
 
   divider: {
     height: 1,
-    backgroundColor: darkColors.border,
+    backgroundColor: c.border,
     marginHorizontal: 12,
     marginVertical: 4,
   },
@@ -469,7 +475,7 @@ const s = StyleSheet.create({
   // ── User area ──
   userAreaWrapper: {
     borderTopWidth: 1,
-    borderTopColor: darkColors.border,
+    borderTopColor: c.border,
     padding: 8,
   },
   userArea: {
@@ -478,7 +484,7 @@ const s = StyleSheet.create({
     gap: 10,
     padding: 8,
     borderRadius: 8,
-    backgroundColor: darkColors.surfaceElevated,
+    backgroundColor: c.surfaceElevated,
   },
   userAreaCollapsed: {
     justifyContent: 'center',
@@ -490,25 +496,25 @@ const s = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     borderWidth: 1.5,
-    borderColor: darkColors.green,
+    borderColor: c.green,
     flexShrink: 0,
   },
   avatarPlaceholder: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: darkColors.border,
+    backgroundColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   userAreaLabel: {
-    color: darkColors.text,
+    color: c.text,
     fontSize: 12,
     fontWeight: '600',
   },
   userAreaSub: {
-    color: darkColors.textTertiary,
+    color: c.textTertiary,
     fontSize: 10,
   },
 

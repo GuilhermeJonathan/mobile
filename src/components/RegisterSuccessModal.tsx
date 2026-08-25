@@ -4,7 +4,7 @@ import {
   StyleSheet, Animated, ScrollView,
 } from 'react-native';
 import DogMascot from './DogMascot';
-import { darkColors as C } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 export type NextAction = 'explore' | 'lancamento' | 'whatsapp' | 'meta';
 
@@ -42,6 +42,8 @@ const ACTIONS: { id: NextAction; icon: string; title: string; sub: string }[] = 
 ];
 
 export default function RegisterSuccessModal({ visible, name, onAction }: Props) {
+  const { colors: C } = useTheme();
+  const s = makeStyles(C);
   const scaleAnim   = useRef(new Animated.Value(0.7)).current;
   const fadeAnim    = useRef(new Animated.Value(0)).current;
   const bounceAnim  = useRef(new Animated.Value(0)).current;
@@ -117,7 +119,7 @@ export default function RegisterSuccessModal({ visible, name, onAction }: Props)
   );
 }
 
-const s = StyleSheet.create({
+const makeStyles = (C: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.82)',

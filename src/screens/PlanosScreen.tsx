@@ -4,11 +4,10 @@ import {
   StyleSheet, ActivityIndicator, Platform, Linking, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { darkColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import DogMascot from '../components/DogMascot';
 import { authService, PlanInfo } from '../services/authService';
 
-const C = darkColors;
 
 const PLANS = [
   {
@@ -45,6 +44,8 @@ const PLANS = [
 ];
 
 export default function PlanosScreen() {
+  const { colors: C } = useTheme();
+  const styles = makeStyles(C);
   const [planInfo, setPlanInfo]               = useState<PlanInfo | null>(null);
   const [loading, setLoading]                 = useState(true);
   const [checkingOut, setCheckingOut]         = useState<string | null>(null);
@@ -294,7 +295,7 @@ export default function PlanosScreen() {
 
 const isWeb = Platform.OS === 'web';
 
-const styles = StyleSheet.create({
+const makeStyles = (C: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: C.background,
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: C.card,
+    backgroundColor: C.surfaceElevated,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   faqItem: {
-    backgroundColor: C.card,
+    backgroundColor: C.surfaceElevated,
     borderRadius: 10,
     padding: 14,
     borderWidth: 1,
@@ -553,7 +554,7 @@ const styles = StyleSheet.create({
   },
   changePlanCard: {
     flex: 1,
-    backgroundColor: C.card,
+    backgroundColor: C.surfaceElevated,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: C.border,
