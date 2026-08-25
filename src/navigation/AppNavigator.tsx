@@ -43,6 +43,7 @@ import VendasScreen from '../screens/VendasScreen';
 import PagamentoSucessoScreen from '../screens/PagamentoSucessoScreen';
 import UserDrawer from '../components/UserDrawer';
 import OnboardingTour from '../components/OnboardingTour';
+import Icon, { IconName } from '../components/Icon';
 import TrialExpiredModal from '../components/TrialExpiredModal';
 import TrialBanner from '../components/TrialBanner';
 import TermsModal from '../components/TermsModal';
@@ -198,16 +199,16 @@ function MainTabs() {
   const tabNavigator = (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ size }) => {
-          const icons: Record<string, string> = {
-            Dashboard: '📊',
-            Lançamentos: '💰',
-            Receitas: '📈',
-            Cartões: '💳',
-            Contas: '🏦',
-            Orçamento: '📋',
+        tabBarIcon: ({ color, size }) => {
+          const icons: Record<string, IconName> = {
+            Dashboard: 'dashboard',
+            Lançamentos: 'wallet',
+            Receitas: 'trending-up',
+            Cartões: 'card',
+            Contas: 'bank',
+            Orçamento: 'clipboard',
           };
-          return <Text style={{ fontSize: size - 4 }}>{icons[route.name]}</Text>;
+          return <Icon name={icons[route.name]} size={size - 2} color={color} />;
         },
         tabBarActiveTintColor: colors.green,
         tabBarInactiveTintColor: colors.textTertiary,
@@ -230,14 +231,14 @@ function MainTabs() {
                 onPress={() => navigationRef.current?.navigate('BuscaLancamentos' as never)}
                 style={{ padding: 6 }}
               >
-                <Text style={{ fontSize: 20 }}>🔍</Text>
+                <Icon name="search" size={22} color={colors.text} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setDrawerOpen(true)}
                 style={{ padding: 6 }}
               >
                 <View>
-                  <Text style={{ fontSize: 20 }}>🔔</Text>
+                  <Icon name="bell" size={22} color={colors.text} />
                   {badge > 0 && (
                     <View style={{
                       position: 'absolute', top: -2, right: -2,
@@ -262,7 +263,7 @@ function MainTabs() {
                 onPress={() => navigationRef.current?.navigate('BuscaLancamentos' as never)}
                 style={{ padding: 6 }}
               >
-                <Text style={{ fontSize: 20 }}>🔍</Text>
+                <Icon name="search" size={22} color={colors.text} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setDrawerOpen(true)} style={{ padding: 4 }}>
                 <View>
@@ -275,7 +276,7 @@ function MainTabs() {
                       }}
                     />
                   ) : (
-                    <Text style={{ fontSize: 22 }}>👤</Text>
+                    <Icon name="user" size={26} color={colors.text} />
                   )}
                   {badge > 0 && (
                     <View style={{

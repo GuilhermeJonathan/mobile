@@ -11,6 +11,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { AppHeaderTitle } from '../navigation/AppNavigator';
 import DogMascot from './DogMascot';
 import WhatsAppIcon from './WhatsAppIcon';
+import Icon, { IconName } from './Icon';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -24,39 +25,39 @@ const COLLAPSED_WIDTH  = 64;
 interface NavItem {
   routeName: string;
   label: string;
-  icon: string;
+  icon: IconName;
   isRootStack?: boolean;
 }
 
 const MAIN_ITEMS: NavItem[] = [
-  { routeName: 'Dashboard',   label: 'Dashboard',   icon: '📊' },
-  { routeName: 'Lançamentos', label: 'Lançamentos', icon: '💰' },
-  { routeName: 'Receitas',    label: 'Receitas',    icon: '📈' },
-  { routeName: 'Cartões',     label: 'Cartões',     icon: '💳' },
-  { routeName: 'Contas',      label: 'Contas',      icon: '🏦' },
-  { routeName: 'Orçamento',   label: 'Orçamento',   icon: '📋' },
+  { routeName: 'Dashboard',   label: 'Dashboard',   icon: 'dashboard' },
+  { routeName: 'Lançamentos', label: 'Lançamentos', icon: 'wallet' },
+  { routeName: 'Receitas',    label: 'Receitas',    icon: 'trending-up' },
+  { routeName: 'Cartões',     label: 'Cartões',     icon: 'card' },
+  { routeName: 'Contas',      label: 'Contas',      icon: 'bank' },
+  { routeName: 'Orçamento',   label: 'Orçamento',   icon: 'clipboard' },
 ];
 
 const EXTRA_ITEMS: NavItem[] = [
-  { routeName: 'Dividas',          label: 'Dívidas',        icon: '📅', isRootStack: true },
-  { routeName: 'Anual',            label: 'Visão Anual',    icon: '📆', isRootStack: true },
-  { routeName: 'Familia',          label: 'Família',        icon: '👨‍👩‍👧', isRootStack: true },
-  { routeName: 'Metas',            label: 'Metas',          icon: '🎯', isRootStack: true },
-  { routeName: 'Assinaturas',      label: 'Assinaturas',    icon: '📦' },
-  { routeName: 'Categorias',       label: 'Categorias',     icon: '🏷️' },
-  { routeName: 'Transferencia',    label: 'Transferência',  icon: '↔️' },
-  { routeName: 'ImportarExtrato',  label: 'Importar OFX',  icon: '📥' },
-  { routeName: 'BuscaLancamentos', label: 'Buscar',         icon: '🔍', isRootStack: true },
-  { routeName: 'WhatsApp',         label: 'WhatsApp',       icon: '💬', isRootStack: true },
+  { routeName: 'Dividas',          label: 'Dívidas',        icon: 'calendar', isRootStack: true },
+  { routeName: 'Anual',            label: 'Visão Anual',    icon: 'calendar-range', isRootStack: true },
+  { routeName: 'Familia',          label: 'Família',        icon: 'users', isRootStack: true },
+  { routeName: 'Metas',            label: 'Metas',          icon: 'target', isRootStack: true },
+  { routeName: 'Assinaturas',      label: 'Assinaturas',    icon: 'repeat' },
+  { routeName: 'Categorias',       label: 'Categorias',     icon: 'tag' },
+  { routeName: 'Transferencia',    label: 'Transferência',  icon: 'transfer' },
+  { routeName: 'ImportarExtrato',  label: 'Importar OFX',  icon: 'download' },
+  { routeName: 'BuscaLancamentos', label: 'Buscar',         icon: 'search', isRootStack: true },
+  { routeName: 'WhatsApp',         label: 'WhatsApp',       icon: 'chat', isRootStack: true },
 ];
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 const ADMIN_ITEMS: NavItem[] = [
-  { routeName: 'Vendas',               label: 'Vendas',      icon: '🛒' },
-  { routeName: 'AdminUsers',           label: 'Usuários',    icon: '👥' },
-  { routeName: 'Invites',              label: 'Convites',    icon: '🎟️' },
-  { routeName: 'PaymentTransactions',  label: 'Transações',  icon: '💳' },
+  { routeName: 'Vendas',               label: 'Vendas',      icon: 'cart' },
+  { routeName: 'AdminUsers',           label: 'Usuários',    icon: 'user' },
+  { routeName: 'Invites',              label: 'Convites',    icon: 'ticket' },
+  { routeName: 'PaymentTransactions',  label: 'Transações',  icon: 'receipt' },
 ];
 
 export interface DesktopShellProps {
@@ -89,7 +90,7 @@ function NavRow({
     >
       {item.routeName === 'WhatsApp'
         ? <View style={{ width: 22, alignItems: 'center' }}><WhatsAppIcon size={18} /></View>
-        : <Text style={[s.navIcon, active && s.navIconActive]}>{item.icon}</Text>
+        : <View style={{ width: 22, alignItems: 'center' }}><Icon name={item.icon} size={18} color={active ? colors.green : colors.textSecondary} /></View>
       }
       {!collapsed && (
         <Text style={[s.navLabel, active && s.navLabelActive]} numberOfLines={1}>
@@ -420,14 +421,6 @@ const makeStyles = (c: ReturnType<typeof useTheme>['colors']) => StyleSheet.crea
   },
   navItemActive: {
     backgroundColor: c.green + '1A',
-  },
-  navIcon: {
-    fontSize: 16,
-    width: 22,
-    textAlign: 'center',
-  },
-  navIconActive: {
-    // emoji color can't be changed, but layout stays consistent
   },
   navLabel: {
     color: c.textSecondary,
