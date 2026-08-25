@@ -9,6 +9,7 @@ import { lancamentosService, saldosService } from '../services/api';
 import { Lancamento, SaldoConta, SituacaoLancamento, TipoLancamento, TipoConta, TipoReceita } from '../types';
 import { authService } from '../services/authService';
 import { fmtBRL } from '../utils/currency';
+import { tabular } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { FAB } from '../components/ui';
 import type { ColorScheme } from '../theme/colors';
@@ -27,12 +28,13 @@ const TIPO_CONTA_EMOJI: Record<number, string> = {
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-const situacaoCor: Record<number, string> = {
-  [SituacaoLancamento.Recebido]: '#4CAF50',
-  [SituacaoLancamento.Pago]:     '#4CAF50',
-  [SituacaoLancamento.AReceber]: '#2196F3',
-  [SituacaoLancamento.AVencer]:  '#FF9800',
-  [SituacaoLancamento.Vencido]:  '#e53935',
+// Cor semântica de cada situação — mapeada para tokens do tema (resolvida com colors[...]).
+const situacaoCorKey: Record<number, 'green' | 'blue' | 'orange' | 'red'> = {
+  [SituacaoLancamento.Recebido]: 'green',
+  [SituacaoLancamento.Pago]:     'green',
+  [SituacaoLancamento.AReceber]: 'blue',
+  [SituacaoLancamento.AVencer]:  'orange',
+  [SituacaoLancamento.Vencido]:  'red',
 };
 
 const situacaoLabel: Record<number, string> = {
@@ -596,7 +598,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
   // ── Row de lançamento ─────────────────────────────────────────────────────
   const renderLancamento = (item: Lancamento, indented = false) => {
     const confirmado = isConfirmado(item.situacao);
-    const corSituacao = situacaoCor[item.situacao];
+    const corSituacao = colors[situacaoCorKey[item.situacao]];
     const corValor = item.tipo === TipoLancamento.Credito ? '#4CAF50' : '#e53935';
 
     const rowContent = (
@@ -706,7 +708,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
   const totalMesCredito = lancamentos.filter(l => !l.cartaoId && l.tipo === TipoLancamento.Credito).reduce((s, l) => s + l.valor, 0);
   const totalMesDebito  = lancamentos.filter(l => l.tipo !== TipoLancamento.Credito).reduce((s, l) => s + l.valor, 0);
   const saldoMes = totalMesCredito - totalMesDebito;
-  const saldoCor = saldoMes >= 0 ? '#4CAF50' : '#e53935';
+  const saldoCor = saldoMes >= 0 ? colors.green : colors.red;
 
   // ── Impressão ─────────────────────────────────────────────────────────────
   function imprimir() {
@@ -855,7 +857,7 @@ export default function LancamentosScreen({ navigation, route }: any) {
     if (v === null) return null;
     const isPositive = v > 0;
     const isGood = positiveIsGood ? isPositive : !isPositive;
-    const cor = isGood ? '#3fb950' : '#f85149';
+    const cor = isGood ? colors.green : colors.red;
     return (
       <Text style={{ color: cor, fontSize: 10, fontWeight: '700', marginTop: 2 }}>
         {isPositive ? '▲' : '▼'} {Math.abs(v).toFixed(1)}%
@@ -1326,9 +1328,9 @@ function makeStyles(c: ColorScheme) {
     },
     resumoItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
     resumoLabel: { fontSize: 11, color: c.textSecondary, marginBottom: 4 },
-    resumoCredito: { fontSize: 15, fontWeight: 'bold', color: c.green },
-    resumoDebito: { fontSize: 15, fontWeight: 'bold', color: c.red },
-    resumoSaldo: { fontSize: 15, fontWeight: 'bold' },
+    resumoCredito: { ...tabular, fontSize: 15, fontWeight: 'bold', color: c.green },
+    resumoDebito: { ...tabular, fontSize: 15, fontWeight: 'bold', color: c.red },
+    resumoSaldo: { ...tabular, fontSize: 15, fontWeight: 'bold' },
     resumoDivider: { width: 1, backgroundColor: c.border, marginVertical: 10 },
 
     dateHeader: {
@@ -1471,7 +1473,7 @@ function makeStyles(c: ColorScheme) {
     recorrenteBadgeText: { fontSize: 11, color: c.purpleLight, fontWeight: '600' },
 
     itemRight: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 8 },
-    itemValor: { fontSize: 15, fontWeight: 'bold', textAlign: 'right' },
+    itemValor: { ...tabular, fontSize: 15, fontWeight: 'bold', textAlign: 'right' },
 
     situacaoBadge: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 3 },
     situacaoBadgeText: { fontSize: 12, fontWeight: '600' },

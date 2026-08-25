@@ -59,6 +59,11 @@ export function text(role: Role, w: Weight = 'regular'): TextStyle {
   };
 }
 
+/** Só os dígitos tabulares — para aplicar (spread) em estilos de valor existentes. */
+export const tabular: TextStyle = {
+  fontVariant: ['tabular-nums'],
+};
+
 /** Valores monetários — dígitos de largura fixa para alinhar em colunas. */
 export const money: TextStyle = {
   fontFamily,

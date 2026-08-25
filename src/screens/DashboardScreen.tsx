@@ -10,6 +10,7 @@ import { Dashboard, DicaFinanceira } from '../types';
 import { useDashboard } from '../hooks/useDashboard';
 import { SkeletonList } from '../components/SkeletonLoader';
 import { fmtBRL, fmtBRLCompact } from '../utils/currency';
+import { tabular } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorScheme } from '../theme/colors';
 import { useVencimentos } from '../contexts/VencimentosContext';
@@ -117,7 +118,7 @@ function ReceitaDespesaDonut({ receitas, despesas }: { receitas: number; despesa
   const receitasDeg = total > 0 ? (receitas / total) * 360 : 180;
   const despesasDeg = 360 - receitasDeg;
   const saldo = receitas - despesas;
-  const saldoColor = saldo >= 0 ? '#4CAF50' : '#e53935';
+  const saldoColor = saldo >= 0 ? colors.green : colors.red;
 
   return (
     <View style={{ alignItems: 'center' }}>
@@ -623,7 +624,7 @@ export default function DashboardScreen() {
 
   if (isLoading) return <SkeletonList count={5} />;
 
-  const saldoColor = (dashboard?.saldo ?? 0) >= 0 ? '#4CAF50' : '#e53935';
+  const saldoColor = (dashboard?.saldo ?? 0) >= 0 ? colors.green : colors.red;
   const totalDespesas = dashboard?.totalDebitos ?? 0;
   const resumo = dashboard?.resumoDebitos ?? [];
 
@@ -661,23 +662,23 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
       <View style={styles.cards}>
-        <View style={[styles.card, { borderLeftColor: '#4CAF50' }]}>
+        <View style={[styles.card, { borderLeftColor: colors.green }]}>
           <View style={styles.cardRow}>
             <Text style={styles.cardLabel}>↑ Receitas</Text>
             <View style={styles.cardValueRow}>
               {!hideValues && <VariacaoBadge valor={dashboard?.variacaoCreditos ?? null} positiveIsGood />}
-              <Text style={[styles.cardValue, { color: '#4CAF50' }]}>
+              <Text style={[styles.cardValue, { color: colors.green }]}>
                 {hideValues ? '• • • • • •' : fmtBRL(dashboard?.totalCreditos ?? 0)}
               </Text>
             </View>
           </View>
         </View>
-        <View style={[styles.card, { borderLeftColor: '#e53935' }]}>
+        <View style={[styles.card, { borderLeftColor: colors.red }]}>
           <View style={styles.cardRow}>
             <Text style={styles.cardLabel}>↓ Despesas</Text>
             <View style={styles.cardValueRow}>
               {!hideValues && <VariacaoBadge valor={dashboard?.variacaoDebitos ?? null} positiveIsGood={false} />}
-              <Text style={[styles.cardValue, { color: '#e53935' }]}>
+              <Text style={[styles.cardValue, { color: colors.red }]}>
                 {hideValues ? '• • • • • •' : fmtBRL(dashboard?.totalDebitos ?? 0)}
               </Text>
             </View>
@@ -1242,7 +1243,7 @@ function makeStyles(c: ColorScheme) {
     cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     cardLabel: { fontSize: 14, color: c.textSecondary, fontWeight: '500' },
     cardValueRow: { flexDirection: 'row', alignItems: 'center' },
-    cardValue: { fontSize: 22, fontWeight: 'bold' },
+    cardValue: { ...tabular, fontSize: 22, fontWeight: 'bold' },
     section: { margin: 16, marginTop: 12, backgroundColor: c.surface, borderRadius: 12, padding: 18, overflow: 'hidden' },
     sectionTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 4, color: c.text },
     sectionSub: { fontSize: 11, color: c.textTertiary, marginBottom: 12 },
@@ -1264,7 +1265,7 @@ function makeStyles(c: ColorScheme) {
     catItemRow:    { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
     catItemDesc:   { fontSize: 14, fontWeight: '600', color: c.text },
     catItemMeta:   { fontSize: 12, color: c.textSecondary },
-    catItemValor:  { fontSize: 14, fontWeight: '700', color: c.red },
+    catItemValor:  { ...tabular, fontSize: 14, fontWeight: '700', color: c.red },
     legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     legendDot: { width: 10, height: 10, borderRadius: 5 },
@@ -1401,7 +1402,7 @@ function makeStyles(c: ColorScheme) {
     pendenciaLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     pendenciaIcon: { fontSize: 16 },
     pendenciaLabel: { fontSize: 14, color: c.text, fontWeight: '500' },
-    pendenciaValor: { fontSize: 15, fontWeight: '700' },
+    pendenciaValor: { ...tabular, fontSize: 15, fontWeight: '700' },
 
     // Modal "vamos começar"
     emptyOverlay: {
