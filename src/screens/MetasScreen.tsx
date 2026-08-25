@@ -10,6 +10,7 @@ import { FAB } from '../components/ui';
 import EmptyState from '../components/EmptyState';
 import type { ColorScheme } from '../theme/colors';
 import { fmtBRL } from '../utils/currency';
+import { tabular } from '../theme/typography';
 import { api } from '../services/api';
 import { useMetas, useCreateMeta, useDeleteMeta } from '../hooks/useMetas';
 import { SkeletonList } from '../components/SkeletonLoader';
@@ -629,7 +630,7 @@ function styles(c: ColorScheme) {
     resumoItem:  { flex: 1, alignItems: 'center' },
     resumoSep:   { width: 1, backgroundColor: c.border, marginVertical: 4 },
     resumoLabel: { fontSize: 10, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 },
-    resumoValor: { fontSize: 15, fontWeight: '700', color: c.text },
+    resumoValor: { ...tabular, fontSize: 15, fontWeight: '700', color: c.text },
 
     searchWrap:  { marginBottom: 16 },
     searchInput: {
@@ -658,8 +659,8 @@ function styles(c: ColorScheme) {
     progressBg:  { height: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3 },
     progressFill:{ height: 6, borderRadius: 3 },
     cardValorLabel:{ fontSize: 10, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 },
-    cardValor:   { fontSize: 18, fontWeight: '700', color: '#fff' },
-    cardValorMeta:{ fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
+    cardValor:   { ...tabular, fontSize: 18, fontWeight: '700', color: '#fff' },
+    cardValorMeta:{ ...tabular, fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
     cardFalta:   { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
     cardData:    { fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 8 },
     atualizarBtn:{

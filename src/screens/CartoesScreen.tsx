@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { cartoesService } from '../services/api';
 import { CartaoCredito, CartaoLancamento, SituacaoLancamento } from '../types';
 import { fmtBRL } from '../utils/currency';
+import { tabular } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { FAB } from '../components/ui';
 import EmptyState from '../components/EmptyState';
@@ -22,12 +23,12 @@ const situacaoLabel: Record<number, string> = {
   [SituacaoLancamento.Vencido]: 'Vencido',
 };
 
-const situacaoCor: Record<number, string> = {
-  [SituacaoLancamento.Recebido]: '#4CAF50',
-  [SituacaoLancamento.Pago]: '#4CAF50',
-  [SituacaoLancamento.AReceber]: '#2196F3',
-  [SituacaoLancamento.AVencer]: '#FF9800',
-  [SituacaoLancamento.Vencido]: '#e53935',
+const situacaoCorKey: Record<number, 'green' | 'blue' | 'orange' | 'red'> = {
+  [SituacaoLancamento.Recebido]: 'green',
+  [SituacaoLancamento.Pago]: 'green',
+  [SituacaoLancamento.AReceber]: 'blue',
+  [SituacaoLancamento.AVencer]: 'orange',
+  [SituacaoLancamento.Vencido]: 'red',
 };
 
 export default function CartoesScreen({ navigation }: any) {
@@ -262,7 +263,7 @@ export default function CartoesScreen({ navigation }: any) {
                   <Text style={[styles.lancamentoValor, l.valor < 0 && { color: colors.green }]}>
                     {l.valor < 0 ? `+${fmtBRL(Math.abs(l.valor))}` : fmtBRL(l.valor)}
                   </Text>
-                  <Text style={[styles.lancamentoSituacao, { color: situacaoCor[l.situacao] }]}>
+                  <Text style={[styles.lancamentoSituacao, { color: colors[situacaoCorKey[l.situacao]] }]}>
                     {situacaoLabel[l.situacao]}
                   </Text>
                 </View>
@@ -373,13 +374,13 @@ function makeStyles(c: ColorScheme) {
     mesTitle: { fontSize: 18, fontWeight: 'bold', color: c.text },
     totalCard: { backgroundColor: c.blue, borderRadius: 12, padding: 16, marginBottom: 12, alignItems: 'center' },
     totalLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 13 },
-    totalValor: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+    totalValor: { ...tabular, color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
     card: { backgroundColor: c.surface, borderRadius: 12, padding: 16, marginBottom: 12 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
     cardHeaderLeft: { flex: 1 },
     cardNome: { fontSize: 16, fontWeight: 'bold', color: c.text },
     cardVencimento: { fontSize: 12, color: '#64B5F6', fontWeight: '600', marginTop: 2 },
-    cardTotal: { fontSize: 14, color: c.red, fontWeight: '600', marginTop: 2 },
+    cardTotal: { ...tabular, fontSize: 14, color: c.red, fontWeight: '600', marginTop: 2 },
     cardVazio: { fontSize: 13, color: c.textTertiary, marginTop: 2 },
     cardActions: { flexDirection: 'row', gap: 4 },
     btnAct: { padding: 6 },
@@ -392,7 +393,7 @@ function makeStyles(c: ColorScheme) {
     catBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surfaceElevated, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: c.border },
     catBadgeText: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
     lancamentoRight: { alignItems: 'flex-end' },
-    lancamentoValor: { fontSize: 14, color: c.red, fontWeight: '600' },
+    lancamentoValor: { ...tabular, fontSize: 14, color: c.red, fontWeight: '600' },
     lancamentoSituacao: { fontSize: 11, marginTop: 2 },
     // ── Resumo por tipo ──────────────────────────────────────────
     resumo:       { borderTopWidth: 1, borderTopColor: c.border, paddingVertical: 10, gap: 6 },
@@ -401,7 +402,7 @@ function makeStyles(c: ColorScheme) {
     resumoLabel:  { fontSize: 12, color: c.textSecondary, fontWeight: '600', width: 108 },
     resumoBarBg:  { flex: 1, height: 4, backgroundColor: c.surfaceElevated, borderRadius: 2, overflow: 'hidden' },
     resumoBarFill:{ height: 4, borderRadius: 2 },
-    resumoValor:  { fontSize: 12, color: c.text, fontWeight: '700', minWidth: 84, textAlign: 'right' },
+    resumoValor:  { ...tabular, fontSize: 12, color: c.text, fontWeight: '700', minWidth: 84, textAlign: 'right' },
     // ─────────────────────────────────────────────────────────────
     empty: { textAlign: 'center', marginTop: 40, color: c.textSecondary, fontSize: 16, lineHeight: 24 },
     errorBox: { backgroundColor: c.redDim, borderRadius: 8, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: c.redBorder },

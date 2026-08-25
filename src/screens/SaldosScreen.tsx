@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { saldosService } from '../services/api';
 import { SaldoConta, TipoConta } from '../types';
 import { fmtBRL } from '../utils/currency';
+import { tabular } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { FAB } from '../components/ui';
 import { ColorScheme } from '../theme/colors';
@@ -261,7 +262,7 @@ function makeStyles(c: ColorScheme) {
       alignItems: 'center', marginBottom: 16,
     },
     totalLabel: { fontSize: 13, color: c.textSecondary, marginBottom: 4 },
-    totalValue: { fontSize: 26, fontWeight: 'bold' },
+    totalValue: { ...tabular, fontSize: 26, fontWeight: 'bold' },
     transferenciaBtn: {
       marginTop: 14, borderWidth: 1.5, borderColor: c.greenBorder,
       borderRadius: 10, paddingVertical: 8, paddingHorizontal: 20,
@@ -279,7 +280,7 @@ function makeStyles(c: ColorScheme) {
     cardNome:  { fontSize: 15, fontWeight: '700', color: c.text },
     cardTipo:  { fontSize: 12, color: c.textSecondary, marginTop: 2 },
     cardRight:    { alignItems: 'flex-end', gap: 6 },
-    cardSaldo:    { fontSize: 16, fontWeight: 'bold' },
+    cardSaldo:    { ...tabular, fontSize: 16, fontWeight: 'bold' },
     cardActions:  { flexDirection: 'row', gap: 6 },
     editBtn:      { backgroundColor: c.surfaceSubtle, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
     editBtnText:  { fontSize: 12 },

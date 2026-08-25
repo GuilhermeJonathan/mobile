@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { receitasRecorrentesService } from '../services/api';
 import { ReceitaRecorrente, TipoReceita } from '../types';
 import { fmtBRL, maskBRL, parseBRL } from '../utils/currency';
+import { tabular } from '../theme/typography';
 import { useTheme } from '../theme/ThemeContext';
 import { FAB } from '../components/ui';
 import EmptyState from '../components/EmptyState';
@@ -516,7 +517,7 @@ function makeStyles(c: ColorScheme) {
     container: { flex: 1, backgroundColor: c.background },
     totalCard: { backgroundColor: c.green, borderRadius: 12, padding: 20, marginBottom: 12, alignItems: 'center' },
     totalLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13 },
-    totalValor: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
+    totalValor: { ...tabular, color: '#fff', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
     totalSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 4 },
     card: { backgroundColor: c.surface, borderRadius: 12, padding: 16, marginBottom: 10 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -525,7 +526,7 @@ function makeStyles(c: ColorScheme) {
     cardDia: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
     cardHorista: { fontSize: 12, color: c.green, marginTop: 2 },
     cardRight: { alignItems: 'flex-end', gap: 6 },
-    cardValor: { fontSize: 16, fontWeight: 'bold', color: c.green },
+    cardValor: { ...tabular, fontSize: 16, fontWeight: 'bold', color: c.green },
     cardActions: { flexDirection: 'row', gap: 8 },
     btnAction: { padding: 4 },
     btnActionText: { fontSize: 18 },
